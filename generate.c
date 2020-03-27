@@ -69,14 +69,22 @@ void enter_block(ASTNode *node) {
 }
 
 void enter_declarator(ASTNode *node) {
-	emit("DECLARATOR");
 	if(node->left != NULL) {
 		char *ident = (char*)generate(node->left);
-		emit("DECLARATOR NAME %s", ident);
+		//emit("DECLARATOR NAME %s", ident);
 	}
 	if(node->right != NULL) {
-		char *ident = (char*)generate(node->right);
-		emit("DECLARATOR BODY %s", ident);
+		ASTNode *right = node->right;
+		if(right->token->type == STRING) {
+			for(int i = 0; i < strlen(right->token->string); i++) {
+				emit("iload %c", right->token->string[i]);
+			}
+		} else {
+
+		}
+		//char *ident = (char*)generate(node->right);
+		//emit("ialign %i", node->right->size);
+		//emit("iload %s", ident);
 	}
 }
 
