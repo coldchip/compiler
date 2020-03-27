@@ -77,14 +77,21 @@ void enter_declarator(ASTNode *node) {
 		ASTNode *right = node->right;
 		if(right->token->type == STRING) {
 			for(int i = 0; i < strlen(right->token->string); i++) {
-				emit("iload %c", right->token->string[i]);
+				emit("iload 0x%02x", right->token->string[i]);
 			}
+		} if(right->token->type == NUMBER) {
+			int number = atoi(right->token->string);
+			unsigned char a = (number >> 24) & 0xFF;
+			unsigned char b = (number >> 16) & 0xFF;
+			unsigned char c = (number >> 8) & 0xFF;
+			unsigned char d = (number >> 0) & 0xFF;
+			emit("iload 0x%02x", a);
+			emit("iload 0x%02x", b);
+			emit("iload 0x%02x", c);
+			emit("iload 0x%02x", d);
 		} else {
 
 		}
-		//char *ident = (char*)generate(node->right);
-		//emit("ialign %i", node->right->size);
-		//emit("iload %s", ident);
 	}
 }
 

@@ -1,7 +1,7 @@
 void main() {
 	//int a = 1 + 2 + 3;
-	string a = 3;
-	string b = "Hello World!";	
+	var a = 65535;
+	var b = "Hello World!";	
 	printf(a);
 }
 

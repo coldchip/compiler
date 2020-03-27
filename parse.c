@@ -59,8 +59,6 @@ static ASTNode *new_node(NodeType type) {
 void parse_type(ParseState *ps) {
 	if(is(ps, KW_VOID)) {
 		next(ps);
-	} else if(is(ps, KW_INT)) {
-		next(ps);
 	} else {
 		c_error("%s is not a type at line %i", ps->token->string, ps->token->line);
 	}
@@ -89,7 +87,7 @@ ASTNode *parse_literal(ParseState *ps) {
 }
 
 ASTNode *parse_decl(ParseState *ps) {
-	if(is(ps, KW_STRING)) {
+	if(is(ps, KW_VAR)) {
 		ASTNode *node = new_node(AST_DECLARATOR);
 		next(ps);
 		node->left = parse_identifier(ps);
@@ -151,7 +149,7 @@ ASTNode *parse_stmt(ParseState *ps) {
 			return parse_block(ps);
 		}
 		break;
-		case KW_STRING:
+		case KW_VAR:
 		{
 			return parse_decl(ps);
 		}

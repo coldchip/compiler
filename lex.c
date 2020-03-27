@@ -64,18 +64,8 @@ bool strmatch(char *a, char *b) {
 TokenType keyword_type(char *keyword) {
 	if(strmatch(keyword, "void")) {
 		return KW_VOID;
-	} else if(strmatch(keyword, "int")) {
-		return KW_INT;
-	} else if(strmatch(keyword, "char")) {
-		return KW_CHAR;
-	} else if(strmatch(keyword, "while")) {
-		return KW_WHILE;
-	} else if(strmatch(keyword, "if")) {
-		return KW_IF;
-	} else if(strmatch(keyword, "else")) {
-		return KW_ELSE;
-	} else if(strmatch(keyword, "string")) {
-		return KW_STRING;
+	} else if(strmatch(keyword, "var")) {
+		return KW_VAR;
 	} else {
 		return IDENTIFIER;
 	}

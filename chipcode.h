@@ -7,12 +7,8 @@ typedef enum {
 	IDENTIFIER,
 	STRING,
 	NUMBER,
-	KW_STRING,
+	KW_VAR,
 	KW_VOID,
-	KW_INT,
-	KW_CHAR,
-	KW_IF,
-	KW_WHILE,
 	LPAREN,
 	RPAREN,
 	LBRACKET,
@@ -76,6 +72,10 @@ ASTNode *parse(Token *token);
 ASTNode *parse_stmt(ParseState *ps);
 
 // generate.c
+
+char text_region[10000];
+
+char code_region[10000];
 
 void *generate(ASTNode *node);
 
