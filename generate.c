@@ -60,6 +60,7 @@ bool has_var(GenState *gs, char *name) {
 		}
 		current = current->next;
 	}
+	return false;
 }
 
 int get_pointer(GenState *gs, char *name) {

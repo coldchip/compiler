@@ -3,8 +3,14 @@ void printf(a) {
 }
 
 void main() {
-	var a = 65535;
-	var b = "Hello World!";	
-	var c = "Ok Boomer";
+	var z = "Hello World!";
+	var a = "Fuck";
+	var b = "You";
+	var c = "Ass";
+	var d = "Hole";
+	var e = "123";
+	var f = "ABC";
+	var g = "DEF";
+	var h = "GHI";
 	printf("Fuck", a, b, c);
 }
