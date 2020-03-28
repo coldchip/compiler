@@ -37,7 +37,7 @@ void emit(char *format, ...) {
 	char indent_data[1000];
 	indent_data[0] = '\0';
 	for(int i = 0; i < indent; i++) {
-		strcpy(indent_data, "\t");
+		strcpy(indent_data, "     ");
 	}
 
 	va_list args;
@@ -50,97 +50,109 @@ void emit(char *format, ...) {
     va_end(args);
 }
 
-void enter_function(ASTNode *node) {
-	emit("pushstack");
+void enter_program(GenState *gs, ASTNode *node) {
+	emit("program");
 	indent++;
 	if(node->body != NULL) {
-		generate(node->body);
+		generate(gs, node->body);
 	}
 	indent--;
-	emit("popstack");
 }
 
-void enter_block(ASTNode *node) {
+void enter_function(GenState *gs, ASTNode *node) {
+	emit("func %s", node->identifier->token->string);
+	indent++;
+	if(node->body != NULL) {
+		generate(gs, node->body);
+	}
+	indent--;
+}
+
+void enter_block(GenState *gs, ASTNode *node) {
 	emit("pushstack");
 	if(node->body != NULL) {
-		generate(node->body);
+		generate(gs, node->body);
 	}
 	emit("popstack");
 }
 
-void enter_declarator(ASTNode *node) {
+void enter_declarator(GenState *gs, ASTNode *node) {
 	if(node->left != NULL) {
-		char *ident = (char*)generate(node->left);
+		char *ident = (char*)generate(gs, node->left);
 		//emit("DECLARATOR NAME %s", ident);
 	}
 	if(node->right != NULL) {
 		ASTNode *right = node->right;
 		if(right->token->type == STRING) {
+			// Char = 8Bytes
+			emit("iloadc \"%s\"", right->token->string);
 			for(int i = 0; i < strlen(right->token->string); i++) {
-				emit("iload 0x%02x", right->token->string[i]);
+				gs->sp += 8;
 			}
-		} if(right->token->type == NUMBER) {
+			printf("%i\n", gs->sp);
+		} 
+		if(right->token->type == NUMBER) {
+			// Int = 32Bytes
 			int number = atoi(right->token->string);
-			unsigned char a = (number >> 24) & 0xFF;
-			unsigned char b = (number >> 16) & 0xFF;
-			unsigned char c = (number >> 8) & 0xFF;
-			unsigned char d = (number >> 0) & 0xFF;
-			emit("iload 0x%02x", a);
-			emit("iload 0x%02x", b);
-			emit("iload 0x%02x", c);
-			emit("iload 0x%02x", d);
+			emit("iloadn %i", number);
+			gs->sp += 32;
 		} else {
 
 		}
 	}
 }
 
-char *get_identifier(ASTNode *node) {
+char *get_identifier(GenState *gs, ASTNode *node) {
 	return node->token->string;
 }
 
-char *get_literal(ASTNode *node) {
+char *get_literal(GenState *gs, ASTNode *node) {
 	return node->token->string;
 }
 
-void enter_call(ASTNode *node) {
-	char *ident = (char*)generate(node->identifier);
+void enter_call(GenState *gs, ASTNode *node) {
+	char *ident = (char*)generate(gs, node->identifier);
 	emit("call %s", ident);
 	emit("pusharg");
 	emit("exec");
 }
 
-void *generate(ASTNode *node) {
+void *generate(GenState *gs, ASTNode *node) {
 	while(node != NULL) {
 		switch(node->type) {
+			case AST_PROGRAM:
+			{
+				enter_program(gs, node);
+			}
+			break;
 			case AST_FUNCTION:
 			{
-				enter_function(node);
+				enter_function(gs, node);
 			}
 			break;
 			case AST_BLOCK:
 			{
-				enter_block(node);
+				enter_block(gs, node);
 			}
 			break;
 			case AST_DECLARATOR:
 			{
-				enter_declarator(node);
+				enter_declarator(gs, node);
 			}
 			break;
 			case AST_CALL:
 			{
-				enter_call(node);
+				enter_call(gs, node);
 			}
 			break;
 			case AST_IDENTIFIER:
 			{
-				return get_identifier(node);
+				return get_identifier(gs, node);
 			}
 			break;
 			case AST_LITERAL:
 			{
-				return get_literal(node);
+				return get_literal(gs, node);
 			}
 			break;
 			default:

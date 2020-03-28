@@ -36,9 +36,6 @@ bool is(ParseState *ps, TokenType type) {
 
 void next(ParseState *ps) {
 	ps->token = ps->token->next;
-	if(is(ps, END_OF_TOKEN)) {
-		c_error("Unexpected End of File reached at line %i", ps->token->line);
-	}
 }
 
 void expect(ParseState *ps, TokenType type) {
@@ -123,22 +120,33 @@ ASTNode *parse_block(ParseState *ps) {
 	return node;
 }
 
-ASTNode *parse_call(ParseState *ps) {
-	ASTNode *node = new_node(AST_CALL);
+ASTNode *parse_param(ParseState *ps) {
+	ASTNode *node = new_node(AST_PARAM);
 	ASTNode node_body_head = {};
 	node->body = &node_body_head;
+	while(is(ps, IDENTIFIER)) {
+		node->body->next = parse_identifier(ps);
+		node->body = node->body->next;
+		if(is(ps, COMMA)) {
+			expect(ps, COMMA);
+			next(ps);
+			expect(ps, IDENTIFIER);
+		}
+	}
+	node->args = node_body_head.next;
+	return node;
+}
+
+ASTNode *parse_call(ParseState *ps) {
+	ASTNode *node = new_node(AST_CALL);
 	node->identifier = parse_identifier(ps);
 	expect(ps, LPAREN);
 	next(ps);
-	while(!is(ps, RPAREN)) {
-		node->body->next = parse_identifier(ps);
-		node->body = node->body->next;
-	}
+	node->args = parse_param(ps);
 	expect(ps, RPAREN);
 	next(ps);
 	expect(ps, SEMICOLON);
 	next(ps);
-	node->arguments = node_body_head.next;
 	return node;
 }
 
@@ -167,24 +175,16 @@ ASTNode *parse_stmt(ParseState *ps) {
 	}
 }
 
-ASTNode* parse_function(ParseState *ps) {
+ASTNode *parse_function(ParseState *ps) {
 	ASTNode *node = new_node(AST_FUNCTION);
-	ASTNode node_body_head = {};
-	node->body = &node_body_head;
 	parse_type(ps);
-	parse_identifier(ps);
+	node->identifier = parse_identifier(ps);
 	expect(ps, LPAREN);
 	next(ps);
+	node->args = parse_param(ps);
 	expect(ps, RPAREN);
 	next(ps);
-	expect(ps, LBRACE);
-	next(ps);
-	while(!is(ps, RBRACE)) {
-		node->body->next = parse_stmt(ps);
-		node->body = node->body->next;
-	}
-	expect(ps, RBRACE);
-	node->body = node_body_head.next;
+	node->body = parse_block(ps);
 	return node;
 }
 
@@ -201,6 +201,16 @@ ASTNode *parse(Token *token) {
 	ParseState ps = {};
 	ps.token = token;
 
-	ASTNode *node = parse_function(&ps);
+	ASTNode *node = new_node(AST_PROGRAM);
+	ASTNode node_body_head = {};
+	node->body = &node_body_head;
+
+	while(!is(&ps, END_OF_TOKEN)) {
+		node->body->next = parse_function(&ps);
+		node->body = node->body->next;
+	}
+
+	node->body = node_body_head.next;
+
 	return node;
 }

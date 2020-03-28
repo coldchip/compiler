@@ -27,7 +27,9 @@ int main(int argc, char const *argv[]) {
 		Token *token = lex(buf);
 		ASTNode *node = parse(token);
 		printf("\n\n\n\n\n\n");
-		generate(node);
+		GenState gs;
+		gs.sp = 0x00;
+		generate(&gs, node);
 	} else {
 		printf("No input file(s) specified\n");
 	}

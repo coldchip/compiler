@@ -16,6 +16,7 @@ typedef enum {
 	LBRACE,
 	RBRACE,
 	SEMICOLON,
+	COMMA,
 	ASSIGN,
 	PLUS,
 	MINUS,
@@ -38,7 +39,9 @@ extern Token *lex(char *file);
 
 // parse.c
 typedef enum {
+	AST_PROGRAM,
 	AST_FUNCTION,
+	AST_PARAM,
 	AST_BIN_EXPR,
 	AST_DECLARATOR,
 	AST_IDENTIFIER,
@@ -60,7 +63,7 @@ typedef struct _ASTNode {
 	struct _ASTNode *left;
 	TokenType op;
 	struct _ASTNode *right;
-	struct _ASTNode *arguments;
+	struct _ASTNode *args;
 	struct _ASTNode *next;
 } ASTNode;
 
@@ -73,10 +76,10 @@ ASTNode *parse_stmt(ParseState *ps);
 
 // generate.c
 
-char text_region[10000];
+typedef struct _GenState {
+	int sp;
+} GenState;
 
-char code_region[10000];
-
-void *generate(ASTNode *node);
+void *generate(GenState *gs, ASTNode *node);
 
 #endif

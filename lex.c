@@ -193,6 +193,11 @@ Token *lex(char *data) {
 					token_tracker = new_token(token_tracker, SEMICOLON, t);
 				}
 				break;
+				case ',':
+				{
+					token_tracker = new_token(token_tracker, COMMA, t);
+				}
+				break;
 				case '+':
 				{
 					token_tracker = new_token(token_tracker, PLUS, t);
