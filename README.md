@@ -1,1 +1,1 @@
-A Simple Compiler
+A Simple ChipCode to Byte Code Compiler
