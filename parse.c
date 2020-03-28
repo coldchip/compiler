@@ -120,8 +120,8 @@ ASTNode *parse_block(ParseState *ps) {
 	return node;
 }
 
-ASTNode *parse_param(ParseState *ps) {
-	ASTNode *node = new_node(AST_PARAM);
+ASTNode *parse_argument(ParseState *ps) {
+	ASTNode *node = new_node(AST_ARGUMENT);
 	ASTNode node_body_head = {};
 	node->body = &node_body_head;
 	while(is(ps, IDENTIFIER)) {
@@ -133,7 +133,29 @@ ASTNode *parse_param(ParseState *ps) {
 			expect(ps, IDENTIFIER);
 		}
 	}
-	node->args = node_body_head.next;
+	node->body = node_body_head.next;
+	return node;
+}
+
+ASTNode *parse_param(ParseState *ps) {
+	ASTNode *node = new_node(AST_PARAM);
+	ASTNode node_body_head = {};
+	node->body = &node_body_head;
+	while(is(ps, IDENTIFIER) || is(ps, NUMBER) || is(ps, STRING)) {
+		if(is(ps, IDENTIFIER)) {
+			node->body->next = parse_identifier(ps);
+		} else if(is(ps, NUMBER) || is(ps, STRING)) {
+			node->body->next = parse_literal(ps);
+		} else {
+			c_error("Param only accepts identifier and literal");
+		}
+		node->body = node->body->next;
+		if(is(ps, COMMA)) {
+			expect(ps, COMMA);
+			next(ps);
+		}
+	}
+	node->body = node_body_head.next;
 	return node;
 }
 
@@ -181,7 +203,7 @@ ASTNode *parse_function(ParseState *ps) {
 	node->identifier = parse_identifier(ps);
 	expect(ps, LPAREN);
 	next(ps);
-	node->args = parse_param(ps);
+	node->args = parse_argument(ps);
 	expect(ps, RPAREN);
 	next(ps);
 	node->body = parse_block(ps);

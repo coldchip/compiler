@@ -36,10 +36,6 @@ int main(int argc, char const *argv[]) {
 		gs.sp = 0x00;
 		gs.st = &st;
 		generate(&gs, node);
-		while(gs.st->start != NULL) {
-			printf("%s %i\n", gs.st->start->name, gs.st->start->pointer);
-			gs.st->start = gs.st->start->next;
-		}
 	} else {
 		printf("No input file(s) specified\n");
 	}
