@@ -137,8 +137,8 @@ ASTNode *parse_argument(ParseState *ps) {
 	return node;
 }
 
-ASTNode *parse_param(ParseState *ps) {
-	ASTNode *node = new_node(AST_PARAM);
+ASTNode *parse_parameter(ParseState *ps) {
+	ASTNode *node = new_node(AST_PARAMETER);
 	ASTNode node_body_head = {};
 	node->body = &node_body_head;
 	while(is(ps, IDENTIFIER) || is(ps, NUMBER) || is(ps, STRING)) {
@@ -164,7 +164,7 @@ ASTNode *parse_call(ParseState *ps) {
 	node->identifier = parse_identifier(ps);
 	expect(ps, LPAREN);
 	next(ps);
-	node->args = parse_param(ps);
+	node->args = parse_parameter(ps);
 	expect(ps, RPAREN);
 	next(ps);
 	expect(ps, SEMICOLON);

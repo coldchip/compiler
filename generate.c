@@ -105,7 +105,7 @@ void enter_argument(GenState *gs, ASTNode *node) {
 	}
 }
 
-void enter_param(GenState *gs, ASTNode *node) {
+void enter_parameter(GenState *gs, ASTNode *node) {
 	ASTNode *params = node->body;
 	while(params != NULL) {
 		char *ident = (char*)generate(gs, params);
@@ -221,9 +221,9 @@ void *generate(GenState *gs, ASTNode *node) {
 				enter_argument(gs, node);
 			}
 			break;
-			case AST_PARAM:
+			case AST_PARAMETER:
 			{
-				enter_param(gs, node);
+				enter_parameter(gs, node);
 			}
 			break;
 			case AST_BLOCK:

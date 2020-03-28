@@ -41,7 +41,7 @@ extern Token *lex(char *file);
 typedef enum {
 	AST_PROGRAM,
 	AST_FUNCTION,
-	AST_PARAM,
+	AST_PARAMETER,
 	AST_ARGUMENT,
 	AST_BIN_EXPR,
 	AST_DECLARATOR,
