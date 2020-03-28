@@ -23,15 +23,15 @@ static void c_error(char *format, ...) {
 	exit(1);
 }
 
-static Token *new_token(Token *next, TokenType type, char* string) {
+static Token *new_token(Token *prev, TokenType type, char* string) {
 	// Updates previous entry->next pointer with the malloc'd entry pointer
 	Token *tok = malloc(sizeof(Token));
 	memset(tok, 0, sizeof(Token));
 	tok->string = string;
-	tok->line = next->line;
+	tok->line = prev->line;
 	tok->type = type;
 	tok->next = NULL;
-	next->next = tok;
+	prev->next = tok;
 	return tok;
 }
 

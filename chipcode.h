@@ -76,7 +76,15 @@ ASTNode *parse_stmt(ParseState *ps);
 
 // generate.c
 
+typedef struct _SymbolTable {
+	char *name;
+	int pointer;
+	struct _SymbolTable *next;
+	struct _SymbolTable *start;
+} SymbolTable;
+
 typedef struct _GenState {
+	SymbolTable *st;
 	int sp;
 } GenState;
 

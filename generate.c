@@ -31,6 +31,40 @@ static char *rand_string(char *str, size_t size) {
     return str;
 }
 
+void new_st(GenState *gs, char *name, int pointer) {
+	SymbolTable *prev = gs->st;
+
+	SymbolTable *next = malloc(sizeof(SymbolTable));
+	memset(next, 0, sizeof(SymbolTable));
+
+	char *name_malloc = malloc((sizeof(char) * strlen(name)) + 1);
+	strcpy(name_malloc, name);
+
+	next->name = name_malloc;
+	next->pointer = pointer;
+	if(prev->start == NULL) {
+		prev->start = next;
+	}
+	next->start = prev->start;
+
+	prev->next = next;
+
+	gs->st = next;
+}
+
+bool has_var(GenState *gs, char *name) {
+	while(gs->st->start != NULL) {
+		if(strcmp(name, gs->st->start->name) == 0) {
+			return true;
+		}
+		gs->st->start = gs->st->start->next;
+	}
+}
+
+void stack_inc(GenState *gs, int inc) {
+	gs->sp += inc;
+}
+
 int indent = 0;
 
 void emit(char *format, ...) {
@@ -79,25 +113,26 @@ void enter_block(GenState *gs, ASTNode *node) {
 void enter_declarator(GenState *gs, ASTNode *node) {
 	if(node->left != NULL) {
 		char *ident = (char*)generate(gs, node->left);
-		//emit("DECLARATOR NAME %s", ident);
-	}
-	if(node->right != NULL) {
-		ASTNode *right = node->right;
-		if(right->token->type == STRING) {
-			// Char = 8Bytes
-			emit("iloadc \"%s\"", right->token->string);
-			for(int i = 0; i < strlen(right->token->string); i++) {
-				gs->sp += 8;
-			}
-			printf("%i\n", gs->sp);
-		} 
-		if(right->token->type == NUMBER) {
-			// Int = 32Bytes
-			int number = atoi(right->token->string);
-			emit("iloadn %i", number);
-			gs->sp += 32;
-		} else {
+		if(has_var(gs, ident)) {
+			c_error("Error, Variable %s already existed. ", ident);
+		}
+		if(node->right != NULL) {
+			ASTNode *right = node->right;
+			if(right->token->type == STRING) {
+				emit("iloadc \"%s\"", right->token->string);
+				new_st(gs, ident, gs->sp);
+				for(int i = 0; i < strlen(right->token->string); i++) {
+					stack_inc(gs, 8);
+				}
+			} 
+			if(right->token->type == NUMBER) {
+				int number = atoi(right->token->string);
+				emit("iloadn %i", number);
+				new_st(gs, ident, gs->sp);
+				stack_inc(gs, 32);
+			} else {
 
+			}
 		}
 	}
 }

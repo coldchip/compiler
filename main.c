@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "chipcode.h"
 
 char *read_file_into_buffer(char *file) {
@@ -27,9 +28,18 @@ int main(int argc, char const *argv[]) {
 		Token *token = lex(buf);
 		ASTNode *node = parse(token);
 		printf("\n\n\n\n\n\n");
+
+		SymbolTable st;
+		memset(&st, 0, sizeof(st));
+
 		GenState gs;
 		gs.sp = 0x00;
+		gs.st = &st;
 		generate(&gs, node);
+		while(gs.st->start != NULL) {
+			printf("%s %i\n", gs.st->start->name, gs.st->start->pointer);
+			gs.st->start = gs.st->start->next;
+		}
 	} else {
 		printf("No input file(s) specified\n");
 	}
