@@ -23,7 +23,7 @@ static void c_error(char *format, ...) {
 	exit(1);
 }
 
-TokenType get_type(ParseState *ps) {
+TokenType get_token_type(ParseState *ps) {
 	return ps->token->type;
 }
 
@@ -36,7 +36,7 @@ char* get_token(ParseState *ps) {
 }
 
 bool is(ParseState *ps, TokenType type) {
-	if(get_type(ps) == type) {
+	if(get_token_type(ps) == type) {
 		return true;
 	}
 	return false;
@@ -47,7 +47,7 @@ void next(ParseState *ps) {
 }
 
 void expect(ParseState *ps, TokenType type) {
-	if(get_type(ps) != type) {
+	if(get_token_type(ps) != type) {
 		c_error("Unexpected %s at line %i", get_token(ps), get_line(ps));
 	}
 }
@@ -92,7 +92,36 @@ ASTNode *parse_literal(ParseState *ps) {
 }
 
 ASTNode *parse_expr(ParseState *ps) {
-	
+	ASTNode *left;
+	switch(get_token_type(ps)) {
+		case IDENTIFIER:
+		{
+			left = parse_identifier(ps);
+		}
+		break;
+		case NUMBER:
+		{
+			left = parse_literal(ps);
+		}
+		break;
+		default:
+		{
+			c_error("Unknown type %s at line %i", get_token(ps), get_line(ps));
+		}
+		break;
+	}
+	if(is(ps, PLUS)) {
+		next(ps);
+		ASTNode *right = parse_expr(ps);
+
+		ASTNode *bin_expr = new_node(AST_BIN_EXPR);
+		bin_expr->left = left;
+		//bin_expr->op = op;
+		bin_expr->right = right;
+		return bin_expr;
+	} else {
+		return left;
+	}
 }
 
 ASTNode *parse_decl(ParseState *ps) {
@@ -103,7 +132,7 @@ ASTNode *parse_decl(ParseState *ps) {
 		if(!is(ps, SEMICOLON)) {
 			expect(ps, ASSIGN);
 			next(ps);
-			switch(get_type(ps)) {
+			switch(get_token_type(ps)) {
 				case STRING:
 				{
 					node->right = parse_literal(ps);
@@ -206,7 +235,7 @@ ASTNode *parse_call(ParseState *ps) {
 }
 
 ASTNode *parse_stmt(ParseState *ps) {
-	switch(get_type(ps)) {
+	switch(get_token_type(ps)) {
 		case LBRACE:
 		{
 			return parse_block(ps);

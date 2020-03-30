@@ -12,6 +12,6 @@ void main() {
 	var f = "ABC";
 	var g = "DEF";
 	var h = "GHI";
-	var num = 1;
+	var num = 1 + 3;
 	printf(num);
 }

@@ -74,6 +74,10 @@ int get_pointer(GenState *gs, char *name) {
 	return 0;
 }
 
+NodeType get_node_type(ASTNode *node) {
+	return node->type;
+}
+
 void stack_inc(GenState *gs, int inc) {
 	gs->sp += inc;
 }
@@ -167,26 +171,22 @@ void enter_declarator(GenState *gs, ASTNode *node) {
 		}
 		if(node->right != NULL) {
 			ASTNode *right = node->right;
-			if(right->token->type == STRING) {
+			if(get_node_type(right) == AST_LITERAL) {
 				// x = "Test";
-				emit("iloadc \"%s\"", right->token->string);
+				emit("iloadc \"%s\"", generate(gs, right));
 				new_st(gs, ident, gs->sp);
-				for(int i = 0; i < strlen(right->token->string); i++) {
+				for(int i = 0; i < strlen(generate(gs, right)); i++) {
 					stack_inc(gs, 8);
 				}
-			} else if(right->token->type == NUMBER) {
-				// x = 0;
-				int number = atoi(right->token->string);
-				emit("iloadn %i", number);
-				new_st(gs, ident, gs->sp);
-				stack_inc(gs, 32);
-			} else if(right->token->type == IDENTIFIER) {
+			} else if(get_node_type(right) == AST_IDENTIFIER) {
 				// x = y;
-				if(has_var(gs, right->token->string)) {
-					new_st(gs, ident, get_pointer(gs, right->token->string));
+				if(has_var(gs, generate(gs, right))) {
+					new_st(gs, ident, get_pointer(gs, generate(gs, right)));
 				} else {
-					c_error("Variable %s not defined", right->token->string);
+					c_error("Variable %s not defined", generate(gs, right));
 				}
+			} else {
+				c_error("Right Hand error");
 			}
 		}
 	}
