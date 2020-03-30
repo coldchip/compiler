@@ -27,6 +27,14 @@ TokenType get_type(ParseState *ps) {
 	return ps->token->type;
 }
 
+int get_line(ParseState *ps) {
+	return ps->token->line;
+}
+
+char* get_token(ParseState *ps) {
+	return ps->token->string;
+}
+
 bool is(ParseState *ps, TokenType type) {
 	if(get_type(ps) == type) {
 		return true;
@@ -40,7 +48,7 @@ void next(ParseState *ps) {
 
 void expect(ParseState *ps, TokenType type) {
 	if(get_type(ps) != type) {
-		c_error("Unexpected %s at line %i", ps->token->string, ps->token->line);
+		c_error("Unexpected %s at line %i", get_token(ps), get_line(ps));
 	}
 }
 
@@ -57,7 +65,7 @@ void parse_type(ParseState *ps) {
 	if(is(ps, KW_VOID)) {
 		next(ps);
 	} else {
-		c_error("%s is not a type at line %i", ps->token->string, ps->token->line);
+		c_error("%s is not a type at line %i", get_token(ps), get_line(ps));
 	}
 }
 
@@ -68,7 +76,7 @@ ASTNode *parse_identifier(ParseState *ps) {
 		next(ps);
 		return node;
 	} else {
-		c_error("%s is not an IDENTIFIER at line %i", ps->token->string, ps->token->line);
+		c_error("%s is not an IDENTIFIER at line %i", get_token(ps), get_line(ps));
 	}
 }
 
@@ -79,8 +87,12 @@ ASTNode *parse_literal(ParseState *ps) {
 		next(ps);
 		return node;
 	} else {
-		c_error("%s is not an LITERAL at line %i", ps->token->string, ps->token->line);
+		c_error("%s is not an LITERAL at line %i", get_token(ps), get_line(ps));
 	}
+}
+
+ASTNode *parse_expr(ParseState *ps) {
+	
 }
 
 ASTNode *parse_decl(ParseState *ps) {
@@ -91,7 +103,28 @@ ASTNode *parse_decl(ParseState *ps) {
 		if(!is(ps, SEMICOLON)) {
 			expect(ps, ASSIGN);
 			next(ps);
-			node->right = parse_literal(ps);
+			switch(get_type(ps)) {
+				case STRING:
+				{
+					node->right = parse_literal(ps);
+				}
+				break;
+				case IDENTIFIER:
+				{
+					node->right = parse_identifier(ps);
+				}
+				break;
+				case NUMBER:
+				{
+					node->right = parse_expr(ps);
+				}
+				break;
+				default:
+				{
+					c_error("Right hand side of declarator is not a valid type at line %i", get_line(ps));
+				}
+				break;
+			}
 			expect(ps, SEMICOLON);
 			next(ps);
 			return node;
@@ -100,7 +133,7 @@ ASTNode *parse_decl(ParseState *ps) {
 			return node;
 		}
 	} else {
-		c_error("Unknown type %s at line %i", ps->token->string, ps->token->line);
+		c_error("Unknown type %s at line %i", get_token(ps), get_line(ps));
 	}
 }
 
@@ -191,7 +224,7 @@ ASTNode *parse_stmt(ParseState *ps) {
 		break;
 		default:
 		{
-			c_error("%s is not a valid statement at line %i", ps->token->string, ps->token->line);
+			c_error("%s is not a valid statement at line %i", get_token(ps), get_line(ps));
 		}
 		break;
 	}

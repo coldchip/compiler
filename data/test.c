@@ -12,5 +12,6 @@ void main() {
 	var f = "ABC";
 	var g = "DEF";
 	var h = "GHI";
-	printf("Fuck", a, b, c);
+	var num = 1;
+	printf(num);
 }

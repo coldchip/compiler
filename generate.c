@@ -99,28 +99,31 @@ void emit(char *format, ...) {
 
 void enter_argument(GenState *gs, ASTNode *node) {
 	ASTNode *params = node->body;
+	int param_count = 0;
 	while(params != NULL) {
 		char *ident = (char*)generate(gs, params);
-		emit("iload %i", get_pointer(gs, ident));
+		emit("iload reg%i", param_count);
 		params = params->next;
+		param_count++;
 	}
 }
 
 void enter_parameter(GenState *gs, ASTNode *node) {
 	ASTNode *params = node->body;
+	int param_count = 0;
 	while(params != NULL) {
 		char *ident = (char*)generate(gs, params);
 		if(params->type == AST_LITERAL) {
-			emit("istorec \"%s\"", ident);
-			params = params->next;
+			emit("istorec reg%i \"%s\"", param_count, ident);
 		} else {
 			if(has_var(gs, ident)) {
-				emit("istore %i", get_pointer(gs, ident));
-				params = params->next;
+				emit("istore reg%i %i", param_count, get_pointer(gs, ident));
 			} else {
 				c_error("Undefined parameter variable \"%s\"", ident);
 			}
 		}
+		params = params->next;
+		param_count++;
 	}
 }
 
@@ -165,19 +168,25 @@ void enter_declarator(GenState *gs, ASTNode *node) {
 		if(node->right != NULL) {
 			ASTNode *right = node->right;
 			if(right->token->type == STRING) {
+				// x = "Test";
 				emit("iloadc \"%s\"", right->token->string);
 				new_st(gs, ident, gs->sp);
 				for(int i = 0; i < strlen(right->token->string); i++) {
 					stack_inc(gs, 8);
 				}
-			} 
-			if(right->token->type == NUMBER) {
+			} else if(right->token->type == NUMBER) {
+				// x = 0;
 				int number = atoi(right->token->string);
 				emit("iloadn %i", number);
 				new_st(gs, ident, gs->sp);
 				stack_inc(gs, 32);
-			} else {
-
+			} else if(right->token->type == IDENTIFIER) {
+				// x = y;
+				if(has_var(gs, right->token->string)) {
+					new_st(gs, ident, get_pointer(gs, right->token->string));
+				} else {
+					c_error("Variable %s not defined", right->token->string);
+				}
 			}
 		}
 	}
@@ -194,10 +203,8 @@ char *get_literal(GenState *gs, ASTNode *node) {
 void enter_call(GenState *gs, ASTNode *node) {
 	char *ident = (char*)generate(gs, node->identifier);
 	if(has_var(gs, ident)) {
-		emit("call %s", ident);
 		generate(gs, node->args);
-		emit("pusharg");
-		emit("exec");
+		emit("call %s", ident);
 	} else {
 		c_error("Call to undefined function \"%s\"", ident);
 	}
