@@ -5,17 +5,15 @@
 
 SymbolTable *symtable_init() {
 	SymbolTable *st = malloc(sizeof(SymbolTable));
-	TableEntry *first = malloc(sizeof(TableEntry));
-	memset(st, 0, sizeof(SymbolTable));
-	st->entry = first;
-	st->start = first;
+	st->entry = NULL;
+	st->start = NULL;
 	return st;
 }
 
 SymbolTable *symtable_clone(SymbolTable *st) {
 	SymbolTable *st_new = symtable_init();
 
-	TableEntry *current = st->start->next;
+	TableEntry *current = st->start;
 	while(current != NULL) {
 		symtable_add(st_new, current->name, current->pointer);
 		current = current->next;
@@ -24,8 +22,6 @@ SymbolTable *symtable_clone(SymbolTable *st) {
 }
 
 void symtable_add(SymbolTable *st, char *name, int pointer) {
-
-	TableEntry *prev = st->entry;
 
 	TableEntry *next = malloc(sizeof(TableEntry));
 	memset(next, 0, sizeof(TableEntry));
@@ -36,12 +32,16 @@ void symtable_add(SymbolTable *st, char *name, int pointer) {
 	next->name = name_malloc;
 	next->pointer = pointer;
 
-	prev->next = next;
+	if(st->entry == NULL) {
+		st->start = next;
+	} else {
+		st->entry->next = next;
+	}
 	st->entry = next;
 }
 
 bool symtable_has(SymbolTable *st, char *name) {
-	TableEntry *current = st->start->next;
+	TableEntry *current = st->start;
 	while(current != NULL) {
 		if(strcmp(name, current->name) == 0) {
 			return true;
@@ -52,7 +52,7 @@ bool symtable_has(SymbolTable *st, char *name) {
 }
 
 int symtable_ptr(SymbolTable *st, char *name) {
-	TableEntry *current = st->start->next;
+	TableEntry *current = st->start;
 	while(current != NULL) {
 		if(strcmp(name, current->name) == 0) {
 			return current->pointer;
@@ -66,9 +66,9 @@ void symtable_free(SymbolTable *st) {
 	TableEntry *current = st->start;
 	while(current != NULL) {
 		TableEntry *next = current->next;
-		//free(current->name);
-		//free(current);
+		free(current->name);
+		free(current);
 		current = next;
 	}
-	//free(st);
+	free(st);
 }

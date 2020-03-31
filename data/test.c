@@ -3,11 +3,8 @@ void printf(a) {
 }
 
 void main() {
-	{
-		var aa = "abc";
-		printf(aa);
-
-	}
-	var aa = "abc";
-	printf(aa);
+	var cc = "aa";
+	var aa = cc;
+	var ss = aa;
+	printf(ss);
 }
