@@ -23,10 +23,9 @@ void symtable_add(SymbolTable *st, char *name, int pointer) {
 
 	next->name = name_malloc;
 	next->pointer = pointer;
-	if(prev->start == NULL) {
-		prev->start = next;
+	if(st->start == NULL) {
+		st->start = next;
 	}
-	next->start = prev->start;
 
 	prev->next = next;
 
@@ -34,7 +33,7 @@ void symtable_add(SymbolTable *st, char *name, int pointer) {
 }
 
 bool symtable_has(SymbolTable *st, char *name) {
-	TableEntry *current = st->entry->start;
+	TableEntry *current = st->start;
 	while(current != NULL) {
 		if(strcmp(name, current->name) == 0) {
 			return true;
@@ -45,7 +44,7 @@ bool symtable_has(SymbolTable *st, char *name) {
 }
 
 int symtable_ptr(SymbolTable *st, char *name) {
-	TableEntry *current = st->entry->start;
+	TableEntry *current = st->start;
 	while(current != NULL) {
 		if(strcmp(name, current->name) == 0) {
 			return current->pointer;

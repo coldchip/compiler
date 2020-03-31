@@ -1,5 +1,5 @@
-void printf(a) {
-	__call__(a);
+void printf(aa) {
+	__call__(aa);
 }
 
 void main() {

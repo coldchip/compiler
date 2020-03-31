@@ -83,13 +83,13 @@ ASTNode *parse_stmt(ParseState *ps);
 
 typedef struct _SymbolTable {
 	struct _TableEntry *entry;
+	struct _TableEntry *start;
 } SymbolTable;
 
 typedef struct _TableEntry {
 	char *name;
 	int pointer;
 	struct _TableEntry *next;
-	struct _TableEntry *start;
 } TableEntry;
 
 API SymbolTable *symtable_init();
