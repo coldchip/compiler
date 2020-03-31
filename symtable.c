@@ -12,6 +12,17 @@ SymbolTable *symtable_init() {
 	return st;
 }
 
+SymbolTable *symtable_clone(SymbolTable *st) {
+	SymbolTable *st_new = symtable_init();
+
+	TableEntry *current = st->start->next;
+	while(current != NULL) {
+		symtable_add(st_new, current->name, current->pointer);
+		current = current->next;
+	}
+	return st_new;
+}
+
 void symtable_add(SymbolTable *st, char *name, int pointer) {
 
 	TableEntry *prev = st->entry;
@@ -52,10 +63,12 @@ int symtable_ptr(SymbolTable *st, char *name) {
 }
 
 void symtable_free(SymbolTable *st) {
-	TableEntry *current = st->start->next;
+	TableEntry *current = st->start;
 	while(current != NULL) {
-		
-		current = current->next;
+		TableEntry *next = current->next;
+		//free(current->name);
+		//free(current);
+		current = next;
 	}
-	return 0;
+	//free(st);
 }

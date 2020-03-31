@@ -18,19 +18,6 @@ static void c_error(char *format, ...) {
 	exit(1);
 }
 
-static char *rand_string(char *str, size_t size) {
-    const char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJK";
-    if (size) {
-        --size;
-        for (size_t n = 0; n < size; n++) {
-            int key = rand() % (int) (sizeof charset - 1);
-            str[n] = charset[key];
-        }
-        str[size] = '\0';
-    }
-    return str;
-}
-
 NodeType get_node_type(ASTNode *node) {
 	return node->type;
 }
@@ -106,6 +93,10 @@ void enter_function(GenState *gs, ASTNode *node) {
 		c_error("Duplicate of function \"%s\"", func_name);
 	}
 	symtable_add(gs->st, func_name, 0);
+
+	SymbolTable *st_orig  = gs->st;
+	gs->st = symtable_clone(gs->st);
+	
 	emit("func %s", node->identifier->token->string);
 	indent++;
 	visitor(gs, node->args);
@@ -114,14 +105,20 @@ void enter_function(GenState *gs, ASTNode *node) {
 	}
 	indent--;
 
+	symtable_free(gs->st);
+	gs->st = st_orig;
 }
 
 void enter_block(GenState *gs, ASTNode *node) {
-	emit("pushstack");
+	SymbolTable *st_orig  = gs->st;
+	gs->st = symtable_clone(gs->st);
+
 	if(node->body != NULL) {
 		visitor(gs, node->body);
 	}
-	emit("popstack");
+
+	symtable_free(gs->st);
+	gs->st = st_orig;
 }
 
 void enter_declarator(GenState *gs, ASTNode *node) {
@@ -228,216 +225,10 @@ void *visitor(GenState *gs, ASTNode *node) {
 		}
 		node = node->next;
 	}
+	return NULL;
 }
 
-void *generate(GenState *gs, ASTNode *node) {
+void generate(GenState *gs, ASTNode *node) {
 	gs->st = symtable_init();
 	visitor(gs, node);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void dbg_gen(ASTNode *node) {
-	while(node != NULL) {
-		switch(node->type) {
-			case AST_FUNCTION:
-			{
-				printf("FUNCTION\n");
-				if(node->body != NULL) {
-					dbg_gen(node->body);
-				}
-			}
-			break;
-			case AST_BLOCK:
-			{
-				printf("BLOCK\n");
-				if(node->body != NULL) {
-					dbg_gen(node->body);
-				}
-			}
-			break;
-			case AST_DECLARATOR:
-			{
-				printf("DECLARATOR\n");
-				if(node->left != NULL) {
-					printf("DECLARATOR NAME\n");
-					dbg_gen(node->left);
-				}
-				if(node->right != NULL) {
-					printf("DECLARATOR body\n");
-					dbg_gen(node->right);
-				}
-			}
-			break;
-			case AST_BIN_EXPR:
-			{
-				printf("BIN_EXPR\n");
-				if(node->left != NULL) {
-					printf("LEFT: ");
-					dbg_gen(node->left);
-				}
-				if(node->right != NULL) {
-					printf("RIGHT: ");
-					dbg_gen(node->right);
-				}
-			}
-			break;
-			case AST_IF:
-			{
-				printf("IF\n");
-				if(node->condition != NULL) {
-					printf("CONDITION: \n");
-					dbg_gen(node->condition);
-				}
-				if(node->body != NULL) {
-					printf("CONSEQUENT: \n");
-					dbg_gen(node->body);
-				}
-				if(node->alternate != NULL) {
-					printf("ALTERNATIVE: \n");
-					dbg_gen(node->alternate);
-				}
-			}
-			break;
-			case AST_WHILE:
-			{
-				printf("WHILE\n");
-				if(node->condition != NULL) {
-					printf("CONDITION: \n");
-					dbg_gen(node->condition);
-				}
-				if(node->body != NULL) {
-					printf("CONSEQUENT: \n");
-					dbg_gen(node->body);
-				}
-			}
-			break;
-			case AST_IDENTIFIER:
-			{
-				printf("IDENTIFIER [%s]\n", node->token->string);
-				
-			}
-			break;
-			case AST_LITERAL:
-			{
-				printf("LITERAL [%s]\n", node->token->string);
-				
-			}
-			break;
-			default:
-			{
-				printf("Unknown Type: %i\n", node->type);
-			}
-			break;
-		}
-		node = node->next;
-	}
 }

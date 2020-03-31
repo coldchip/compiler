@@ -78,6 +78,7 @@ ASTNode *parse_identifier(ParseState *ps) {
 	} else {
 		c_error("%s is not an IDENTIFIER at line %i", get_token(ps), get_line(ps));
 	}
+	return NULL;
 }
 
 ASTNode *parse_literal(ParseState *ps) {
@@ -89,6 +90,7 @@ ASTNode *parse_literal(ParseState *ps) {
 	} else {
 		c_error("%s is not an LITERAL at line %i", get_token(ps), get_line(ps));
 	}
+	return NULL;
 }
 
 ASTNode *parse_expr(ParseState *ps) {
@@ -163,6 +165,7 @@ ASTNode *parse_decl(ParseState *ps) {
 	} else {
 		c_error("Unknown type %s at line %i", get_token(ps), get_line(ps));
 	}
+	return NULL;
 }
 
 ASTNode *parse_block(ParseState *ps) {
@@ -256,6 +259,7 @@ ASTNode *parse_stmt(ParseState *ps) {
 		}
 		break;
 	}
+	return NULL;
 }
 
 ASTNode *parse_function(ParseState *ps) {

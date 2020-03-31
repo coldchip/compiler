@@ -93,9 +93,11 @@ typedef struct _TableEntry {
 } TableEntry;
 
 API SymbolTable *symtable_init();
+API SymbolTable *symtable_clone(SymbolTable *st);
 API void symtable_add(SymbolTable *st, char *name, int pointer);
 API bool symtable_has(SymbolTable *st, char *name);
 API int  symtable_ptr(SymbolTable *st, char *name);
+API void symtable_free(SymbolTable *st);
 
 // generate.c
 
@@ -106,7 +108,7 @@ typedef struct _GenState {
 
 void *visitor(GenState *gs, ASTNode *node);
 
-void *generate(GenState *gs, ASTNode *node);
+void generate(GenState *gs, ASTNode *node);
 
 
 
