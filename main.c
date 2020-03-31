@@ -29,12 +29,8 @@ int main(int argc, char const *argv[]) {
 		ASTNode *node = parse(token);
 		printf("\n\n\n\n\n\n");
 
-		SymbolTable st;
-		memset(&st, 0, sizeof(st));
-
 		GenState gs;
 		gs.sp = 0x00;
-		gs.st = &st;
 		generate(&gs, node);
 	} else {
 		printf("No input file(s) specified\n");

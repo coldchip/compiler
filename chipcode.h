@@ -1,6 +1,10 @@
 #ifndef CHIPCODE_H
 #define CHIPCODE_H
 
+#include <stdbool.h>
+
+#define API extern
+
 // lex.c
 typedef enum {
 	END_OF_TOKEN,
@@ -75,20 +79,35 @@ typedef struct _ParseState {
 ASTNode *parse(Token *token);
 ASTNode *parse_stmt(ParseState *ps);
 
-// generate.c
+// symtable.c
 
 typedef struct _SymbolTable {
+	struct _TableEntry *entry;
+} SymbolTable;
+
+typedef struct _TableEntry {
 	char *name;
 	int pointer;
-	struct _SymbolTable *next;
-	struct _SymbolTable *start;
-} SymbolTable;
+	struct _TableEntry *next;
+	struct _TableEntry *start;
+} TableEntry;
+
+API SymbolTable *symtable_init();
+API void symtable_add(SymbolTable *st, char *name, int pointer);
+API bool symtable_has(SymbolTable *st, char *name);
+API int symtable_ptr(SymbolTable *st, char *name);
+
+// generate.c
 
 typedef struct _GenState {
 	SymbolTable *st;
 	int sp;
 } GenState;
 
+void *visitor(GenState *gs, ASTNode *node);
+
 void *generate(GenState *gs, ASTNode *node);
+
+
 
 #endif

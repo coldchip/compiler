@@ -114,11 +114,10 @@ ASTNode *parse_expr(ParseState *ps) {
 		next(ps);
 		ASTNode *right = parse_expr(ps);
 
-		ASTNode *bin_expr = new_node(AST_BIN_EXPR);
-		bin_expr->left = left;
-		//bin_expr->op = op;
-		bin_expr->right = right;
-		return bin_expr;
+		ASTNode *expr = new_node(AST_BIN_EXPR);
+		expr->left = left;
+		expr->right = right;
+		return expr;
 	} else {
 		return left;
 	}

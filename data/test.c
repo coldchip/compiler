@@ -1,5 +1,5 @@
 void printf(a) {
-	//__asm__("printf", a);
+	__call__(a);
 }
 
 void main() {
@@ -12,6 +12,6 @@ void main() {
 	var f = "ABC";
 	var g = "DEF";
 	var h = "GHI";
-	var num = 1 + 3;
+	var num = 1;
 	printf(num);
 }

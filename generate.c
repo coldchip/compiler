@@ -31,49 +31,6 @@ static char *rand_string(char *str, size_t size) {
     return str;
 }
 
-void new_st(GenState *gs, char *name, int pointer) {
-	SymbolTable *prev = gs->st;
-
-	SymbolTable *next = malloc(sizeof(SymbolTable));
-	memset(next, 0, sizeof(SymbolTable));
-
-	char *name_malloc = malloc((sizeof(char) * strlen(name)) + 1);
-	strcpy(name_malloc, name);
-
-	next->name = name_malloc;
-	next->pointer = pointer;
-	if(prev->start == NULL) {
-		prev->start = next;
-	}
-	next->start = prev->start;
-
-	prev->next = next;
-
-	gs->st = next;
-}
-
-bool has_var(GenState *gs, char *name) {
-	SymbolTable *current = gs->st->start;
-	while(current != NULL) {
-		if(strcmp(name, current->name) == 0) {
-			return true;
-		}
-		current = current->next;
-	}
-	return false;
-}
-
-int get_pointer(GenState *gs, char *name) {
-	SymbolTable *current = gs->st->start;
-	while(current != NULL) {
-		if(strcmp(name, current->name) == 0) {
-			return current->pointer;
-		}
-		current = current->next;
-	}
-	return 0;
-}
-
 NodeType get_node_type(ASTNode *node) {
 	return node->type;
 }
@@ -105,8 +62,9 @@ void enter_argument(GenState *gs, ASTNode *node) {
 	ASTNode *params = node->body;
 	int param_count = 0;
 	while(params != NULL) {
-		char *ident = (char*)generate(gs, params);
+		char *ident = (char*)visitor(gs, params);
 		emit("iload reg%i", param_count);
+		symtable_add(gs->st, ident, 0);
 		params = params->next;
 		param_count++;
 	}
@@ -116,12 +74,12 @@ void enter_parameter(GenState *gs, ASTNode *node) {
 	ASTNode *params = node->body;
 	int param_count = 0;
 	while(params != NULL) {
-		char *ident = (char*)generate(gs, params);
+		char *ident = (char*)visitor(gs, params);
 		if(params->type == AST_LITERAL) {
 			emit("istorec reg%i \"%s\"", param_count, ident);
 		} else {
-			if(has_var(gs, ident)) {
-				emit("istore reg%i %i", param_count, get_pointer(gs, ident));
+			if(symtable_has(gs->st, ident)) {
+				emit("istore reg%i %i", param_count, symtable_ptr(gs->st, ident));
 			} else {
 				c_error("Undefined parameter variable \"%s\"", ident);
 			}
@@ -135,55 +93,58 @@ void enter_program(GenState *gs, ASTNode *node) {
 	emit("program");
 	indent++;
 	if(node->body != NULL) {
-		generate(gs, node->body);
+		visitor(gs, node->body);
 	}
 	indent--;
 }
 
 void enter_function(GenState *gs, ASTNode *node) {
-	char *func_name = (char*)generate(gs, node->identifier);
-	if(has_var(gs, func_name)) {
+
+
+	char *func_name = (char*)visitor(gs, node->identifier);
+	if(symtable_has(gs->st, func_name)) {
 		c_error("Duplicate of function \"%s\"", func_name);
 	}
-	new_st(gs, func_name, 0);
+	symtable_add(gs->st, func_name, 0);
 	emit("func %s", node->identifier->token->string);
 	indent++;
-	generate(gs, node->args);
+	visitor(gs, node->args);
 	if(node->body != NULL) {
-		generate(gs, node->body);
+		visitor(gs, node->body);
 	}
 	indent--;
+
 }
 
 void enter_block(GenState *gs, ASTNode *node) {
 	emit("pushstack");
 	if(node->body != NULL) {
-		generate(gs, node->body);
+		visitor(gs, node->body);
 	}
 	emit("popstack");
 }
 
 void enter_declarator(GenState *gs, ASTNode *node) {
 	if(node->left != NULL) {
-		char *ident = (char*)generate(gs, node->left);
-		if(has_var(gs, ident)) {
+		char *ident = (char*)visitor(gs, node->left);
+		if(symtable_has(gs->st, ident)) {
 			c_error("Error, Variable %s already existed. ", ident);
 		}
 		if(node->right != NULL) {
 			ASTNode *right = node->right;
 			if(get_node_type(right) == AST_LITERAL) {
 				// x = "Test";
-				emit("iloadc \"%s\"", generate(gs, right));
-				new_st(gs, ident, gs->sp);
-				for(int i = 0; i < strlen(generate(gs, right)); i++) {
+				emit("iloadc \"%s\"", visitor(gs, right));
+				symtable_add(gs->st, ident, gs->sp);
+				for(int i = 0; i < strlen(visitor(gs, right)); i++) {
 					stack_inc(gs, 8);
 				}
 			} else if(get_node_type(right) == AST_IDENTIFIER) {
 				// x = y;
-				if(has_var(gs, generate(gs, right))) {
-					new_st(gs, ident, get_pointer(gs, generate(gs, right)));
+				if(symtable_has(gs->st, visitor(gs, right))) {
+					symtable_add(gs->st, ident, symtable_ptr(gs->st, visitor(gs, right)));
 				} else {
-					c_error("Variable %s not defined", generate(gs, right));
+					c_error("Variable %s not defined", visitor(gs, right));
 				}
 			} else {
 				c_error("Right Hand error");
@@ -201,9 +162,9 @@ char *get_literal(GenState *gs, ASTNode *node) {
 }
 
 void enter_call(GenState *gs, ASTNode *node) {
-	char *ident = (char*)generate(gs, node->identifier);
-	if(has_var(gs, ident)) {
-		generate(gs, node->args);
+	char *ident = (char*)visitor(gs, node->identifier);
+	if(symtable_has(gs->st, ident) || strcmp(ident, "__call__") == 0) {
+		visitor(gs, node->args);
 		emit("call %s", ident);
 	} else {
 		c_error("Call to undefined function \"%s\"", ident);
@@ -211,7 +172,7 @@ void enter_call(GenState *gs, ASTNode *node) {
 
 }
 
-void *generate(GenState *gs, ASTNode *node) {
+void *visitor(GenState *gs, ASTNode *node) {
 	while(node != NULL) {
 		switch(node->type) {
 			case AST_PROGRAM:
@@ -267,6 +228,11 @@ void *generate(GenState *gs, ASTNode *node) {
 		}
 		node = node->next;
 	}
+}
+
+void *generate(GenState *gs, ASTNode *node) {
+	gs->st = symtable_init();
+	visitor(gs, node);
 }
 
 
