@@ -8,6 +8,7 @@ SymbolTable *symtable_init() {
 	TableEntry *first = malloc(sizeof(TableEntry));
 	memset(st, 0, sizeof(SymbolTable));
 	st->entry = first;
+	st->start = first;
 	return st;
 }
 
@@ -23,17 +24,13 @@ void symtable_add(SymbolTable *st, char *name, int pointer) {
 
 	next->name = name_malloc;
 	next->pointer = pointer;
-	if(st->start == NULL) {
-		st->start = next;
-	}
 
 	prev->next = next;
-
 	st->entry = next;
 }
 
 bool symtable_has(SymbolTable *st, char *name) {
-	TableEntry *current = st->start;
+	TableEntry *current = st->start->next;
 	while(current != NULL) {
 		if(strcmp(name, current->name) == 0) {
 			return true;
@@ -44,11 +41,20 @@ bool symtable_has(SymbolTable *st, char *name) {
 }
 
 int symtable_ptr(SymbolTable *st, char *name) {
-	TableEntry *current = st->start;
+	TableEntry *current = st->start->next;
 	while(current != NULL) {
 		if(strcmp(name, current->name) == 0) {
 			return current->pointer;
 		}
+		current = current->next;
+	}
+	return 0;
+}
+
+void symtable_free(SymbolTable *st) {
+	TableEntry *current = st->start->next;
+	while(current != NULL) {
+		
 		current = current->next;
 	}
 	return 0;

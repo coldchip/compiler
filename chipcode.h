@@ -87,15 +87,15 @@ typedef struct _SymbolTable {
 } SymbolTable;
 
 typedef struct _TableEntry {
-	char *name;
-	int pointer;
+	char * name;
+	int    pointer;
 	struct _TableEntry *next;
 } TableEntry;
 
 API SymbolTable *symtable_init();
 API void symtable_add(SymbolTable *st, char *name, int pointer);
 API bool symtable_has(SymbolTable *st, char *name);
-API int symtable_ptr(SymbolTable *st, char *name);
+API int  symtable_ptr(SymbolTable *st, char *name);
 
 // generate.c
 
