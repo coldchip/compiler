@@ -1,2 +1,2 @@
-# <center>`ChipCode Compiler`</center>
-A simple ChipCode to byte codes compiler
+![logo](https://github.com/coldchip/compiler/raw/master/docs/chipcode.png)
+
