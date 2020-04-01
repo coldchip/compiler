@@ -31,8 +31,12 @@ int get_line(ParseState *ps) {
 	return ps->token->line;
 }
 
-char* get_token(ParseState *ps) {
+char* get_string_from_token(ParseState *ps) {
 	return ps->token->string;
+}
+
+char* get_string_from_node(ASTNode *node) {
+	return node->token->string;
 }
 
 bool is(ParseState *ps, TokenType type) {
@@ -48,7 +52,7 @@ void next(ParseState *ps) {
 
 void expect(ParseState *ps, TokenType type) {
 	if(get_token_type(ps) != type) {
-		c_error("Unexpected %s at line %i", get_token(ps), get_line(ps));
+		c_error("Unexpected %s at line %i", get_string_from_token(ps), get_line(ps));
 	}
 }
 
@@ -65,7 +69,7 @@ void parse_type(ParseState *ps) {
 	if(is(ps, KW_VOID)) {
 		next(ps);
 	} else {
-		c_error("%s is not a type at line %i", get_token(ps), get_line(ps));
+		c_error("%s is not a type at line %i", get_string_from_token(ps), get_line(ps));
 	}
 }
 
@@ -76,7 +80,7 @@ ASTNode *parse_identifier(ParseState *ps) {
 		next(ps);
 		return node;
 	} else {
-		c_error("%s is not an IDENTIFIER at line %i", get_token(ps), get_line(ps));
+		c_error("%s is not an IDENTIFIER at line %i", get_string_from_token(ps), get_line(ps));
 	}
 	return NULL;
 }
@@ -88,7 +92,7 @@ ASTNode *parse_literal(ParseState *ps) {
 		next(ps);
 		return node;
 	} else {
-		c_error("%s is not an LITERAL at line %i", get_token(ps), get_line(ps));
+		c_error("%s is not an LITERAL at line %i", get_string_from_token(ps), get_line(ps));
 	}
 	return NULL;
 }
@@ -108,7 +112,7 @@ ASTNode *parse_expr(ParseState *ps) {
 		break;
 		default:
 		{
-			c_error("Unknown type %s at line %i", get_token(ps), get_line(ps));
+			c_error("Unknown type %s at line %i", get_string_from_token(ps), get_line(ps));
 		}
 		break;
 	}
@@ -130,6 +134,10 @@ ASTNode *parse_decl(ParseState *ps) {
 		ASTNode *node = new_node(AST_DECLARATOR);
 		next(ps);
 		node->left = parse_identifier(ps);
+		if(symtable_has(ps->st, get_string_from_node(node->left)) == true) {
+			c_error("Error, Variable %s already existed. ", get_string_from_node(node->left));
+		}
+		symtable_add(ps->st, get_string_from_node(node->left), 0);
 		if(!is(ps, SEMICOLON)) {
 			expect(ps, ASSIGN);
 			next(ps);
@@ -142,6 +150,9 @@ ASTNode *parse_decl(ParseState *ps) {
 				case IDENTIFIER:
 				{
 					node->right = parse_identifier(ps);
+					if(symtable_has(ps->st, get_string_from_node(node->right)) != true) {
+						c_error("Variable %s not defined", get_string_from_node(node->right));
+					}
 				}
 				break;
 				case NUMBER:
@@ -163,12 +174,15 @@ ASTNode *parse_decl(ParseState *ps) {
 			return node;
 		}
 	} else {
-		c_error("Unknown type %s at line %i", get_token(ps), get_line(ps));
+		c_error("Unknown type %s at line %i", get_string_from_token(ps), get_line(ps));
 	}
 	return NULL;
 }
 
 ASTNode *parse_block(ParseState *ps) {
+	SymbolTable *st_orig  = ps->st;
+	ps->st = symtable_clone(ps->st);
+
 	ASTNode *node = new_node(AST_BLOCK);
 	ASTNode node_body_head = {};
 	node->body = &node_body_head;
@@ -181,6 +195,10 @@ ASTNode *parse_block(ParseState *ps) {
 	expect(ps, RBRACE);
 	next(ps);
 	node->body = node_body_head.next;
+
+	symtable_free(ps->st);
+	ps->st = st_orig;
+
 	return node;
 }
 
@@ -191,6 +209,7 @@ ASTNode *parse_argument(ParseState *ps) {
 	while(is(ps, IDENTIFIER)) {
 		node->body->next = parse_identifier(ps);
 		node->body = node->body->next;
+		symtable_add(ps->st, get_string_from_node(node->body), 0);
 		if(is(ps, COMMA)) {
 			expect(ps, COMMA);
 			next(ps);
@@ -208,6 +227,9 @@ ASTNode *parse_parameter(ParseState *ps) {
 	while(is(ps, IDENTIFIER) || is(ps, NUMBER) || is(ps, STRING)) {
 		if(is(ps, IDENTIFIER)) {
 			node->body->next = parse_identifier(ps);
+			if(symtable_has(ps->st, get_string_from_node(node->body->next)) != true) {
+				c_error("Undefined parameter variable \"%s\"", get_string_from_node(node->body->next));
+			}
 		} else if(is(ps, NUMBER) || is(ps, STRING)) {
 			node->body->next = parse_literal(ps);
 		} else {
@@ -226,6 +248,9 @@ ASTNode *parse_parameter(ParseState *ps) {
 ASTNode *parse_call(ParseState *ps) {
 	ASTNode *node = new_node(AST_CALL);
 	node->identifier = parse_identifier(ps);
+	if(symtable_has(ps->st, get_string_from_node(node->identifier)) != true) {
+		c_error("Call to undefined function \"%s\"", get_string_from_node(node->identifier));
+	}
 	expect(ps, LPAREN);
 	next(ps);
 	node->args = parse_parameter(ps);
@@ -255,7 +280,7 @@ ASTNode *parse_stmt(ParseState *ps) {
 		break;
 		default:
 		{
-			c_error("%s is not a valid statement at line %i", get_token(ps), get_line(ps));
+			c_error("%s is not a valid statement at line %i", get_string_from_token(ps), get_line(ps));
 		}
 		break;
 	}
@@ -266,12 +291,18 @@ ASTNode *parse_function(ParseState *ps) {
 	ASTNode *node = new_node(AST_FUNCTION);
 	parse_type(ps);
 	node->identifier = parse_identifier(ps);
+	if(symtable_has(ps->st, get_string_from_node(node->identifier)) == true) {
+		c_error("Duplicate of function \"%s\"", get_string_from_node(node->identifier));
+	}
+	symtable_add(ps->st, get_string_from_node(node->identifier), 0);
 	expect(ps, LPAREN);
 	next(ps);
 	node->args = parse_argument(ps);
 	expect(ps, RPAREN);
 	next(ps);
+
 	node->body = parse_block(ps);
+
 	return node;
 }
 
@@ -287,6 +318,7 @@ ASTNode *parse(Token *token) {
 	
 	ParseState ps = {};
 	ps.token = token;
+	ps.st = symtable_init();
 
 	ASTNode *node = new_node(AST_PROGRAM);
 	ASTNode node_body_head = {};
@@ -298,6 +330,8 @@ ASTNode *parse(Token *token) {
 	}
 
 	node->body = node_body_head.next;
+
+	symtable_free(ps.st);
 
 	return node;
 }

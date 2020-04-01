@@ -65,11 +65,7 @@ void enter_parameter(GenState *gs, ASTNode *node) {
 		if(params->type == AST_LITERAL) {
 			emit("istorec reg%i \"%s\"", param_count, ident);
 		} else {
-			if(symtable_has(gs->st, ident)) {
-				emit("istore reg%i %i", param_count, symtable_ptr(gs->st, ident));
-			} else {
-				c_error("Undefined parameter variable \"%s\"", ident);
-			}
+			emit("istore reg%i %i", param_count, symtable_ptr(gs->st, ident));		
 		}
 		params = params->next;
 		param_count++;
@@ -89,9 +85,6 @@ void enter_function(GenState *gs, ASTNode *node) {
 
 
 	char *func_name = (char*)visitor(gs, node->identifier);
-	if(symtable_has(gs->st, func_name)) {
-		c_error("Duplicate of function \"%s\"", func_name);
-	}
 	symtable_add(gs->st, func_name, 0);
 
 	SymbolTable *st_orig  = gs->st;
@@ -124,9 +117,6 @@ void enter_block(GenState *gs, ASTNode *node) {
 void enter_declarator(GenState *gs, ASTNode *node) {
 	if(node->left != NULL) {
 		char *ident = (char*)visitor(gs, node->left);
-		if(symtable_has(gs->st, ident)) {
-			c_error("Error, Variable %s already existed. ", ident);
-		}
 		if(node->right != NULL) {
 			ASTNode *right = node->right;
 			if(get_node_type(right) == AST_LITERAL) {
@@ -138,11 +128,8 @@ void enter_declarator(GenState *gs, ASTNode *node) {
 				}
 			} else if(get_node_type(right) == AST_IDENTIFIER) {
 				// x = y;
-				if(symtable_has(gs->st, visitor(gs, right))) {
-					symtable_add(gs->st, ident, symtable_ptr(gs->st, visitor(gs, right)));
-				} else {
-					c_error("Variable %s not defined", visitor(gs, right));
-				}
+				symtable_add(gs->st, ident, symtable_ptr(gs->st, visitor(gs, right)));
+				
 			} else {
 				c_error("Right Hand error");
 			}
@@ -160,12 +147,9 @@ char *get_literal(GenState *gs, ASTNode *node) {
 
 void enter_call(GenState *gs, ASTNode *node) {
 	char *ident = (char*)visitor(gs, node->identifier);
-	if(symtable_has(gs->st, ident) || strcmp(ident, "__call__") == 0) {
-		visitor(gs, node->args);
-		emit("call %s", ident);
-	} else {
-		c_error("Call to undefined function \"%s\"", ident);
-	}
+	visitor(gs, node->args);
+	emit("call %s", ident);
+	
 
 }
 
