@@ -307,7 +307,7 @@ ASTNode *parse_function(ParseState *ps) {
 }
 
 ASTNode *parse(Token *token) {
-	
+	/*
 	Token *token_copy = token;
 	while(token_copy != NULL) {
 		if(token_copy->type != END_OF_TOKEN) {
@@ -315,7 +315,7 @@ ASTNode *parse(Token *token) {
 		}
 		token_copy = token_copy->next;
 	}
-	
+	*/
 	ParseState ps = {};
 	ps.token = token;
 	ps.st = symtable_init();

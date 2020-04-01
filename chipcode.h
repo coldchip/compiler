@@ -11,6 +11,7 @@ typedef enum {
 	IDENTIFIER,
 	STRING,
 	NUMBER,
+	KW_INCLUDE,
 	KW_VAR,
 	KW_VOID,
 	LPAREN,
