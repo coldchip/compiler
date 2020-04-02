@@ -212,7 +212,9 @@ void *visitor(GenState *gs, ASTNode *node) {
 	return NULL;
 }
 
-void generate(GenState *gs, ASTNode *node) {
-	gs->st = symtable_init();
-	visitor(gs, node);
+void generate(ASTNode *node) {
+	GenState gs;
+	gs.sp = 0x00;
+	gs.st = symtable_init();
+	visitor(&gs, node);
 }

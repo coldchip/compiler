@@ -25,13 +25,12 @@ int main(int argc, char const *argv[]) {
 	if(file != NULL) {
 		printf("Attempting to compile %s\n", file);
 		char *buf = read_file_into_buffer(file);
-		Token *token = lex(buf);
+		char *expanded = macro(buf);
+		Token *token = lex(expanded);
 		ASTNode *node = parse(token);
-		printf("\n\n\n\n\n\n");
+		generate(node);
 
-		GenState gs;
-		gs.sp = 0x00;
-		generate(&gs, node);
+		free(buf);
 	} else {
 		printf("No input file(s) specified\n");
 	}

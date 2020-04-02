@@ -61,6 +61,10 @@ API bool symtable_has(SymbolTable *st, char *name);
 API int  symtable_ptr(SymbolTable *st, char *name);
 API void symtable_free(SymbolTable *st);
 
+// macro.c
+
+char *macro(char *input);
+
 // parse.c
 typedef enum {
 	AST_PROGRAM,
@@ -109,7 +113,7 @@ typedef struct _GenState {
 
 void *visitor(GenState *gs, ASTNode *node);
 
-void generate(GenState *gs, ASTNode *node);
+void generate(ASTNode *node);
 
 
 
