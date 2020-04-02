@@ -25,9 +25,13 @@ int main(int argc, char const *argv[]) {
 	if(file != NULL) {
 		printf("Attempting to compile %s\n", file);
 		char *buf = read_file_into_buffer(file);
+		printf("Preprocessing %s\n", file);
 		char *expanded = macro(buf);
+		printf("Lexing %s\n", file);
 		Token *token = lex(expanded);
+		printf("Parsing %s\n", file);
 		ASTNode *node = parse(token);
+		printf("Generating Byte Code %s\n", file);
 		generate(node);
 
 		free(buf);
