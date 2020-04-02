@@ -50,7 +50,7 @@ void enter_argument(GenState *gs, ASTNode *node) {
 	int param_count = 0;
 	while(params != NULL) {
 		char *ident = (char*)visitor(gs, params);
-		emit("iload reg%i", param_count);
+		emit("args reg%i", param_count);
 		symtable_add(gs->st, ident, 0);
 		params = params->next;
 		param_count++;
@@ -73,12 +73,13 @@ void enter_parameter(GenState *gs, ASTNode *node) {
 }
 
 void enter_program(GenState *gs, ASTNode *node) {
-	emit("program");
+	emit("program {");
 	indent++;
 	if(node->body != NULL) {
 		visitor(gs, node->body);
 	}
 	indent--;
+	emit("}");
 }
 
 void enter_function(GenState *gs, ASTNode *node) {
@@ -90,13 +91,14 @@ void enter_function(GenState *gs, ASTNode *node) {
 	SymbolTable *st_orig  = gs->st;
 	gs->st = symtable_clone(gs->st);
 	
-	emit("func %s", node->identifier->token->string);
+	emit("function %s {", node->identifier->token->string);
 	indent++;
 	visitor(gs, node->args);
 	if(node->body != NULL) {
 		visitor(gs, node->body);
 	}
 	indent--;
+	emit("}");
 
 	symtable_free(gs->st);
 	gs->st = st_orig;

@@ -248,8 +248,10 @@ ASTNode *parse_parameter(ParseState *ps) {
 ASTNode *parse_call(ParseState *ps) {
 	ASTNode *node = new_node(AST_CALL);
 	node->identifier = parse_identifier(ps);
-	if(symtable_has(ps->st, get_string_from_node(node->identifier)) != true) {
-		c_error("Call to undefined function \"%s\"", get_string_from_node(node->identifier));
+	if(strcmp(get_string_from_node(node->identifier), "__call__") != 0) {
+		if(symtable_has(ps->st, get_string_from_node(node->identifier)) != true) {
+			c_error("Call to undefined function \"%s\"", get_string_from_node(node->identifier));
+		}
 	}
 	expect(ps, LPAREN);
 	next(ps);
