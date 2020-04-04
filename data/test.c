@@ -8,6 +8,6 @@ void test() {
 
 void main() {
 	var cc = "aa";
-	var dd = 0;
+	var dd = 2999;
 	printf(cc);
 }

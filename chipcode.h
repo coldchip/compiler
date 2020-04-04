@@ -104,17 +104,45 @@ typedef struct _ParseState {
 ASTNode *parse(Token *token);
 ASTNode *parse_stmt(ParseState *ps);
 
+// ir.c
+
+typedef enum {
+	NOP
+} OPCode;
+
+typedef struct _IR {
+	struct _InstructionEntry *i_entry;
+	struct _InstructionEntry *i_start;
+
+	struct _ConstantEntry *c_entry;
+	struct _ConstantEntry *c_start;
+} IR;
+
+typedef struct _ConstantEntry {
+	char * data;
+	struct _ConstantEntry *next;
+} ConstantEntry;
+
+typedef struct _InstructionEntry {
+	char * name;
+	int    pointer;
+	struct _InstructionEntry *next;
+} InstructionEntry;
+
+API IR *ir_init();
+API void ir_add_constant(IR *ir, char *data);
+
 // generate.c
 
 typedef struct _GenState {
 	SymbolTable *st;
+	IR *ir;
 	int sp;
 } GenState;
 
 void *visitor(GenState *gs, ASTNode *node);
 
 void generate(ASTNode *node);
-
 
 
 #endif

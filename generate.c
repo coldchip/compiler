@@ -39,7 +39,7 @@ void emit(char *format, ...) {
     va_start(args, format);
 
 	char fmt[1000];
-	snprintf(fmt, sizeof(fmt), "%s%s\n", indent_data, format);
+	snprintf(fmt, sizeof(fmt), "%s%s", indent_data, format);
 	vprintf(fmt, args);
     
     va_end(args);
@@ -50,7 +50,9 @@ void enter_argument(GenState *gs, ASTNode *node) {
 	int param_count = 0;
 	while(params != NULL) {
 		char *ident = (char*)visitor(gs, params);
-		emit("args reg%i", param_count);
+		emit("acop s%i r%i\n", gs->sp, param_count);
+		symtable_add(gs->st, ident, gs->sp);
+		stack_inc(gs, 1);
 		symtable_add(gs->st, ident, 0);
 		params = params->next;
 		param_count++;
@@ -62,24 +64,22 @@ void enter_parameter(GenState *gs, ASTNode *node) {
 	int param_count = 0;
 	while(params != NULL) {
 		char *ident = (char*)visitor(gs, params);
-		if(params->type == AST_LITERAL) {
-			emit("istorec reg%i \"%s\"", param_count, ident);
-		} else {
-			emit("istore reg%i %i", param_count, symtable_ptr(gs->st, ident));		
-		}
+		
+		emit("acop r%i s%i\n", param_count, symtable_ptr(gs->st, ident));		
+		
 		params = params->next;
 		param_count++;
 	}
 }
 
 void enter_program(GenState *gs, ASTNode *node) {
-	emit("program {");
+	emit("program {\n");
 	indent++;
 	if(node->body != NULL) {
 		visitor(gs, node->body);
 	}
 	indent--;
-	emit("}");
+	emit("}\n");
 }
 
 void enter_function(GenState *gs, ASTNode *node) {
@@ -91,14 +91,14 @@ void enter_function(GenState *gs, ASTNode *node) {
 	SymbolTable *st_orig  = gs->st;
 	gs->st = symtable_clone(gs->st);
 	
-	emit("function %s {", node->identifier->token->string);
+	emit("function %s {\n", node->identifier->token->string);
 	indent++;
 	visitor(gs, node->args);
 	if(node->body != NULL) {
 		visitor(gs, node->body);
 	}
 	indent--;
-	emit("}");
+	emit("}\n");
 
 	symtable_free(gs->st);
 	gs->st = st_orig;
@@ -122,12 +122,10 @@ void enter_declarator(GenState *gs, ASTNode *node) {
 		if(node->right != NULL) {
 			ASTNode *right = node->right;
 			if(get_node_type(right) == AST_LITERAL) {
-				// x = "Test";
-				emit("iloadc \"%s\"", visitor(gs, right));
+				// x = "Test"; x = 9;
+				emit("imov s%i \"%s\"\n", gs->sp, visitor(gs, right));
 				symtable_add(gs->st, ident, gs->sp);
-				for(int i = 0; i < strlen(visitor(gs, right)); i++) {
-					stack_inc(gs, 8);
-				}
+				stack_inc(gs, 1);
 			} else if(get_node_type(right) == AST_IDENTIFIER) {
 				// x = y;
 				symtable_add(gs->st, ident, symtable_ptr(gs->st, visitor(gs, right)));
@@ -150,7 +148,7 @@ char *get_literal(GenState *gs, ASTNode *node) {
 void enter_call(GenState *gs, ASTNode *node) {
 	char *ident = (char*)visitor(gs, node->identifier);
 	visitor(gs, node->args);
-	emit("call %s", ident);
+	emit("call %s\n", ident);
 	
 
 }
@@ -218,5 +216,13 @@ void generate(ASTNode *node) {
 	GenState gs;
 	gs.sp = 0x00;
 	gs.st = symtable_init();
+	gs.ir = ir_init();
 	visitor(&gs, node);
+
+	ConstantEntry *cs = gs.ir->c_start;
+
+	while(cs != NULL) {
+		printf("Constant: %s\n", cs->data);
+		cs = cs->next;
+	}
 }
