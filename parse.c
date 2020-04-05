@@ -62,7 +62,17 @@ static ASTNode *new_node(NodeType type) {
 	memset(node, 0, sizeof(Token));
 	node->type = type;
 	node->next = NULL;
+	node->body = NULL;
 	return node;
+}
+
+void add_body(ASTNode *node, ASTNode *body) {
+	if(node->body == NULL) {
+		node->body = body;
+	} else {
+		node->body_next->next = body;	
+	}
+	node->body_next = body;
 }
 
 void parse_type(ParseState *ps) {
@@ -184,17 +194,13 @@ ASTNode *parse_block(ParseState *ps) {
 	ps->st = symtable_clone(ps->st);
 
 	ASTNode *node = new_node(AST_BLOCK);
-	ASTNode node_body_head = {};
-	node->body = &node_body_head;
 	expect(ps, LBRACE);
 	next(ps);
 	while(!is(ps, RBRACE)) {
-		node->body->next = parse_stmt(ps);
-		node->body = node->body->next;
+		add_body(node, parse_stmt(ps));
 	}
 	expect(ps, RBRACE);
 	next(ps);
-	node->body = node_body_head.next;
 
 	symtable_free(ps->st);
 	ps->st = st_orig;
@@ -204,11 +210,8 @@ ASTNode *parse_block(ParseState *ps) {
 
 ASTNode *parse_argument(ParseState *ps) {
 	ASTNode *node = new_node(AST_ARGUMENT);
-	ASTNode node_body_head = {};
-	node->body = &node_body_head;
 	while(is(ps, IDENTIFIER)) {
-		node->body->next = parse_identifier(ps);
-		node->body = node->body->next;
+		add_body(node, parse_identifier(ps));
 		symtable_add(ps->st, get_string_from_node(node->body), 0);
 		if(is(ps, COMMA)) {
 			expect(ps, COMMA);
@@ -216,32 +219,28 @@ ASTNode *parse_argument(ParseState *ps) {
 			expect(ps, IDENTIFIER);
 		}
 	}
-	node->body = node_body_head.next;
 	return node;
 }
 
 ASTNode *parse_parameter(ParseState *ps) {
 	ASTNode *node = new_node(AST_PARAMETER);
-	ASTNode node_body_head = {};
-	node->body = &node_body_head;
 	while(is(ps, IDENTIFIER) || is(ps, NUMBER) || is(ps, STRING)) {
 		if(is(ps, IDENTIFIER)) {
-			node->body->next = parse_identifier(ps);
-			if(symtable_has(ps->st, get_string_from_node(node->body->next)) != true) {
-				c_error("Undefined parameter variable \"%s\"", get_string_from_node(node->body->next));
+			ASTNode *ident = parse_identifier(ps);
+			add_body(node, ident);
+			if(symtable_has(ps->st, get_string_from_node(ident)) != true) {
+				c_error("Undefined parameter variable \"%s\"", get_string_from_node(ident));
 			}
 		} else if(is(ps, NUMBER) || is(ps, STRING)) {
-			node->body->next = parse_literal(ps);
+			add_body(node, parse_literal(ps));
 		} else {
 			c_error("Param only accepts identifier and literal");
 		}
-		node->body = node->body->next;
 		if(is(ps, COMMA)) {
 			expect(ps, COMMA);
 			next(ps);
 		}
 	}
-	node->body = node_body_head.next;
 	return node;
 }
 
@@ -291,19 +290,33 @@ ASTNode *parse_stmt(ParseState *ps) {
 
 ASTNode *parse_function(ParseState *ps) {
 	ASTNode *node = new_node(AST_FUNCTION);
+
 	parse_type(ps);
 	node->identifier = parse_identifier(ps);
 	if(symtable_has(ps->st, get_string_from_node(node->identifier)) == true) {
 		c_error("Duplicate of function \"%s\"", get_string_from_node(node->identifier));
 	}
 	symtable_add(ps->st, get_string_from_node(node->identifier), 0);
+	
+	SymbolTable *st_orig  = ps->st;
+	ps->st = symtable_clone(ps->st);
+
 	expect(ps, LPAREN);
 	next(ps);
 	node->args = parse_argument(ps);
 	expect(ps, RPAREN);
 	next(ps);
 
-	node->body = parse_block(ps);
+	expect(ps, LBRACE);
+	next(ps);
+	while(!is(ps, RBRACE)) {
+		add_body(node, parse_stmt(ps));
+	}
+	expect(ps, RBRACE);
+	next(ps);
+
+	symtable_free(ps->st);
+	ps->st = st_orig;
 
 	return node;
 }
@@ -323,15 +336,10 @@ ASTNode *parse(Token *token) {
 	ps.st = symtable_init();
 
 	ASTNode *node = new_node(AST_PROGRAM);
-	ASTNode node_body_head = {};
-	node->body = &node_body_head;
 
 	while(!is(&ps, END_OF_TOKEN)) {
-		node->body->next = parse_function(&ps);
-		node->body = node->body->next;
+		add_body(node, parse_function(&ps));
 	}
-
-	node->body = node_body_head.next;
 
 	symtable_free(ps.st);
 

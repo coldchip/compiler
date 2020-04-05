@@ -88,6 +88,7 @@ typedef struct _ASTNode {
 	struct _ASTNode *identifier;
 	struct _ASTNode *condition;
 	struct _ASTNode *body;
+	struct _ASTNode *body_next;
 	struct _ASTNode *alternate;
 	struct _ASTNode *left;
 	TokenType op;

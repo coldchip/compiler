@@ -63,10 +63,15 @@ void enter_parameter(GenState *gs, ASTNode *node) {
 	ASTNode *params = node->body;
 	int param_count = 0;
 	while(params != NULL) {
-		char *ident = (char*)visitor(gs, params);
+		if(get_node_type(params) == AST_IDENTIFIER) {
+			char *ident = (char*)visitor(gs, params);
 		
-		emit("acop r%i s%i\n", param_count, symtable_ptr(gs->st, ident));		
-		
+			emit("acop r%i s%i\n", param_count, symtable_ptr(gs->st, ident));		
+		}
+		if(get_node_type(params) == AST_LITERAL) {
+			char *literal = (char*)visitor(gs, params);
+			emit("imov r%i \"%s\"\n", param_count, literal);		
+		}
 		params = params->next;
 		param_count++;
 	}
@@ -86,17 +91,20 @@ void enter_function(GenState *gs, ASTNode *node) {
 
 
 	char *func_name = (char*)visitor(gs, node->identifier);
-	symtable_add(gs->st, func_name, 0);
 
 	SymbolTable *st_orig  = gs->st;
 	gs->st = symtable_clone(gs->st);
+	gs->sp = 0;
 	
-	emit("function %s {\n", node->identifier->token->string);
+	emit("function %s {\n", func_name);
 	indent++;
+
 	visitor(gs, node->args);
+
 	if(node->body != NULL) {
 		visitor(gs, node->body);
 	}
+
 	indent--;
 	emit("}\n");
 
@@ -123,7 +131,7 @@ void enter_declarator(GenState *gs, ASTNode *node) {
 			ASTNode *right = node->right;
 			if(get_node_type(right) == AST_LITERAL) {
 				// x = "Test"; x = 9;
-				emit("imov s%i \"%s\"\n", gs->sp, visitor(gs, right));
+				emit("imov s%i \"%s\"\n", gs->sp, (char*)visitor(gs, right));
 				symtable_add(gs->st, ident, gs->sp);
 				stack_inc(gs, 1);
 			} else if(get_node_type(right) == AST_IDENTIFIER) {
@@ -214,7 +222,7 @@ void *visitor(GenState *gs, ASTNode *node) {
 
 void generate(ASTNode *node) {
 	GenState gs;
-	gs.sp = 0x00;
+	gs.sp = 0;
 	gs.st = symtable_init();
 	gs.ir = ir_init();
 	visitor(&gs, node);
