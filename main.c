@@ -17,6 +17,14 @@ char *read_file_into_buffer(char *file) {
 	fread((char*)p, 1, fsize, infp);
 	fclose(infp);
 	*(p + fsize) = '\0';
+
+
+	for(char *check = p; check < p + fsize; check++) {
+		if(*check == '\0') {
+			printf("Cannot compiler because file %s contains NULL character(s)\n", file);
+    		exit(0);
+		}
+	}
 	return p;
 }
 

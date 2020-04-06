@@ -1,4 +1,4 @@
 COMPILER=gcc
 
 module:
-	$(COMPILER) *.c -o build/app.exe -lws2_32 -Wall -O3 -g
+	$(COMPILER) *.c -o build/app.exe -lws2_32 -Wall -O3

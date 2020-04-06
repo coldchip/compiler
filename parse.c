@@ -70,9 +70,16 @@ void add_body(ASTNode *node, ASTNode *body) {
 	if(node->body == NULL) {
 		node->body = body;
 	} else {
-		node->body_next->next = body;	
+		ASTNode *current = node->body;
+		while(1) {
+			if(current->next == NULL) {
+				current->next = body;
+				break;
+			} else {
+				current = current->next;
+			}
+		}
 	}
-	node->body_next = body;
 }
 
 void parse_type(ParseState *ps) {

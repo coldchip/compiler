@@ -51,6 +51,7 @@ void enter_argument(GenState *gs, ASTNode *node) {
 	while(params != NULL) {
 		char *ident = (char*)visitor(gs, params);
 		emit("acop s%i r%i\n", gs->sp, param_count);
+		ir_add_instruction(gs->ir, ACOP);
 		symtable_add(gs->st, ident, gs->sp);
 		stack_inc(gs, 1);
 		symtable_add(gs->st, ident, 0);
@@ -65,12 +66,13 @@ void enter_parameter(GenState *gs, ASTNode *node) {
 	while(params != NULL) {
 		if(get_node_type(params) == AST_IDENTIFIER) {
 			char *ident = (char*)visitor(gs, params);
-		
-			emit("acop r%i s%i\n", param_count, symtable_ptr(gs->st, ident));		
+			emit("acop r%i s%i\n", param_count, symtable_ptr(gs->st, ident));
+			ir_add_instruction(gs->ir, ACOP);	
 		}
 		if(get_node_type(params) == AST_LITERAL) {
 			char *literal = (char*)visitor(gs, params);
-			emit("imov r%i \"%s\"\n", param_count, literal);		
+			emit("imov r%i \"%s\"\n", param_count, literal);
+			ir_add_instruction(gs->ir, IMOV);	
 		}
 		params = params->next;
 		param_count++;
@@ -132,6 +134,7 @@ void enter_declarator(GenState *gs, ASTNode *node) {
 			if(get_node_type(right) == AST_LITERAL) {
 				// x = "Test"; x = 9;
 				emit("imov s%i \"%s\"\n", gs->sp, (char*)visitor(gs, right));
+				ir_add_instruction(gs->ir, IMOV);
 				symtable_add(gs->st, ident, gs->sp);
 				stack_inc(gs, 1);
 			} else if(get_node_type(right) == AST_IDENTIFIER) {
@@ -157,7 +160,7 @@ void enter_call(GenState *gs, ASTNode *node) {
 	char *ident = (char*)visitor(gs, node->identifier);
 	visitor(gs, node->args);
 	emit("call %s\n", ident);
-	
+	ir_add_instruction(gs->ir, CALL);
 
 }
 
@@ -227,10 +230,31 @@ void generate(ASTNode *node) {
 	gs.ir = ir_init();
 	visitor(&gs, node);
 
-	ConstantEntry *cs = gs.ir->c_start;
+	InstructionEntry *cs = gs.ir->start;
 
 	while(cs != NULL) {
-		printf("Constant: %s\n", cs->data);
+		switch(cs->op) {
+			case NOP:
+			{
+				printf("NOP\n");
+			}
+			break;
+			case ACOP:
+			{
+				printf("ACOP\n");
+			}
+			break;
+			case IMOV:
+			{
+				printf("IMOV\n");
+			}
+			break;
+			case CALL:
+			{
+				printf("CALL\n");
+			}
+			break;
+		}
 		cs = cs->next;
 	}
 }

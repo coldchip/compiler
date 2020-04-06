@@ -88,7 +88,6 @@ typedef struct _ASTNode {
 	struct _ASTNode *identifier;
 	struct _ASTNode *condition;
 	struct _ASTNode *body;
-	struct _ASTNode *body_next;
 	struct _ASTNode *alternate;
 	struct _ASTNode *left;
 	TokenType op;
@@ -108,30 +107,25 @@ ASTNode *parse_stmt(ParseState *ps);
 // ir.c
 
 typedef enum {
-	NOP
+	NOP,
+	ACOP,
+	IMOV,
+	CALL
 } OPCode;
 
 typedef struct _IR {
-	struct _InstructionEntry *i_entry;
-	struct _InstructionEntry *i_start;
-
-	struct _ConstantEntry *c_entry;
-	struct _ConstantEntry *c_start;
+	struct _InstructionEntry *entry;
+	struct _InstructionEntry *start;
 } IR;
 
-typedef struct _ConstantEntry {
-	char * data;
-	struct _ConstantEntry *next;
-} ConstantEntry;
-
 typedef struct _InstructionEntry {
-	char * name;
+	OPCode op;
 	int    pointer;
 	struct _InstructionEntry *next;
 } InstructionEntry;
 
 API IR *ir_init();
-API void ir_add_constant(IR *ir, char *data);
+API void ir_add_instruction(IR *ir, OPCode op);
 
 // generate.c
 
