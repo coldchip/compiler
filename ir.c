@@ -12,11 +12,13 @@ IR *ir_init() {
 	return ir;
 }
 
-void ir_add_instruction(IR *ir, OPCode op) {
+void ir_add_instruction(IR *ir, OPCode op, int left, int right) {
 	InstructionEntry *next = malloc(sizeof(InstructionEntry));
 	memset(next, 0, sizeof(InstructionEntry));
 
 	next->op = op;
+	next->left = left;
+	next->right = right;
 
 	if(ir->entry == NULL) {
 		ir->start = next;

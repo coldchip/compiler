@@ -5,6 +5,11 @@
 
 #define API extern
 
+typedef struct _ChipBinary {
+	char magic[10];
+	int version;
+} ChipBinary;
+
 // lex.c
 typedef enum {
 	END_OF_TOKEN,
@@ -120,12 +125,13 @@ typedef struct _IR {
 
 typedef struct _InstructionEntry {
 	OPCode op;
-	int    pointer;
+	int left;
+	int right;
 	struct _InstructionEntry *next;
 } InstructionEntry;
 
 API IR *ir_init();
-API void ir_add_instruction(IR *ir, OPCode op);
+API void ir_add_instruction(IR *ir, OPCode op, int left, int right);
 
 // generate.c
 
@@ -137,7 +143,7 @@ typedef struct _GenState {
 
 void *visitor(GenState *gs, ASTNode *node);
 
-void generate(ASTNode *node);
+GenState *generate(ASTNode *node);
 
 
 #endif
