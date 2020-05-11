@@ -6,8 +6,9 @@
 #define API extern
 
 typedef struct _ChipBinary {
-	char magic[10];
+	char magic[8];
 	int version;
+	unsigned int timestamp;
 } ChipBinary;
 
 // lex.c
@@ -119,19 +120,11 @@ typedef enum {
 } OPCode;
 
 typedef struct _IR {
-	struct _InstructionEntry *entry;
-	struct _InstructionEntry *start;
+	
 } IR;
 
-typedef struct _InstructionEntry {
-	OPCode op;
-	int left;
-	int right;
-	struct _InstructionEntry *next;
-} InstructionEntry;
-
 API IR *ir_init();
-API void ir_add_instruction(IR *ir, OPCode op, int left, int right);
+API void ir_add_instruction(IR *ir, char* instruction, ...);
 
 // generate.c
 

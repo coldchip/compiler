@@ -2,28 +2,24 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
 #include <string.h>
 #include "chipcode.h"
 
 IR *ir_init() {
 	IR *ir = malloc(sizeof(IR));
-	ir->entry = NULL;
-	ir->start = NULL;
 	return ir;
 }
 
-void ir_add_instruction(IR *ir, OPCode op, int left, int right) {
-	InstructionEntry *next = malloc(sizeof(InstructionEntry));
-	memset(next, 0, sizeof(InstructionEntry));
+void ir_add_instruction(IR *ir, char *format, ...) {
+	va_list args;
+    va_start(args, format);
+    int bufsz = vsnprintf(NULL, 0, format, args);
+    char buf[bufsz + 1];
+    vsprintf((char*)&buf, format, args);
 
-	next->op = op;
-	next->left = left;
-	next->right = right;
+    printf("%s\n", buf);
 
-	if(ir->entry == NULL) {
-		ir->start = next;
-	} else {
-		ir->entry->next = next;
-	}
-	ir->entry = next;
+    va_end(args);
 }
