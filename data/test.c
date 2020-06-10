@@ -1,10 +1,9 @@
-void printf(a) {
-	__call__("printf", a);
-}
+
+void print(aa, bb) {
+
+} 
 
 void main() {
-	var cc = 1;
-	while(true) {
-		printf(cc);
-	}
+	int cc = 1;
+	print(cc, cc);
 }

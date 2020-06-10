@@ -38,11 +38,10 @@ int main(int argc, char const *argv[]) {
 		char *expanded = macro(buf);
 		printf("Lexing %s\n", file);
 		Token *token = lex(expanded);
-		printf("Parsing %s\n", file);
-		ASTNode *node = parse(token);
-		printf("Generating Byte Code %s\n", file);
-		GenState *gs = generate(node);
-
+		while(token != NULL) {
+			printf("%s\n", token->data);
+			token = token->next;
+		}
 		free(buf);
 	} else {
 		printf("No input file(s) specified\n");
