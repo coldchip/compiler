@@ -38,10 +38,13 @@ int main(int argc, char const *argv[]) {
 		char *expanded = macro(buf);
 		printf("Lexing %s\n", file);
 		Token *token = lex(expanded);
+		parse(token);
+		/*
 		while(token != NULL) {
 			printf("%s\n", token->data);
 			token = token->next;
 		}
+		*/
 		free(buf);
 	} else {
 		printf("No input file(s) specified\n");

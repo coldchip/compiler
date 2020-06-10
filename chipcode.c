@@ -8,7 +8,7 @@ void c_error(char *format, ...) {
     va_start(args, format);
 
 	char fmt[1000];
-	snprintf(fmt, sizeof(fmt), "[ChipCode] %s\n", format);
+	snprintf(fmt, sizeof(fmt), "\033[0;31m[ChipCode] %s\033[0m\n", format);
 	vprintf(fmt, args);
     
     va_end(args);
