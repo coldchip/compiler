@@ -51,7 +51,10 @@ typedef struct _Node {
 	
 } Node;
 
+void parse_call(Parser *parser);
 void parse_stmt(Parser *parser);
+void parse_arg(Parser *parser);
+void parse_args(Parser *parser);
 void parse_param(Parser *parser);
 void parse_params(Parser *parser);
 void parse_declarator(Parser *parser);
@@ -59,7 +62,9 @@ void parse_basetype(Parser *parser);
 void parse_function(Parser *parser);
 void parse_program(Parser *parser);
 
-void consume(Parser *parser);
+bool is_function(Parser *parser);
+bool is_call(Parser *parser);
+
 bool consume_string(Parser *parser, const char *str);
 bool consume_type(Parser *parser, TokenType type);
 void expect_string(Parser *parser, const char *str);
@@ -69,5 +74,20 @@ bool peek_type(Parser *parser, TokenType type);
 
 bool is_typename(Parser *parser);
 API void parse(Token *token);
+
+// vm.c
+
+typedef enum {
+	OP_MOV,
+	OP_JMP,
+	OP_SUB,
+	OP_DIV,
+	OP_MUL,
+	OP_ADD,
+	OP_CALL,
+	OP_CMP
+} OpCode;
+
+void vm_exec();
 
 #endif

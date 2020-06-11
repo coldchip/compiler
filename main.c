@@ -39,6 +39,8 @@ int main(int argc, char const *argv[]) {
 		printf("Lexing %s\n", file);
 		Token *token = lex(expanded);
 		parse(token);
+
+		vm_exec();
 		/*
 		while(token != NULL) {
 			printf("%s\n", token->data);
