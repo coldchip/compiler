@@ -51,12 +51,22 @@ typedef struct _Node {
 	
 } Node;
 
+void parse_stmt(Parser *parser);
+void parse_param(Parser *parser);
+void parse_params(Parser *parser);
+void parse_declarator(Parser *parser);
+void parse_basetype(Parser *parser);
 void parse_function(Parser *parser);
 void parse_program(Parser *parser);
-void expect(Parser *parser, const char *str);
-void next(Parser *parser);
-bool is_type(Parser *parser, TokenType type);
-bool is_data(Parser *parser, const char *str);
+
+void consume(Parser *parser);
+bool consume_string(Parser *parser, const char *str);
+bool consume_type(Parser *parser, TokenType type);
+void expect_string(Parser *parser, const char *str);
+void expect_type(Parser *parser, TokenType type);
+bool peek_string(Parser *parser, const char *str);
+bool peek_type(Parser *parser, TokenType type);
+
 bool is_typename(Parser *parser);
 API void parse(Token *token);
 
