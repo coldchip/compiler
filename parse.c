@@ -4,6 +4,9 @@
 
 Node *new_node(NodeType type) {
 	Node *node = malloc(sizeof(Node));
+	node->body = list_init();
+	node->left = NULL;
+	node->right = NULL;
 	node->type = type;
 	return node;
 }
@@ -53,7 +56,6 @@ Node *parse_stmt(Parser *parser) {
 		return node;
 	} else if(consume_string(parser, "{")) {
 		Node *node = new_node(AST_BLOCK);
-		node->body = list_init();
 
 		while(!peek_string(parser, "}")) {
 			list_add(node->body, parse_stmt(parser));
@@ -84,7 +86,7 @@ Node *parse_stmt(Parser *parser) {
 
 Node *parse_function(Parser *parser) {
 	Node *node = new_node(AST_FUNCTION);
-	node->body = list_init();
+
 	parse_basetype(parser);
 	parse_declarator(parser);
 
@@ -106,7 +108,7 @@ Node *parse_function(Parser *parser) {
 
 Node *parse_program(Parser *parser) {
 	Node *node = new_node(AST_PROGRAM);
-	node->body = list_init();
+
 	while(!peek_type(parser, TK_EOF)) {
 		if(is_function(parser)) {
 			list_add(node->body, parse_function(parser));
@@ -120,7 +122,12 @@ Node *parse_program(Parser *parser) {
 Node *parse(Token *token) {
 	Parser parser;
 	parser.token = token;
-	return parse_program(&parser);
+	parser.varscope = list_init();
+
+	Node *node = parse_program(&parser);
+	
+	list_free(parser.varscope);
+	return node;
 }
 
 bool is_function(Parser *parser) {

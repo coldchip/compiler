@@ -23,8 +23,25 @@ void enter_function(Node *node) {
 	node_free(node);
 }
 
-void enter_expr(Node *node) {
+void enter_binexpr(Node *node) {
 	printf("Expr\n");
+	if(node->left) {
+		visitor(node->left);
+	}
+	if(node->right) {
+		visitor(node->right);
+	}
+	node_free(node);
+}
+
+void enter_literal(Node *node) {
+	printf("literal %s\n", node->token->data);
+	node_free(node);
+}
+
+void enter_ident(Node *node) {
+	printf("ident %s\n", node->token->data);
+	node_free(node);
 }
 
 void visitor(Node *node) {
@@ -39,9 +56,19 @@ void visitor(Node *node) {
 			enter_function(node);
 		}
 		break;
-		case AST_EXPR:
+		case AST_BINEXPR:
 		{
-			enter_expr(node);
+			enter_binexpr(node);
+		}
+		break;
+		case AST_LITERAL:
+		{
+			enter_literal(node);
+		}
+		break;
+		case AST_IDENT:
+		{
+			enter_ident(node);
 		}
 		break;
 		case AST_IF:

@@ -21,6 +21,8 @@ typedef struct _ListEntry {
 API List *list_init();
 API List *list_clone(List *st);
 API void list_add(List *st, void *ptr);
+API void *list_get_last(List *st);
+API void *list_remove_last(List *st);
 API void list_free(List *st);
 
 // chipcode.c
@@ -66,27 +68,38 @@ typedef enum {
 	AST_IF,
 	AST_BLOCK,
 	AST_WHILE,
-	AST_EXPR
+	AST_ASSIGN,
+	AST_BINEXPR,
+	AST_IDENT,
+	AST_LITERAL
 } NodeType;
+
+typedef struct _Scope {
+	List *var;
+} Scope;
 
 typedef struct _Parser {
 	Token *token;
+	List *varscope;
 } Parser;
 
 typedef struct _Node {
 	NodeType type;
+	struct _Node *left;
+	struct _Node *right;
 	List *body;
+	Token *token;
 } Node;
 
 Node *new_node(NodeType type);
 void node_free(Node *node);
 
 Node *parse_expr(Parser *parser);
-void parse_assign(Parser *parser);
-void parse_plus(Parser *parser);
-void parse_minus(Parser *parser);
-void parse_relational(Parser *parser);
-void parse_primary(Parser *parser);
+Node *parse_assign(Parser *parser);
+Node *parse_plus(Parser *parser);
+Node *parse_minus(Parser *parser);
+Node *parse_relational(Parser *parser);
+Node *parse_primary(Parser *parser);
 
 void parse_arg(Parser *parser);
 void parse_args(Parser *parser);

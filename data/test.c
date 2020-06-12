@@ -1,10 +1,8 @@
 void printf() {
-	
+
 }
 
 void main() {
 	
-	int a = 0;
-	int a = 0;
-	int a = 0;
+	a = a + b + 2;
 }
