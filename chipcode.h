@@ -62,7 +62,11 @@ API Token *lex(char *file);
 
 typedef enum {
 	AST_PROGRAM,
-	AST_FUNCTION
+	AST_FUNCTION,
+	AST_IF,
+	AST_BLOCK,
+	AST_WHILE,
+	AST_EXPR
 } NodeType;
 
 typedef struct _Parser {
@@ -75,8 +79,9 @@ typedef struct _Node {
 } Node;
 
 Node *new_node(NodeType type);
+void node_free(Node *node);
 
-void parse_expr(Parser *parser);
+Node *parse_expr(Parser *parser);
 void parse_assign(Parser *parser);
 void parse_plus(Parser *parser);
 void parse_minus(Parser *parser);
@@ -89,9 +94,9 @@ void parse_param(Parser *parser);
 void parse_params(Parser *parser);
 
 void parse_call(Parser *parser);
-void parse_stmt(Parser *parser);
 void parse_declarator(Parser *parser);
 void parse_basetype(Parser *parser);
+Node *parse_stmt(Parser *parser);
 Node *parse_function(Parser *parser);
 Node *parse_program(Parser *parser);
 
@@ -110,6 +115,10 @@ API Node *parse(Token *token);
 
 // codegen.c
 
+void enter_expr(Node *node);
+void enter_function(Node *node);
+void enter_program(Node *node);
+void visitor(Node *node);
 void generate(Node *node);
 
 // vm.c

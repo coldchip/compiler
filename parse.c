@@ -8,43 +8,18 @@ Node *new_node(NodeType type) {
 	return node;
 }
 
+void node_free(Node *node) {
+	if(node->body) {
+		free(node->body);
+	}
+	free(node);
+}
+
 void parse_call(Parser *parser) {
 	expect_type(parser, TK_IDENT);
 	expect_string(parser, "(");
 	parse_args(parser);
 	expect_string(parser, ")");
-	expect_string(parser, ";");
-}
-
-void parse_stmt(Parser *parser) {
-	if(consume_string(parser, "if")) {
-		expect_string(parser, "(");
-		parse_expr(parser);
-		expect_string(parser, ")");
-		parse_stmt(parser);
-		if(consume_string(parser, "else")) {
-			parse_stmt(parser);
-		}
-		return;
-	} else if(consume_string(parser, "{")) {
-		while(!peek_string(parser, "}")) {
-			parse_stmt(parser);
-		}
-		expect_string(parser, "}");
-		return;
-	} else if(consume_string(parser, "while")) {
-		expect_string(parser, "(");
-		parse_expr(parser);
-		expect_string(parser, ")");
-		parse_stmt(parser);
-		return;
-	} else if(is_typename(parser)) {
-		parse_declarator(parser);
-		return;
-	} else {
-
-	}
-	parse_expr(parser);
 	expect_string(parser, ";");
 }
 
@@ -64,8 +39,52 @@ void parse_declarator(Parser *parser) {
 	parse_expr(parser);
 }
 
+Node *parse_stmt(Parser *parser) {
+	if(consume_string(parser, "if")) {
+		expect_string(parser, "(");
+		parse_expr(parser);
+		expect_string(parser, ")");
+		parse_stmt(parser);
+		if(consume_string(parser, "else")) {
+			parse_stmt(parser);
+		}
+
+		Node *node = new_node(AST_IF);
+		return node;
+	} else if(consume_string(parser, "{")) {
+		Node *node = new_node(AST_BLOCK);
+		node->body = list_init();
+
+		while(!peek_string(parser, "}")) {
+			list_add(node->body, parse_stmt(parser));
+		}
+		expect_string(parser, "}");
+
+		return node;
+	} else if(consume_string(parser, "while")) {
+		expect_string(parser, "(");
+		parse_expr(parser);
+		expect_string(parser, ")");
+		parse_stmt(parser);
+
+		Node *node = new_node(AST_WHILE);
+		return node;
+	} else if(is_typename(parser)) {
+		parse_declarator(parser);
+
+		Node *node = new_node(AST_BLOCK);
+		return node;
+	} else {
+
+	}
+	Node *node = parse_expr(parser);
+	expect_string(parser, ";");
+	return node;
+}
+
 Node *parse_function(Parser *parser) {
 	Node *node = new_node(AST_FUNCTION);
+	node->body = list_init();
 	parse_basetype(parser);
 	parse_declarator(parser);
 
@@ -78,7 +97,7 @@ Node *parse_function(Parser *parser) {
 	expect_string(parser, "{");
 
 	while(!peek_string(parser, "}")) {
-		parse_stmt(parser);
+		list_add(node->body, parse_stmt(parser));
 	}
 
 	expect_string(parser, "}");

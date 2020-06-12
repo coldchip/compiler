@@ -1,8 +1,10 @@
 #include <string.h>
 #include "chipcode.h"
 
-void parse_expr(Parser *parser) {
+Node *parse_expr(Parser *parser) {
+	Node *node = new_node(AST_EXPR);
 	parse_assign(parser);
+	return node;
 }
 
 void parse_assign(Parser *parser) {
