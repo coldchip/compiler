@@ -13,7 +13,7 @@ void parse_assign(Parser *parser) {
 }
 
 void parse_plus(Parser *parser) {
-	parse_primary(parser);
+	parse_minus(parser);
 	if(consume_string(parser, "+")) {
 		parse_plus(parser);
 	}
