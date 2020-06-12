@@ -20,13 +20,27 @@ void parse_plus(Parser *parser) {
 }
 
 void parse_minus(Parser *parser) {
-	parse_primary(parser);
+	parse_relational(parser);
 	if(consume_string(parser, "-")) {
 		parse_minus(parser);
 	}
 }
 
+void parse_relational(Parser *parser) {
+	parse_primary(parser);
+	if(consume_string(parser, "<")) {
+		parse_relational(parser);
+	} else if(consume_string(parser, "<=")) {
+		parse_relational(parser);
+	} else if(consume_string(parser, ">")) {
+		parse_relational(parser);
+	} else if(consume_string(parser, ">=")) {
+		parse_relational(parser);
+	}
+}
+
 void parse_primary(Parser *parser) {
-	consume_type(parser, TK_IDENT);
-	consume_type(parser, TK_NUMBER);
+	if(!consume_type(parser, TK_IDENT) && !consume_type(parser, TK_NUMBER)) {
+		c_error("Expecting Identifier or Literal at Line %i", parser->token->line);
+	}
 }

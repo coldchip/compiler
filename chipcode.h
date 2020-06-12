@@ -6,6 +6,23 @@
 #define VERSION 1.0
 #define API extern
 
+// symtable.c
+
+typedef struct _List {
+	struct _ListEntry *entry;
+	struct _ListEntry *start;
+} List;
+
+typedef struct _ListEntry {
+	void *ptr;
+	struct _ListEntry *next;
+} ListEntry;
+
+API List *list_init();
+API List *list_clone(List *st);
+API void list_add(List *st, void *ptr);
+API void list_free(List *st);
+
 // chipcode.c
 
 API void c_error(char *format, ...);
@@ -43,18 +60,27 @@ API Token *lex(char *file);
 
 // parse.c
 
+typedef enum {
+	AST_PROGRAM,
+	AST_FUNCTION
+} NodeType;
+
 typedef struct _Parser {
 	Token *token;
 } Parser;
 
 typedef struct _Node {
-	
+	NodeType type;
+	List *body;
 } Node;
+
+Node *new_node(NodeType type);
 
 void parse_expr(Parser *parser);
 void parse_assign(Parser *parser);
 void parse_plus(Parser *parser);
 void parse_minus(Parser *parser);
+void parse_relational(Parser *parser);
 void parse_primary(Parser *parser);
 
 void parse_arg(Parser *parser);
@@ -66,8 +92,8 @@ void parse_call(Parser *parser);
 void parse_stmt(Parser *parser);
 void parse_declarator(Parser *parser);
 void parse_basetype(Parser *parser);
-void parse_function(Parser *parser);
-void parse_program(Parser *parser);
+Node *parse_function(Parser *parser);
+Node *parse_program(Parser *parser);
 
 bool is_function(Parser *parser);
 bool is_call(Parser *parser);
@@ -80,7 +106,11 @@ bool peek_string(Parser *parser, const char *str);
 bool peek_type(Parser *parser, TokenType type);
 
 bool is_typename(Parser *parser);
-API void parse(Token *token);
+API Node *parse(Token *token);
+
+// codegen.c
+
+void generate(Node *node);
 
 // vm.c
 

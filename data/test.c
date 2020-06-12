@@ -1,6 +1,6 @@
 void main() {
-	if() {
+	if(a < a) {
 
 	}
-	a = 0 + 3 + s - 0;
+	int a = 0;
 }

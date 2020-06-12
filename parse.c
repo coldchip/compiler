@@ -1,5 +1,12 @@
 #include <string.h>
+#include <stdlib.h>
 #include "chipcode.h"
+
+Node *new_node(NodeType type) {
+	Node *node = malloc(sizeof(Node));
+	node->type = type;
+	return node;
+}
 
 void parse_call(Parser *parser) {
 	expect_type(parser, TK_IDENT);
@@ -31,6 +38,9 @@ void parse_stmt(Parser *parser) {
 		expect_string(parser, ")");
 		parse_stmt(parser);
 		return;
+	} else if(is_typename(parser)) {
+		parse_declarator(parser);
+		return;
 	} else {
 
 	}
@@ -51,10 +61,11 @@ void parse_basetype(Parser *parser) {
 }
 
 void parse_declarator(Parser *parser) {
-	expect_type(parser, TK_IDENT);
+	parse_expr(parser);
 }
 
-void parse_function(Parser *parser) {
+Node *parse_function(Parser *parser) {
+	Node *node = new_node(AST_FUNCTION);
 	parse_basetype(parser);
 	parse_declarator(parser);
 
@@ -71,22 +82,26 @@ void parse_function(Parser *parser) {
 	}
 
 	expect_string(parser, "}");
+	return node;
 }
 
-void parse_program(Parser *parser) {
+Node *parse_program(Parser *parser) {
+	Node *node = new_node(AST_PROGRAM);
+	node->body = list_init();
 	while(!peek_type(parser, TK_EOF)) {
 		if(is_function(parser)) {
-			parse_function(parser);
+			list_add(node->body, parse_function(parser));
 		} else {
 
 		}
 	}
+	return node;
 }
 
-void parse(Token *token) {
+Node *parse(Token *token) {
 	Parser parser;
 	parser.token = token;
-	parse_program(&parser);
+	return parse_program(&parser);
 }
 
 bool is_function(Parser *parser) {
