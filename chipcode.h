@@ -57,12 +57,13 @@ void parse_plus(Parser *parser);
 void parse_minus(Parser *parser);
 void parse_primary(Parser *parser);
 
-void parse_call(Parser *parser);
-void parse_stmt(Parser *parser);
 void parse_arg(Parser *parser);
 void parse_args(Parser *parser);
 void parse_param(Parser *parser);
 void parse_params(Parser *parser);
+
+void parse_call(Parser *parser);
+void parse_stmt(Parser *parser);
 void parse_declarator(Parser *parser);
 void parse_basetype(Parser *parser);
 void parse_function(Parser *parser);
