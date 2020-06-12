@@ -51,6 +51,12 @@ typedef struct _Node {
 	
 } Node;
 
+void parse_expr(Parser *parser);
+void parse_assign(Parser *parser);
+void parse_plus(Parser *parser);
+void parse_minus(Parser *parser);
+void parse_primary(Parser *parser);
+
 void parse_call(Parser *parser);
 void parse_stmt(Parser *parser);
 void parse_arg(Parser *parser);
@@ -85,7 +91,9 @@ typedef enum {
 	OP_MUL,
 	OP_ADD,
 	OP_CALL,
-	OP_CMP
+	OP_CMP,
+	OP_PUSH,
+	OP_POP
 } OpCode;
 
 void vm_exec();

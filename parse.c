@@ -26,10 +26,6 @@ void parse_call(Parser *parser) {
 	expect_string(parser, ";");
 }
 
-void parse_expr(Parser *parser) {
-
-}
-
 void parse_stmt(Parser *parser) {
 	if(consume_string(parser, "if")) {
 		expect_string(parser, "(");
@@ -39,21 +35,24 @@ void parse_stmt(Parser *parser) {
 		if(consume_string(parser, "else")) {
 			parse_stmt(parser);
 		}
+		return;
 	} else if(consume_string(parser, "{")) {
 		while(!peek_string(parser, "}")) {
 			parse_stmt(parser);
 		}
 		expect_string(parser, "}");
+		return;
 	} else if(consume_string(parser, "while")) {
 		expect_string(parser, "(");
 		parse_expr(parser);
 		expect_string(parser, ")");
 		parse_stmt(parser);
-	} else if(is_call(parser)) {
-		parse_call(parser);
+		return;
 	} else {
-		c_error("Invalid Statement");
+
 	}
+	parse_expr(parser);
+	expect_string(parser, ";");
 }
 
 void parse_param(Parser *parser) {
@@ -167,7 +166,7 @@ bool consume_type(Parser *parser, TokenType type) {
 
 void expect_string(Parser *parser, const char *str) {
 	if(!consume_string(parser, str))
-		c_error("Parse Error: Expecting %s at line %i", str, parser->token->line);
+		c_error("Parse Error: Expecting %s at line %i, got \"%s\"", str, parser->token->line, parser->token->data);
 }
 
 void expect_type(Parser *parser, TokenType type) {
