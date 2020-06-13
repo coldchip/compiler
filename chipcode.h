@@ -71,7 +71,8 @@ typedef enum {
 	AST_ASSIGN,
 	AST_BINEXPR,
 	AST_IDENT,
-	AST_LITERAL
+	AST_LITERAL,
+	AST_DECL
 } NodeType;
 
 typedef struct _Scope {
@@ -87,7 +88,8 @@ typedef struct _Node {
 	NodeType type;
 	struct _Node *left;
 	struct _Node *right;
-	List *body;
+	struct _Node *body;
+	List *bodylist;
 	Token *token;
 } Node;
 
@@ -107,6 +109,7 @@ void parse_param(Parser *parser);
 void parse_params(Parser *parser);
 
 void parse_call(Parser *parser);
+Node *parse_declaration(Parser *parser);
 void parse_declarator(Parser *parser);
 void parse_basetype(Parser *parser);
 Node *parse_stmt(Parser *parser);

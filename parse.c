@@ -4,7 +4,7 @@
 
 Node *new_node(NodeType type) {
 	Node *node = malloc(sizeof(Node));
-	node->body = list_init();
+	node->bodylist = list_init();
 	node->left = NULL;
 	node->right = NULL;
 	node->type = type;
@@ -12,8 +12,8 @@ Node *new_node(NodeType type) {
 }
 
 void node_free(Node *node) {
-	if(node->body) {
-		free(node->body);
+	if(node->bodylist) {
+		list_free(node->bodylist);
 	}
 	free(node);
 }
@@ -38,6 +38,13 @@ void parse_basetype(Parser *parser) {
 	}
 }
 
+Node *parse_declaration(Parser *parser) {
+	Node *node = new_node(AST_DECL);
+	parse_basetype(parser);
+	node->body = parse_expr(parser);
+	return node;
+}
+
 void parse_declarator(Parser *parser) {
 	parse_expr(parser);
 }
@@ -58,7 +65,7 @@ Node *parse_stmt(Parser *parser) {
 		Node *node = new_node(AST_BLOCK);
 
 		while(!peek_string(parser, "}")) {
-			list_add(node->body, parse_stmt(parser));
+			list_add(node->bodylist, parse_stmt(parser));
 		}
 		expect_string(parser, "}");
 
@@ -72,16 +79,14 @@ Node *parse_stmt(Parser *parser) {
 		Node *node = new_node(AST_WHILE);
 		return node;
 	} else if(is_typename(parser)) {
-		parse_declarator(parser);
-
-		Node *node = new_node(AST_BLOCK);
+		Node *node = parse_declaration(parser);
+		expect_string(parser, ";");
 		return node;
 	} else {
-
+		Node *node = parse_expr(parser);
+		expect_string(parser, ";");
+		return node;
 	}
-	Node *node = parse_expr(parser);
-	expect_string(parser, ";");
-	return node;
 }
 
 Node *parse_function(Parser *parser) {
@@ -99,7 +104,7 @@ Node *parse_function(Parser *parser) {
 	expect_string(parser, "{");
 
 	while(!peek_string(parser, "}")) {
-		list_add(node->body, parse_stmt(parser));
+		list_add(node->bodylist, parse_stmt(parser));
 	}
 
 	expect_string(parser, "}");
@@ -111,7 +116,7 @@ Node *parse_program(Parser *parser) {
 
 	while(!peek_type(parser, TK_EOF)) {
 		if(is_function(parser)) {
-			list_add(node->body, parse_function(parser));
+			list_add(node->bodylist, parse_function(parser));
 		} else {
 
 		}

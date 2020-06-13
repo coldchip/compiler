@@ -4,43 +4,54 @@
 
 void enter_program(Node *node) {
 	printf(".program\n");
-	ListEntry *entry = node->body->start;
+	ListEntry *entry = node->bodylist->start;
 	while(entry != NULL) {
 		visitor(entry->ptr);
 		entry = entry->next;
 	}
-	free(node->body);
-	free(node);
+	node_free(node);
 }
 
 void enter_function(Node *node) {
 	printf(".function\n");
-	ListEntry *entry = node->body->start;
+	printf("push\n");
+	ListEntry *entry = node->bodylist->start;
 	while(entry != NULL) {
 		visitor(entry->ptr);
 		entry = entry->next;
 	}
+	printf("pop\n");
+	node_free(node);
+}
+
+void enter_decl(Node *node) {
+	visitor(node->body);
 	node_free(node);
 }
 
 void enter_binexpr(Node *node) {
-	printf("Expr\n");
-	if(node->left) {
-		visitor(node->left);
-	}
+	// Enter deepest first
 	if(node->right) {
 		visitor(node->right);
 	}
+	if(node->left) {
+		visitor(node->left);
+	}
+	printf("pop r0\n");
+	printf("pop r1\n");
+	printf("add r0 r1\n");
+	// Push last result to stack
+	printf("push r0\n");
 	node_free(node);
 }
 
 void enter_literal(Node *node) {
-	printf("literal %s\n", node->token->data);
+	printf("push %s\n", node->token->data);
 	node_free(node);
 }
 
 void enter_ident(Node *node) {
-	printf("ident %s\n", node->token->data);
+	printf("push $%s\n", node->token->data);
 	node_free(node);
 }
 
@@ -69,6 +80,11 @@ void visitor(Node *node) {
 		case AST_IDENT:
 		{
 			enter_ident(node);
+		}
+		break;
+		case AST_DECL:
+		{
+			enter_decl(node);
 		}
 		break;
 		case AST_IF:

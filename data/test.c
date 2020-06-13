@@ -4,5 +4,5 @@ void printf() {
 
 void main() {
 	
-	a = a + b + 2;
+	int a = a + b + 2;
 }
