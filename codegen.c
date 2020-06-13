@@ -2,6 +2,62 @@
 #include <stdlib.h>
 #include "chipcode.h"
 
+void emit(OpCode op, Register a, Register b) {
+	printf("%i %i, %i\n", op, a, b);
+	switch(op) {
+		case OP_MOV:
+		{
+
+		}
+		break;
+		case OP_JMP:
+		{
+
+		}
+		break;
+		case OP_SUB:
+		{
+
+		}
+		break;
+		case OP_DIV:
+		{
+
+		}
+		break;
+		case OP_MUL:
+		{
+
+		}
+		break;
+		case OP_ADD:
+		{
+
+		}
+		break;
+		case OP_CALL:
+		{
+
+		}
+		break;
+		case OP_CMP:
+		{
+
+		}
+		break;
+		case OP_PUSH:
+		{
+
+		}
+		break;
+		case OP_POP:
+		{
+
+		}
+		break;
+	}
+}
+
 void enter_program(Node *node) {
 	printf(".program\n");
 	ListEntry *entry = node->bodylist->start;
@@ -14,13 +70,13 @@ void enter_program(Node *node) {
 
 void enter_function(Node *node) {
 	printf(".function\n");
-	printf("push\n");
+	emit(OP_PUSH, NO_REG, NO_REG);
 	ListEntry *entry = node->bodylist->start;
 	while(entry != NULL) {
 		visitor(entry->ptr);
 		entry = entry->next;
 	}
-	printf("pop\n");
+	emit(OP_POP, NO_REG, NO_REG);
 	node_free(node);
 }
 
@@ -37,11 +93,11 @@ void enter_binexpr(Node *node) {
 	if(node->left) {
 		visitor(node->left);
 	}
-	printf("pop r0\n");
-	printf("pop r1\n");
-	printf("add r0 r1\n");
+	emit(OP_POP, R0, NO_REG);
+	emit(OP_POP, R1, NO_REG);
+	emit(OP_ADD, R0, R1);
 	// Push last result to stack
-	printf("push r0\n");
+	emit(OP_PUSH, R0, NO_REG);
 	node_free(node);
 }
 

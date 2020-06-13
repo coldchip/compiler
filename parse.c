@@ -62,6 +62,7 @@ Node *parse_stmt(Parser *parser) {
 		Node *node = new_node(AST_IF);
 		return node;
 	} else if(consume_string(parser, "{")) {
+
 		Node *node = new_node(AST_BLOCK);
 
 		while(!peek_string(parser, "}")) {
@@ -90,6 +91,7 @@ Node *parse_stmt(Parser *parser) {
 }
 
 Node *parse_function(Parser *parser) {
+
 	Node *node = new_node(AST_FUNCTION);
 
 	parse_basetype(parser);
@@ -108,10 +110,12 @@ Node *parse_function(Parser *parser) {
 	}
 
 	expect_string(parser, "}");
+
 	return node;
 }
 
 Node *parse_program(Parser *parser) {
+
 	Node *node = new_node(AST_PROGRAM);
 
 	while(!peek_type(parser, TK_EOF)) {
@@ -121,17 +125,18 @@ Node *parse_program(Parser *parser) {
 
 		}
 	}
+
 	return node;
 }
 
 Node *parse(Token *token) {
 	Parser parser;
 	parser.token = token;
-	parser.varscope = list_init();
+	parser.scope = scope_init();
 
 	Node *node = parse_program(&parser);
 	
-	list_free(parser.varscope);
+	scope_free(parser.scope);
 	return node;
 }
 

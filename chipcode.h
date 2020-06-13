@@ -25,6 +25,21 @@ API void *list_get_last(List *st);
 API void *list_remove_last(List *st);
 API void list_free(List *st);
 
+// fifo.c
+
+typedef struct _Scope {
+	struct _ScopeEntry *entry;
+	struct _ScopeEntry *start;
+} Scope;
+
+typedef struct _ScopeEntry {
+	void *ptr;
+	struct _ScopeEntry *next;
+} ScopeEntry;
+
+Scope *scope_init();
+void scope_free(Scope *st);
+
 // chipcode.c
 
 API void c_error(char *format, ...);
@@ -75,13 +90,9 @@ typedef enum {
 	AST_DECL
 } NodeType;
 
-typedef struct _Scope {
-	List *var;
-} Scope;
-
 typedef struct _Parser {
 	Token *token;
-	List *varscope;
+	Scope *scope;
 } Parser;
 
 typedef struct _Node {
@@ -131,13 +142,18 @@ API Node *parse(Token *token);
 
 // codegen.c
 
-void enter_expr(Node *node);
-void enter_function(Node *node);
-void enter_program(Node *node);
-void visitor(Node *node);
-void generate(Node *node);
-
-// vm.c
+typedef enum {
+	NO_REG,
+	R0,
+	R1,
+	R2,
+	R3,
+	R4,
+	R5,
+	R6,
+	R7,
+	R8
+} Register;
 
 typedef enum {
 	OP_MOV,
@@ -151,6 +167,16 @@ typedef enum {
 	OP_PUSH,
 	OP_POP
 } OpCode;
+
+void emit(OpCode op, Register a, Register b);
+
+void enter_expr(Node *node);
+void enter_function(Node *node);
+void enter_program(Node *node);
+void visitor(Node *node);
+void generate(Node *node);
+
+// vm.c
 
 void vm_exec();
 
