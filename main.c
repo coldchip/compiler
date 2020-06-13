@@ -48,6 +48,7 @@ int main(int argc, char const *argv[]) {
 		}
 		*/
 		free(buf);
+		token_free(token);
 	} else {
 		printf("No input file(s) specified\n");
 	}

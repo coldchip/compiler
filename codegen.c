@@ -89,22 +89,22 @@ void visitor(Node *node) {
 		break;
 		case AST_IF:
 		{
-
+			
 		}
 		break;
 		case AST_WHILE:
 		{
-
+			
 		}
 		break;
 		case AST_BLOCK:
 		{
-
+			
 		}
 		break;
 		default:
 		{
-
+			
 		}
 		break;
 	}

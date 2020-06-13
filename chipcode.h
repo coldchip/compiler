@@ -59,6 +59,7 @@ bool is_keyword(char bit);
 bool is_number(char bit);
 bool strmatch(char *a, char *b);
 API Token *lex(char *file);
+API void token_free(Token *token);
 
 // parse.c
 
@@ -68,7 +69,6 @@ typedef enum {
 	AST_IF,
 	AST_BLOCK,
 	AST_WHILE,
-	AST_ASSIGN,
 	AST_BINEXPR,
 	AST_IDENT,
 	AST_LITERAL,

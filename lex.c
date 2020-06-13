@@ -149,6 +149,17 @@ Token *lex(char *data) {
 			continue;
 		}
 	}
-	token_tracker = new_token(token_tracker, TK_EOF, "");
+	token_tracker = new_token(token_tracker, TK_EOF, NULL);
 	return token.next;	
-}	
+}
+
+void token_free(Token *token) {
+	while(token != NULL) {
+		Token *token_next = token->next;
+		if(token->data) {
+			free(token->data);
+		}
+		free(token);
+		token = token_next;
+	}
+}

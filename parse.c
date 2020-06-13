@@ -46,7 +46,7 @@ Node *parse_declaration(Parser *parser) {
 }
 
 void parse_declarator(Parser *parser) {
-	parse_expr(parser);
+	expect_type(parser, TK_IDENT);
 }
 
 Node *parse_stmt(Parser *parser) {
