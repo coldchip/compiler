@@ -9,19 +9,8 @@ List *list_init() {
 	st->start = NULL;
 	return st;
 }
-
-List *list_clone(List *st) {
-	List *st_new = list_init();
-
-	ListEntry *current = st->start;
-	while(current != NULL) {
-		list_add(st_new, current->ptr);
-		current = current->next;
-	}
-	return st_new;
-}
  
-void list_add(List *st, void *ptr) {
+void list_push(List *st, void *ptr) {
 
 	ListEntry *next = malloc(sizeof(ListEntry));
 	memset(next, 0, sizeof(ListEntry));
@@ -38,12 +27,32 @@ void list_add(List *st, void *ptr) {
 	st->entry = next;
 }
 
+void *list_pop(List *st) {
+	if(st->entry != NULL) {
+		ListEntry *prev = st->entry->prev;
+		void *ptr = st->entry->ptr;
+		list_free_entry(st->entry);
+		if(prev != NULL) {
+			st->entry = prev;
+			st->entry->next = NULL;
+		} else {
+			// Reset everything if popped to head
+			st->start = NULL;
+			st->entry = NULL;
+		}
+		return ptr;
+	}
+	return NULL;
+}
+
 ListEntry *list_get_entry(List *st) {
 	return st->start;
 }
 
 void list_free_entry(ListEntry *le) {
-	free(le);
+	if(le != NULL) {
+		free(le);
+	}
 }
 
 void list_free(List *st) {

@@ -6,7 +6,7 @@
 #define VERSION 1.0
 #define API extern
 
-// symtable.c
+// llist.c
 
 typedef struct _List {
 	struct _ListEntry *entry;
@@ -20,8 +20,8 @@ typedef struct _ListEntry {
 } ListEntry;
 
 API List *list_init();
-API List *list_clone(List *st);
-API void list_add(List *st, void *ptr);
+API void list_push(List *st, void *ptr);
+API void *list_pop(List *st);
 API ListEntry *list_get_entry(List *st);
 API void list_free_entry(ListEntry *le);
 API void list_free(List *st);
@@ -41,7 +41,6 @@ API void scope_push(Scope *scope);
 API void scope_pop(Scope *scope);
 void scope_entry_free(ScopeEntry *se);
 void scope_add_var(Scope *scope, const char *var);
-ScopeEntry *scope_get_current(Scope *scope);
 API void scope_free(Scope *st);
 
 // chipcode.c

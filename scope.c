@@ -12,50 +12,31 @@ Scope *scope_init() {
 }
 
 void scope_add_var(Scope *scope, const char *var) {
-	ScopeEntry *se = scope_get_current(scope);
-	list_add(se->var, var);
+	ScopeEntry *se = scope->list->entry;
+	list_push(se->var, (void*)var);
 }
 
 void scope_push(Scope *scope) {
-	ScopeEntry *se = malloc(sizeof(ScopeEntry));
-	se->var = list_init();
-	list_add(scope->list, se);
+	ScopeEntry *entry = malloc(sizeof(ScopeEntry));
+	entry->var = list_init();
+	list_push(scope->list, entry);
 }
 
 void scope_pop(Scope *scope) {
-	ListEntry *entry = list_get_entry(scope->list);
-	while(1) {
-		if(entry->next == NULL) {
-			if(entry->prev) {
-				entry->prev->next = NULL;
-			} else {
-				scope->list->start = NULL;
-			}
-			scope_entry_free(entry->ptr);
-			list_free_entry(entry);
-			break;
-		}
-		entry = entry->next;
-	}
+	ScopeEntry *entry = list_pop(scope->list);
+	scope_entry_free(entry);
 }
 
-ScopeEntry *scope_get_current(Scope *scope) {
-	ListEntry *entry = list_get_entry(scope->list);
-	while(entry != NULL) {
-		ListEntry *next = entry->next;
-		if(next == NULL) {
-			return entry;
-		}
-		entry = next;
+void scope_entry_free(ScopeEntry *entry) {
+	if(entry != NULL) {
+		list_free(entry->var);
+		free(entry);
 	}
-}
-
-void scope_entry_free(ScopeEntry *se) {
-	list_free(se->var);
-	free(se);
 }
 
 void scope_free(Scope *scope) {
-	list_free(scope->list);
-	free(scope);
+	if(scope != NULL) {
+		list_free(scope->list);
+		free(scope);
+	}
 }

@@ -1,7 +1,7 @@
 COMPILER=gcc
 
 module:
-	$(COMPILER) *.c -o build/app -Wall -O3
+	$(COMPILER) *.c -o build/app -Wall -g
 run:
 	build/app data/test.c 
 test:
