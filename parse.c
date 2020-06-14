@@ -116,6 +116,8 @@ Node *parse_function(Parser *parser) {
 
 Node *parse_program(Parser *parser) {
 
+	scope_push(parser->scope);
+
 	Node *node = new_node(AST_PROGRAM);
 
 	while(!peek_type(parser, TK_EOF)) {
@@ -125,6 +127,8 @@ Node *parse_program(Parser *parser) {
 
 		}
 	}
+
+	scope_pop(parser->scope);
 
 	return node;
 }

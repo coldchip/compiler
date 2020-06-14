@@ -30,42 +30,27 @@ void list_add(List *st, void *ptr) {
 
 	if(st->entry == NULL) {
 		st->start = next;
+		next->prev = NULL;
 	} else {
 		st->entry->next = next;
+		next->prev = st->entry;
 	}
 	st->entry = next;
 }
 
-void *list_get_last(List *st) {
-	ListEntry *current = st->start;
-	while(current != NULL) {
-		if(current->next == NULL) {
-			return current;
-		}
-		current = current->next;
-	}
-	return NULL;
+ListEntry *list_get_entry(List *st) {
+	return st->start;
 }
 
-void *list_remove_last(List *st) {
-	ListEntry *current = st->start;
-	ListEntry *previous = current;
-	while(current != NULL) {
-		if(current->next == NULL) {
-			previous->next = NULL;
-			free(current);
-		}
-		previous = current;
-		current = current->next;
-	}
-	return NULL;
+void list_free_entry(ListEntry *le) {
+	free(le);
 }
 
 void list_free(List *st) {
-	ListEntry *current = st->start;
+	ListEntry *current = list_get_entry(st);
 	while(current != NULL) {
 		ListEntry *next = current->next;
-		free(current);
+		list_free_entry(current);
 		current = next;
 	}
 	free(st);
