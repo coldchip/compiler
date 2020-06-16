@@ -41,6 +41,10 @@ void parse_basetype(Parser *parser) {
 Node *parse_declaration(Parser *parser) {
 	Node *node = new_node(AST_DECL);
 	parse_basetype(parser);
+	char *t = parser->token->data;
+	scope_add_var(parser->scope, t);
+	expect_type(parser, TK_IDENT);
+	expect_string(parser, "=");
 	node->body = parse_expr(parser);
 	return node;
 }

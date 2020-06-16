@@ -12,8 +12,20 @@ Scope *scope_init() {
 }
 
 void scope_add_var(Scope *scope, const char *var) {
-	ScopeEntry *se = scope->list->entry;
-	list_push(se->var, (void*)var);
+	List *varlist = ((ScopeEntry*)scope->list->entry->ptr)->var;
+	list_push(varlist, (void*)var);
+}
+
+bool scope_has_var(Scope *scope, const char *var) {
+	List *varlist = ((ScopeEntry*)scope->list->entry->ptr)->var;
+	ListEntry *entry = varlist->start;
+	while(entry != NULL) {
+		if(strcmp(entry->ptr, var) == 0) {
+			return true;
+		}
+		entry = entry->next;
+	}
+	return false;
 }
 
 void scope_push(Scope *scope) {

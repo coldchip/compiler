@@ -39,8 +39,9 @@ typedef struct _ScopeEntry {
 API Scope *scope_init();
 API void scope_push(Scope *scope);
 API void scope_pop(Scope *scope);
-void scope_entry_free(ScopeEntry *se);
-void scope_add_var(Scope *scope, const char *var);
+API void scope_entry_free(ScopeEntry *se);
+API void scope_add_var(Scope *scope, const char *var);
+API bool scope_has_var(Scope *scope, const char *var);
 API void scope_free(Scope *st);
 
 // chipcode.c
