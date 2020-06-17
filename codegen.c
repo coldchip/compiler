@@ -119,6 +119,18 @@ void enter_function(Node *node) {
 	node_free(node);
 }
 
+void enter_block(Node *node) {
+	printf(".block\n");
+	emit(OP_PUSH, NO_REG, NO_REG, 0, 0);
+	ListEntry *entry = node->bodylist->start;
+	while(entry != NULL) {
+		visitor(entry->ptr);
+		entry = entry->next;
+	}
+	emit(OP_POP, NO_REG, NO_REG, 0, 0);
+	node_free(node);
+}
+
 void enter_decl(Node *node) {
 	visitor(node->body);
 	node_free(node);
@@ -194,7 +206,7 @@ void visitor(Node *node) {
 		break;
 		case AST_BLOCK:
 		{
-			
+			enter_block(node);
 		}
 		break;
 		default:

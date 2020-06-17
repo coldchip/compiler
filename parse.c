@@ -18,7 +18,7 @@ void node_free(Node *node) {
 	free(node);
 }
 
-void parse_call(Parser *parser) {
+Node *parse_call(Parser *parser) {
 	expect_type(parser, TK_IDENT);
 	expect_string(parser, "(");
 	parse_args(parser);
@@ -66,6 +66,8 @@ Node *parse_stmt(Parser *parser) {
 		Node *node = new_node(AST_IF);
 		return node;
 	} else if(consume_string(parser, "{")) {
+		Scope *prev_scope = parser->scope;
+		parser->scope = scope_clone(prev_scope);
 
 		Node *node = new_node(AST_BLOCK);
 
@@ -73,6 +75,9 @@ Node *parse_stmt(Parser *parser) {
 			list_push(node->bodylist, parse_stmt(parser));
 		}
 		expect_string(parser, "}");
+
+		scope_free(parser->scope);
+		parser->scope = prev_scope;
 
 		return node;
 	} else if(consume_string(parser, "while")) {
@@ -95,8 +100,8 @@ Node *parse_stmt(Parser *parser) {
 }
 
 Node *parse_function(Parser *parser) {
-
-	scope_push(parser->scope);
+	Scope *prev_scope = parser->scope;
+	parser->scope = scope_clone(prev_scope);
 
 	Node *node = new_node(AST_FUNCTION);
 
@@ -117,14 +122,13 @@ Node *parse_function(Parser *parser) {
 
 	expect_string(parser, "}");
 
-	scope_pop(parser->scope);
+	scope_free(parser->scope);
+	parser->scope = prev_scope;
 
 	return node;
 }
 
 Node *parse_program(Parser *parser) {
-
-	scope_push(parser->scope);
 
 	Node *node = new_node(AST_PROGRAM);
 
@@ -135,8 +139,6 @@ Node *parse_program(Parser *parser) {
 
 		}
 	}
-
-	scope_pop(parser->scope);
 
 	return node;
 }
@@ -157,14 +159,6 @@ bool is_function(Parser *parser) {
 	parse_basetype(&rewind);
 	parse_declarator(&rewind);
 	if(consume_string(&rewind, "(")) {
-		return true;
-	}
-	return false;
-}
-
-bool is_call(Parser *parser) {
-	Parser rewind = *parser;
-	if(consume_type(&rewind, TK_IDENT) && consume_string(&rewind, "(")) {
 		return true;
 	}
 	return false;

@@ -53,12 +53,16 @@ Node *parse_relational(Parser *parser) {
 Node *parse_primary(Parser *parser) {
 	Token *token = parser->token;
 	if(consume_type(parser, TK_IDENT)) {
-		if(!scope_has_var(parser->scope, token->data)) {
-			c_error("Undefined variable \"%s\"", token->data);
+		if(consume_string(parser, "(")) {
+			return parse_call(parser);
+		} else {
+			if(!scope_has_var(parser->scope, token->data)) {
+				c_error("Undefined variable \"%s\"", token->data);
+			}
+			Node *node = new_node(AST_IDENT);
+			node->token = token;
+			return node;
 		}
-		Node *node = new_node(AST_IDENT);
-		node->token = token;
-		return node;
 	} else if(consume_type(parser, TK_NUMBER)) {
 		Node *node = new_node(AST_LITERAL);
 		node->token = token;

@@ -9,7 +9,18 @@ List *list_init() {
 	st->start = NULL;
 	return st;
 }
- 
+
+List *list_clone(List *list) {
+	List *new = list_init();
+
+	ListEntry *current = list->start;
+	while(current != NULL) {
+		list_push(new, current->ptr);
+		current = current->next;
+	}
+	return new;
+}
+
 void list_push(List *st, void *ptr) {
 
 	ListEntry *next = malloc(sizeof(ListEntry));
@@ -45,10 +56,6 @@ void *list_pop(List *st) {
 	return NULL;
 }
 
-ListEntry *list_get_entry(List *st) {
-	return st->start;
-}
-
 void list_free_entry(ListEntry *le) {
 	if(le != NULL) {
 		free(le);
@@ -56,7 +63,7 @@ void list_free_entry(ListEntry *le) {
 }
 
 void list_free(List *st) {
-	ListEntry *current = list_get_entry(st);
+	ListEntry *current = st->start;
 	while(current != NULL) {
 		ListEntry *next = current->next;
 		list_free_entry(current);

@@ -20,26 +20,20 @@ typedef struct _ListEntry {
 } ListEntry;
 
 API List *list_init();
+API List *list_clone(List *list);
 API void list_push(List *st, void *ptr);
 API void *list_pop(List *st);
-API ListEntry *list_get_entry(List *st);
 API void list_free_entry(ListEntry *le);
 API void list_free(List *st);
 
 // scope.c
 
 typedef struct _Scope {
-	List *list;
+	List *var;
 } Scope;
 
-typedef struct _ScopeEntry {
-	List *var;
-} ScopeEntry;
-
 API Scope *scope_init();
-API void scope_push(Scope *scope);
-API void scope_pop(Scope *scope);
-API void scope_entry_free(ScopeEntry *se);
+API Scope *scope_clone(Scope *scope);
 API void scope_add_var(Scope *scope, const char *var);
 API bool scope_has_var(Scope *scope, const char *var);
 API void scope_free(Scope *st);
@@ -123,7 +117,7 @@ void parse_args(Parser *parser);
 void parse_param(Parser *parser);
 void parse_params(Parser *parser);
 
-void parse_call(Parser *parser);
+Node *parse_call(Parser *parser);
 Node *parse_declaration(Parser *parser);
 void parse_declarator(Parser *parser);
 void parse_basetype(Parser *parser);
@@ -132,7 +126,6 @@ Node *parse_function(Parser *parser);
 Node *parse_program(Parser *parser);
 
 bool is_function(Parser *parser);
-bool is_call(Parser *parser);
 
 bool consume_string(Parser *parser, const char *str);
 bool consume_type(Parser *parser, TokenType type);
@@ -174,9 +167,13 @@ typedef enum {
 
 void emit(OpCode op, Register a, Register b, int c, int d);
 
-void enter_expr(Node *node);
-void enter_function(Node *node);
 void enter_program(Node *node);
+void enter_function(Node *node);
+void enter_block(Node *node);
+void enter_decl(Node *node);
+void enter_binexpr(Node *node);
+void enter_literal(Node *node);
+void enter_ident(Node *node);
 void visitor(Node *node);
 void generate(Node *node);
 
