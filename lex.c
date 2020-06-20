@@ -136,6 +136,11 @@ Token *lex(char *data) {
 			}
 			data = q + 2;
 			continue;
+		} else if(startswith(data, "==")) {
+			char *t = malloc_strcpy(data, 2);
+			token_tracker = new_token(token_tracker, TK_SPECIAL, t);
+			data += 2;
+			continue;
 		} else if(is_space(*data)) {
 			if(*data == '\n') {
 				token_tracker->line++;

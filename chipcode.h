@@ -82,7 +82,11 @@ typedef enum {
 	AST_IF,
 	AST_BLOCK,
 	AST_WHILE,
-	AST_BINEXPR,
+	AST_ASSIGN,
+	AST_ADD,
+	AST_SUB,
+	AST_LT,
+	AST_EQUAL,
 	AST_IDENT,
 	AST_LITERAL,
 	AST_DECL,
@@ -96,9 +100,14 @@ typedef struct _Parser {
 
 typedef struct _Node {
 	NodeType type;
+	struct _Node *condition;
+
 	struct _Node *left;
 	struct _Node *right;
+
 	struct _Node *body;
+	struct _Node *alternate;
+
 	List *bodylist;
 	Token *token;
 } Node;
@@ -111,6 +120,7 @@ Node *parse_assign(Parser *parser);
 Node *parse_plus(Parser *parser);
 Node *parse_minus(Parser *parser);
 Node *parse_relational(Parser *parser);
+Node *parse_equality(Parser *parser);
 Node *parse_primary(Parser *parser);
 
 void parse_arg(Parser *parser);
@@ -177,6 +187,8 @@ void enter_binexpr(Node *node);
 void enter_literal(Node *node);
 void enter_ident(Node *node);
 void enter_call(Node *node);
+void enter_if(Node *node);
+void enter_while(Node *node);
 void visitor(Node *node);
 void generate(Node *node);
 

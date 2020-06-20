@@ -58,15 +58,16 @@ void parse_declarator(Parser *parser) {
 
 Node *parse_stmt(Parser *parser) {
 	if(consume_string(parser, "if")) {
+		Node *node = new_node(AST_IF);
+
 		expect_string(parser, "(");
-		parse_expr(parser);
+		node->condition = parse_expr(parser);
 		expect_string(parser, ")");
-		parse_stmt(parser);
+		node->body = parse_stmt(parser);
 		if(consume_string(parser, "else")) {
-			parse_stmt(parser);
+			node->alternate = parse_stmt(parser);
 		}
 
-		Node *node = new_node(AST_IF);
 		return node;
 	} else if(consume_string(parser, "{")) {
 		Scope *prev_scope = parser->scope;
@@ -84,12 +85,13 @@ Node *parse_stmt(Parser *parser) {
 
 		return node;
 	} else if(consume_string(parser, "while")) {
-		expect_string(parser, "(");
-		parse_expr(parser);
-		expect_string(parser, ")");
-		parse_stmt(parser);
-
 		Node *node = new_node(AST_WHILE);
+
+		expect_string(parser, "(");
+		node->condition = parse_expr(parser);
+		expect_string(parser, ")");
+		node->body = parse_stmt(parser);
+
 		return node;
 	} else if(is_call(parser)) {
 		Node *node = parse_call(parser);
@@ -220,7 +222,8 @@ bool peek_type(Parser *parser, TokenType type) {
 }
 
 bool peek_string(Parser *parser, const char *str) {
-	return (strcmp(parser->token->data, str) == 0);
+	// printf("%s - %s\n", parser->token->data, str);
+	return strcmp(parser->token->data, str) == 0;
 }
 
 bool is_typename(Parser *parser) {

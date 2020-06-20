@@ -3,11 +3,14 @@ void printf(int a) {
 }
 
 void main() {
-	int o = 0;
-	{
-		int a = 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + o;
-		int b = a + 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10;
-		int c = b + 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10;
+	int a = 256;
+	if(a == 1024) {
+		int b = 65535;
+	} else {
+		int y = 100;
 	}
-	printf(o);
+	int c = 2048;
+	while(c) {
+		int d = c + 1;
+	}
 }

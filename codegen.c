@@ -4,6 +4,7 @@
 #include "chipcode.h"
 
 int indent = 0;
+int label = 0;
 
 void emit(char *format, ...) {
 	va_list args;
@@ -73,7 +74,24 @@ void enter_binexpr(Node *node) {
 	}
 	emit("pop r0");
 	emit("pop r1");
-	emit("add r0, r1");
+	switch(node->type) {
+		case AST_ADD:
+		{
+			emit("add r0, r1");
+		}
+		break;
+		case AST_EQUAL:
+		{
+			emit("cmp r0, r1");
+			emit("sete r0");
+		}
+		break;
+		default:
+		{
+			c_error("%i\n", node->type);
+		}
+		break;
+	}
 	// Push last result to stack
 	emit("push r0");
 	node_free(node);
@@ -94,6 +112,44 @@ void enter_call(Node *node) {
 	node_free(node);
 }
 
+void enter_if(Node *node) {
+	if(node->condition) {
+		visitor(node->condition);
+	}
+	emit("pop r0");
+	emit("cmp r0, 1");
+	emit("jne .proc%i", label);
+	if(node->body) {
+		visitor(node->body);
+	}
+	indent--;
+	emit(".proc%i", label);
+	indent++;
+	label++;
+	if(node->alternate) {
+		visitor(node->alternate);
+	}
+	node_free(node);
+}
+
+void enter_while(Node *node) {
+	if(node->condition) {
+		visitor(node->condition);
+	}
+	emit("pop r0");
+	emit("cmp r0, 1");
+	emit("jne .proc%i", label);
+	if(node->body) {
+		visitor(node->body);
+	}
+	emit("jmp ADDR");
+	indent--;
+	emit(".proc%i", label);
+	indent++;
+	label++;
+	node_free(node);
+}
+
 void visitor(Node *node) {
 	switch(node->type) {
 		case AST_PROGRAM:
@@ -106,7 +162,11 @@ void visitor(Node *node) {
 			enter_function(node);
 		}
 		break;
-		case AST_BINEXPR:
+		case AST_ASSIGN:
+		case AST_ADD:
+		case AST_SUB:
+		case AST_LT:
+		case AST_EQUAL:
 		{
 			enter_binexpr(node);
 		}
@@ -128,12 +188,12 @@ void visitor(Node *node) {
 		break;
 		case AST_IF:
 		{
-			
+			enter_if(node);
 		}
 		break;
 		case AST_WHILE:
 		{
-			
+			enter_while(node);
 		}
 		break;
 		case AST_BLOCK:
