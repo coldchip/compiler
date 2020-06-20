@@ -85,7 +85,8 @@ typedef enum {
 	AST_BINEXPR,
 	AST_IDENT,
 	AST_LITERAL,
-	AST_DECL
+	AST_DECL,
+	AST_CALL
 } NodeType;
 
 typedef struct _Parser {
@@ -126,6 +127,7 @@ Node *parse_function(Parser *parser);
 Node *parse_program(Parser *parser);
 
 bool is_function(Parser *parser);
+bool is_call(Parser *parser);
 
 bool consume_string(Parser *parser, const char *str);
 bool consume_type(Parser *parser, TokenType type);
@@ -174,6 +176,7 @@ void enter_decl(Node *node);
 void enter_binexpr(Node *node);
 void enter_literal(Node *node);
 void enter_ident(Node *node);
+void enter_call(Node *node);
 void visitor(Node *node);
 void generate(Node *node);
 

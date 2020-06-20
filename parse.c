@@ -19,11 +19,12 @@ void node_free(Node *node) {
 }
 
 Node *parse_call(Parser *parser) {
+	Node *node = new_node(AST_CALL);
 	expect_type(parser, TK_IDENT);
 	expect_string(parser, "(");
 	parse_args(parser);
 	expect_string(parser, ")");
-	expect_string(parser, ";");
+	return node;
 }
 
 void parse_basetype(Parser *parser) {
@@ -87,6 +88,10 @@ Node *parse_stmt(Parser *parser) {
 		parse_stmt(parser);
 
 		Node *node = new_node(AST_WHILE);
+		return node;
+	} else if(is_call(parser)) {
+		Node *node = parse_call(parser);
+		expect_string(parser, ";");
 		return node;
 	} else if(is_typename(parser)) {
 		Node *node = parse_declaration(parser);
@@ -152,6 +157,15 @@ Node *parse(Token *token) {
 	
 	scope_free(parser.scope);
 	return node;
+}
+
+bool is_call(Parser *parser) {
+	Parser rewind = *parser;
+	parse_declarator(&rewind);
+	if(consume_string(&rewind, "(")) {
+		return true;
+	}
+	return false;
 }
 
 bool is_function(Parser *parser) {

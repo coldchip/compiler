@@ -162,6 +162,11 @@ void enter_ident(Node *node) {
 	node_free(node);
 }
 
+void enter_call(Node *node) {
+	emit(OP_CALL, NO_REG, NO_REG, 0, 0);
+	node_free(node);
+}
+
 void visitor(Node *node) {
 	switch(node->type) {
 		case AST_PROGRAM:
@@ -207,6 +212,11 @@ void visitor(Node *node) {
 		case AST_BLOCK:
 		{
 			enter_block(node);
+		}
+		break;
+		case AST_CALL:
+		{
+			enter_call(node);
 		}
 		break;
 		default:
