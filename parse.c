@@ -20,6 +20,8 @@ void node_free(Node *node) {
 
 Node *parse_call(Parser *parser) {
 	Node *node = new_node(AST_CALL);
+	Token *ident = parser->token;
+	node->token = ident;
 	expect_type(parser, TK_IDENT);
 	expect_string(parser, "(");
 	parse_args(parser);
@@ -111,6 +113,9 @@ Node *parse_function(Parser *parser) {
 	Node *node = new_node(AST_FUNCTION);
 
 	parse_basetype(parser);
+	
+	Token *ident = parser->token;
+	node->token = ident;
 	parse_declarator(parser);
 
 	expect_string(parser, "(");

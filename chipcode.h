@@ -167,7 +167,7 @@ typedef enum {
 	OP_POP
 } OpCode;
 
-void emit(OpCode op, Register a, Register b, int c, int d);
+void emit(char *format, ...);
 
 void enter_program(Node *node);
 void enter_function(Node *node);
