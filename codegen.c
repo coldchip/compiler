@@ -3,89 +3,76 @@
 #include <stdlib.h>
 #include "chipcode.h"
 
-int indent = 0;
-int label = 0;
-
-void emit(char *format, ...) {
-	va_list args;
-    va_start(args, format);
-
-	char fmt[1000];
-
-	for(int i = 0; i < indent; i++) {
-		printf("    ");
-	}
-
-	snprintf(fmt, sizeof(fmt), "%s\n", format);
-
-	vprintf(fmt, args);
-    
-    va_end(args);
-}
-
-void enter_program(Node *node) {
-	emit(".program");
+void enter_program(Generator *generator, Node *node) {
 	ListEntry *entry = node->bodylist->start;
 	while(entry != NULL) {
-		visitor(entry->ptr);
+		visitor(generator, entry->ptr);
 		entry = entry->next;
 	}
 	node_free(node);
 }
 
-void enter_function(Node *node) {
-	emit("%s:", node->token->data);
-	indent++;
-	emit("push fp");
-	emit("mov fp, sp");
+void enter_function(Generator *generator, Node *node) {
+	op_exec(generator->process, "push", "fp", NULL);
+	op_exec(generator->process, "mov", "fp", "sp");
 	ListEntry *entry = node->bodylist->start;
 	while(entry != NULL) {
-		visitor(entry->ptr);
+		visitor(generator, entry->ptr);
 		entry = entry->next;
 	}
-	emit("mov sp, fp");
-	emit("pop fp");
-	indent--;
+	op_exec(generator->process, "mov", "sp", "fp");
+	op_exec(generator->process, "pop", "fp", NULL);
 	node_free(node);
 }
 
-void enter_block(Node *node) {
-	//emit(".block");
-	//emit("push");
+void enter_block(Generator *generator, Node *node) {
 	ListEntry *entry = node->bodylist->start;
 	while(entry != NULL) {
-		visitor(entry->ptr);
+		visitor(generator, entry->ptr);
 		entry = entry->next;
 	}
-	//emit("pop");
 	node_free(node);
 }
 
-void enter_decl(Node *node) {
-	visitor(node->body);
+void enter_decl(Generator *generator, Node *node) {
+	visitor(generator, node->body);
 	node_free(node);
 }
 
-void enter_binexpr(Node *node) {
+void enter_binexpr(Generator *generator, Node *node) {
 	// Enter deepest first
 	if(node->right) {
-		visitor(node->right);
+		visitor(generator, node->right);
 	}
 	if(node->left) {
-		visitor(node->left);
+		visitor(generator, node->left);
 	}
-	emit("pop r0");
-	emit("pop r1");
+	op_exec(generator->process, "pop", "r0", NULL);
+	op_exec(generator->process, "pop", "r1", NULL);
 	switch(node->type) {
 		case AST_ADD:
 		{
-			emit("add r0, r1");
+			op_exec(generator->process, "add", "r0", "r1");
+		}
+		break;
+		case AST_SUB:
+		{
+			op_exec(generator->process, "sub", "r0", "r1");
+		}
+		break;
+		case AST_MUL:
+		{
+			op_exec(generator->process, "mul", "r0", "r1");
+		}
+		break;
+		case AST_DIV:
+		{
+			op_exec(generator->process, "div", "r0", "r1");
 		}
 		break;
 		case AST_EQUAL:
 		{
-			emit("cmp r0, r1");
-			emit("sete r0");
+
 		}
 		break;
 		default:
@@ -95,117 +82,103 @@ void enter_binexpr(Node *node) {
 		break;
 	}
 	// Push last result to stack
-	emit("push r0");
+	op_exec(generator->process, "push", "r0", NULL);
 	node_free(node);
 }
 
-void enter_literal(Node *node) {
-	emit("push %i", atoi(node->token->data));
+void enter_literal(Generator *generator, Node *node) {
+	op_exec(generator->process, "push", (node->token->data), NULL);
 	node_free(node);
 }
 
-void enter_ident(Node *node) {
-	emit("push %i", atoi(node->token->data));
+void enter_ident(Generator *generator, Node *node) {
+	
 	node_free(node);
 }
 
-void enter_call(Node *node) {
-	emit("call %s", node->token->data);
+void enter_call(Generator *generator, Node *node) {
 	node_free(node);
 }
 
-void enter_if(Node *node) {
+void enter_if(Generator *generator, Node *node) {
 	if(node->condition) {
-		visitor(node->condition);
+		visitor(generator, node->condition);
 	}
-	emit("pop r0");
-	emit("cmp r0, 1");
-	emit("jne .proc%i", label);
 	if(node->body) {
-		visitor(node->body);
+		visitor(generator, node->body);
 	}
-	indent--;
-	emit(".proc%i", label);
-	indent++;
-	label++;
 	if(node->alternate) {
-		visitor(node->alternate);
+		visitor(generator, node->alternate);
 	}
 	node_free(node);
 }
 
-void enter_while(Node *node) {
+void enter_while(Generator *generator, Node *node) {
 	if(node->condition) {
-		visitor(node->condition);
+		visitor(generator, node->condition);
 	}
-	emit("pop r0");
-	emit("cmp r0, 1");
-	emit("jne .proc%i", label);
 	if(node->body) {
-		visitor(node->body);
+		visitor(generator, node->body);
 	}
-	emit("jmp ADDR");
-	indent--;
-	emit(".proc%i", label);
-	indent++;
-	label++;
 	node_free(node);
 }
 
-void visitor(Node *node) {
+void visitor(Generator *generator, Node *node) {
 	switch(node->type) {
 		case AST_PROGRAM:
 		{
-			enter_program(node);
+			enter_program(generator, node);
 		}
 		break;
 		case AST_FUNCTION:
 		{
-			enter_function(node);
+			enter_function(generator, node);
 		}
 		break;
 		case AST_ASSIGN:
 		case AST_ADD:
 		case AST_SUB:
+		case AST_MUL:
+		case AST_DIV:
 		case AST_LT:
 		case AST_EQUAL:
 		{
-			enter_binexpr(node);
+			enter_binexpr(generator, node);
 		}
 		break;
 		case AST_LITERAL:
 		{
-			enter_literal(node);
+			enter_literal(generator, node);
 		}
 		break;
 		case AST_IDENT:
 		{
-			enter_ident(node);
+			enter_ident(generator, node);
 		}
 		break;
 		case AST_DECL:
 		{
-			enter_decl(node);
+			enter_decl(generator, node);
 		}
 		break;
 		case AST_IF:
 		{
-			enter_if(node);
+			enter_if(generator, node);
 		}
 		break;
 		case AST_WHILE:
 		{
-			enter_while(node);
+			enter_while(generator, node);
 		}
 		break;
 		case AST_BLOCK:
 		{
-			enter_block(node);
+			enter_block(generator, node);
 		}
 		break;
 		case AST_CALL:
 		{
-			enter_call(node);
+			enter_call(generator, node);
 		}
 		break;
 		default:
@@ -217,5 +190,14 @@ void visitor(Node *node) {
 }
 
 void generate(Node *node) {
-	visitor(node);
+	Generator generator;
+	generator.process = new_process();
+
+	visitor(&generator, node);
+
+	print_hex(generator.process->stack);
+
+	printf("Result Yield: %lu\n", generator.process->r0);
+
+	free_process(generator.process);
 }

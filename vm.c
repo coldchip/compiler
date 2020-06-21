@@ -34,6 +34,11 @@ void *get_reg(Process *process, char *a) {
 }
 
 void op_exec(Process *process, char *op, char *a, char *b) {
+	if(a && b) {
+		printf("%s %s, %s\n", op, a, b);
+	} else {
+		printf("%s %s\n", op, a);
+	}
 	if(strcmp(op, "push") == 0) {
 		memcpy((void*)process->sp, get_reg(process, a), 8);
 		process->sp += 8;
@@ -51,16 +56,38 @@ void op_exec(Process *process, char *op, char *a, char *b) {
 		uint64_t total = *left + *right;
 		memcpy(get_reg(process, a), &total, 8);
 	}
-	printf("Stack Data: \n");
-	print_hex(process->stack);
+	if(strcmp(op, "sub") == 0) {
+		uint64_t *left  = get_reg(process, a);
+		uint64_t *right = get_reg(process, b);
+		uint64_t total = *left - *right;
+		memcpy(get_reg(process, a), &total, 8);
+	}
+	if(strcmp(op, "mul") == 0) {
+		uint64_t *left  = get_reg(process, a);
+		uint64_t *right = get_reg(process, b);
+		uint64_t total = *left * *right;
+		memcpy(get_reg(process, a), &total, 8);
+	}
+	if(strcmp(op, "div") == 0) {
+		uint64_t *left  = get_reg(process, a);
+		uint64_t *right = get_reg(process, b);
+		uint64_t total = *left / *right;
+		memcpy(get_reg(process, a), &total, 8);
+	}
+}
+
+void free_process(Process *process) {
+	free(process->stack);
+	free(process);
 }
 
 void print_hex(const char *string) {
 	unsigned char *p = (unsigned char *) string;
 
 	for (int i=0; i < 200; ++i) {
-	        if (! (i % 8) && i)
-	                printf("\n");
+	        if (! (i % 8) && i) {
+	            printf("\n");
+	        }
 
 	        printf("%02x", p[i]);
 	}

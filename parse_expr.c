@@ -29,11 +29,33 @@ Node *parse_plus(Parser *parser) {
 }
 
 Node *parse_minus(Parser *parser) {
-	Node *left = parse_relational(parser);
+	Node *left = parse_muliply(parser);
 	if(consume_string(parser, "-")) {
 		Node *node = new_node(AST_SUB);
 		node->left = left;
 		node->right = parse_minus(parser);
+		return node;
+	}
+	return left;
+}
+
+Node *parse_muliply(Parser *parser) {
+	Node *left = parse_divide(parser);
+	if(consume_string(parser, "*")) {
+		Node *node = new_node(AST_MUL);
+		node->left = left;
+		node->right = parse_muliply(parser);
+		return node;
+	}
+	return left;
+}
+
+Node *parse_divide(Parser *parser) {
+	Node *left = parse_relational(parser);
+	if(consume_string(parser, "/")) {
+		Node *node = new_node(AST_DIV);
+		node->left = left;
+		node->right = parse_divide(parser);
 		return node;
 	}
 	return left;

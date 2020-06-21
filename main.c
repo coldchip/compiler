@@ -49,11 +49,6 @@ int main(int argc, char const *argv[]) {
 		*/
 		free(buf);
 		token_free(token);
-
-		Process *process = new_process();
-
-		free(process->stack);
-		free(process);
 	} else {
 		printf("No input file(s) specified\n");
 	}

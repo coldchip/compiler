@@ -86,6 +86,8 @@ typedef enum {
 	AST_ASSIGN,
 	AST_ADD,
 	AST_SUB,
+	AST_MUL,
+	AST_DIV,
 	AST_LT,
 	AST_EQUAL,
 	AST_IDENT,
@@ -120,6 +122,8 @@ Node *parse_expr(Parser *parser);
 Node *parse_assign(Parser *parser);
 Node *parse_plus(Parser *parser);
 Node *parse_minus(Parser *parser);
+Node *parse_muliply(Parser *parser);
+Node *parse_divide(Parser *parser);
 Node *parse_relational(Parser *parser);
 Node *parse_equality(Parser *parser);
 Node *parse_primary(Parser *parser);
@@ -150,49 +154,6 @@ bool peek_type(Parser *parser, TokenType type);
 bool is_typename(Parser *parser);
 API Node *parse(Token *token);
 
-// codegen.c
-
-typedef enum {
-	NO_REG,
-	R0,
-	R1,
-	R2,
-	R3,
-	R4,
-	R5,
-	R6,
-	R7,
-	R8
-} Register;
-
-typedef enum {
-	OP_MOV,
-	OP_JMP,
-	OP_SUB,
-	OP_DIV,
-	OP_MUL,
-	OP_ADD,
-	OP_CALL,
-	OP_CMP,
-	OP_PUSH,
-	OP_POP
-} OpCode;
-
-void emit(char *format, ...);
-
-void enter_program(Node *node);
-void enter_function(Node *node);
-void enter_block(Node *node);
-void enter_decl(Node *node);
-void enter_binexpr(Node *node);
-void enter_literal(Node *node);
-void enter_ident(Node *node);
-void enter_call(Node *node);
-void enter_if(Node *node);
-void enter_while(Node *node);
-void visitor(Node *node);
-void generate(Node *node);
-
 // vm.c
 
 typedef struct _Process {
@@ -209,8 +170,31 @@ typedef struct _Process {
 
 API Process *new_process();
 
-void op_exec(Process *process, char *op, char *a, char *b);
+void *get_reg(Process *process, char *a);
 
-void print_hex(const char *string);
+API void op_exec(Process *process, char *op, char *a, char *b);
+
+API void print_hex(const char *string);
+
+API void free_process(Process *process);
+
+// codegen.c
+
+typedef struct _Generator {
+	Process *process;
+} Generator;
+
+void enter_program(Generator *generator, Node *node);
+void enter_function(Generator *generator, Node *node);
+void enter_block(Generator *generator, Node *node);
+void enter_decl(Generator *generator, Node *node);
+void enter_binexpr(Generator *generator, Node *node);
+void enter_literal(Generator *generator, Node *node);
+void enter_ident(Generator *generator, Node *node);
+void enter_call(Generator *generator, Node *node);
+void enter_if(Generator *generator, Node *node);
+void enter_while(Generator *generator, Node *node);
+void visitor(Generator *generator, Node *node);
+void generate(Node *node);
 
 #endif

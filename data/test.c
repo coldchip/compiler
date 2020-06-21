@@ -1,9 +1,3 @@
-int stack(int t) {
-
-}
-
 int main() {
-    int a = 64;
-    int b = a + 64;
-    stack(b);
+    int a = 1024 * 2 * 10 / 10;
 }
