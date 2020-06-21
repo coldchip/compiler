@@ -2,6 +2,7 @@
 #define CHIPCODE_H
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #define VERSION 1.0
 #define API extern
@@ -194,6 +195,22 @@ void generate(Node *node);
 
 // vm.c
 
-void vm_exec();
+typedef struct _Process {
+	uint64_t sp;
+	uint64_t fp;
+	uint64_t r0;
+	uint64_t r1;
+	uint64_t r2;
+	uint64_t r3;
+	char *stack;
+
+	uint64_t val;
+} Process;
+
+API Process *new_process();
+
+void op_exec(Process *process, char *op, char *a, char *b);
+
+void print_hex(const char *string);
 
 #endif

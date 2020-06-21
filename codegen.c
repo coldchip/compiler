@@ -36,13 +36,15 @@ void enter_program(Node *node) {
 void enter_function(Node *node) {
 	emit("%s:", node->token->data);
 	indent++;
-	emit("push rsp");
+	emit("push fp");
+	emit("mov fp, sp");
 	ListEntry *entry = node->bodylist->start;
 	while(entry != NULL) {
 		visitor(entry->ptr);
 		entry = entry->next;
 	}
-	emit("pop rsp");
+	emit("mov sp, fp");
+	emit("pop fp");
 	indent--;
 	node_free(node);
 }
