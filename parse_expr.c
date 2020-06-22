@@ -92,8 +92,7 @@ Node *parse_primary(Parser *parser) {
 		}
 		Node *node = new_node(AST_IDENT);
 		node->token = token;
-		node->offset = parser->scope->offset;
-		parser->scope->offset += 8;
+		node->offset = scope_get_offset(parser->scope, token->data);
 		return node;	
 	} else if(consume_type(parser, TK_NUMBER)) {
 		Node *node = new_node(AST_LITERAL);

@@ -36,6 +36,8 @@ void enter_block(Generator *generator, Node *node) {
 
 void enter_decl(Generator *generator, Node *node) {
 	visitor(generator, node->body);
+	op_exec(generator->process, "pop", "r0", NULL);
+	op_exec(generator->process, "push", "r0", NULL);
 	node_free(node);
 }
 
@@ -200,7 +202,11 @@ void generate(Node *node) {
 
 	print_hex(generator.process->stack);
 
-	printf("Result Yield: %lu\n", generator.process->r0);
+	printf("Frame Pointer: %lu\n", generator.process->fp);
+
+	printf("Stack Pointer: %lu\n", generator.process->sp - (uint64_t)generator.process->stack);
+
+	printf("Result Yield (Register 0): %lu\n", generator.process->r0);
 
 	free_process(generator.process);
 }

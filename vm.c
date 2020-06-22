@@ -12,15 +12,7 @@ Process *new_process() {
 	return process;
 }
 
-void put_reg(Process *process, char *a, uint64_t data) {
-	a = strdup(a);
-	char *reg_or_value = strtok(a, "+");
-	char *offset_char = strtok(NULL, "+");
-
-	int offset = 0;
-	if(offset_char) {
-		offset = atoi(offset_char);
-	}
+void put_reg(Process *process, char *reg_or_value, uint64_t data) {
 	if(strcmp(reg_or_value, "fp") == 0) {
 		process->fp = data;
 	} else if(strcmp(reg_or_value, "sp") == 0) {
@@ -39,8 +31,9 @@ void put_reg(Process *process, char *a, uint64_t data) {
 }
 
 uint64_t get_reg(Process *process, char *a) {
-	a = strdup(a);
-	char *reg_or_value = strtok(a, "+");
+	char reg[64];
+	strcpy(reg, a);
+	char *reg_or_value = strtok(reg, "+");
 	char *offset_char = strtok(NULL, "+");
 
 	int offset = 0;
@@ -52,13 +45,13 @@ uint64_t get_reg(Process *process, char *a) {
 	} else if(strcmp(reg_or_value, "sp") == 0) {
 		return process->sp + offset;
 	} else if(strcmp(reg_or_value, "r0") == 0) {
-		return process->r0;
+		return process->r0 + offset;
 	} else if(strcmp(reg_or_value, "r1") == 0) {
-		return process->r1;
+		return process->r1 + offset;
 	} else if(strcmp(reg_or_value, "r2") == 0) {
-		return process->r2;
+		return process->r2 + offset;
 	} else if(strcmp(reg_or_value, "r3") == 0) {
-		return process->r3;
+		return process->r3 + offset;
 	} else {
 		process->val = atoi(reg_or_value);
 		return process->val;
@@ -73,8 +66,7 @@ void op_exec(Process *process, char *op, char *a, char *b) {
 		printf("%s %s\n", op, a);
 	}
 	if(strcmp(op, "push") == 0) {
-		uint64_t *sp = (void*)process->sp;
-		*sp = get_reg(process, a);
+		*((uint64_t*)process->sp) = get_reg(process, a);
 		process->sp += 8;
 	}
 	if(strcmp(op, "pop") == 0) {

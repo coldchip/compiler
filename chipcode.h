@@ -34,9 +34,15 @@ typedef struct _Scope {
 	uint64_t offset;
 } Scope;
 
+typedef struct _Var {
+	char *var;
+	uint64_t offset;
+} Var;
+
 API Scope *scope_init();
 API Scope *scope_clone(Scope *scope);
-API void scope_add_var(Scope *scope, const char *var);
+API void scope_add_var(Scope *scope, const char *var, uint64_t offset);
+API uint64_t scope_get_offset(Scope *scope, const char *var);
 API bool scope_has_var(Scope *scope, const char *var);
 API void scope_free(Scope *st);
 
@@ -173,7 +179,7 @@ typedef struct _Process {
 
 API Process *new_process();
 
-void put_reg(Process *process, char *a, uint64_t data);
+void put_reg(Process *process, char *reg_or_value, uint64_t data);
 
 uint64_t get_reg(Process *process, char *a);
 
