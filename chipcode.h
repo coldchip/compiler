@@ -31,6 +31,7 @@ API void list_free(List *st);
 
 typedef struct _Scope {
 	List *var;
+	uint64_t offset;
 } Scope;
 
 API Scope *scope_init();
@@ -111,6 +112,8 @@ typedef struct _Node {
 	struct _Node *body;
 	struct _Node *alternate;
 
+	uint64_t offset;
+
 	List *bodylist;
 	Token *token;
 } Node;
@@ -170,7 +173,9 @@ typedef struct _Process {
 
 API Process *new_process();
 
-void *get_reg(Process *process, char *a);
+void put_reg(Process *process, char *a, uint64_t data);
+
+uint64_t get_reg(Process *process, char *a);
 
 API void op_exec(Process *process, char *op, char *a, char *b);
 

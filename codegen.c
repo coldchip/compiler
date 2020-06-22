@@ -92,7 +92,10 @@ void enter_literal(Generator *generator, Node *node) {
 }
 
 void enter_ident(Generator *generator, Node *node) {
-	
+	char offset_data[1000];
+	sprintf(offset_data, "fp+%li", node->offset);
+	op_exec(generator->process, "lea", "r0", offset_data);
+	op_exec(generator->process, "push", "r0", NULL);
 	node_free(node);
 }
 

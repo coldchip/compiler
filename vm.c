@@ -12,24 +12,57 @@ Process *new_process() {
 	return process;
 }
 
-void *get_reg(Process *process, char *a) {
-	if(strcmp(a, "fp") == 0) {
-		return &process->fp;
-	} else if(strcmp(a, "sp") == 0) {
-		return &process->sp;
-	} else if(strcmp(a, "r0") == 0) {
-		return &process->r0;
-	} else if(strcmp(a, "r1") == 0) {
-		return &process->r1;
-	} else if(strcmp(a, "r2") == 0) {
-		return &process->r2;
-	} else if(strcmp(a, "r3") == 0) {
-		return &process->r3;
-	} else {
-		process->val = atoi(a);
-		return &process->val;
+void put_reg(Process *process, char *a, uint64_t data) {
+	a = strdup(a);
+	char *reg_or_value = strtok(a, "+");
+	char *offset_char = strtok(NULL, "+");
+
+	int offset = 0;
+	if(offset_char) {
+		offset = atoi(offset_char);
 	}
-	return NULL;
+	if(strcmp(reg_or_value, "fp") == 0) {
+		process->fp = data;
+	} else if(strcmp(reg_or_value, "sp") == 0) {
+		process->sp = data;
+	} else if(strcmp(reg_or_value, "r0") == 0) {
+		process->r0 = data;
+	} else if(strcmp(reg_or_value, "r1") == 0) {
+		process->r1 = data;
+	} else if(strcmp(reg_or_value, "r2") == 0) {
+		process->r2 = data;
+	} else if(strcmp(reg_or_value, "r3") == 0) {
+		process->r3 = data;
+	} else {
+		c_error("Put error");
+	}
+}
+
+uint64_t get_reg(Process *process, char *a) {
+	a = strdup(a);
+	char *reg_or_value = strtok(a, "+");
+	char *offset_char = strtok(NULL, "+");
+
+	int offset = 0;
+	if(offset_char) {
+		offset = atoi(offset_char);
+	}
+	if(strcmp(reg_or_value, "fp") == 0) {
+		return process->fp + offset;
+	} else if(strcmp(reg_or_value, "sp") == 0) {
+		return process->sp + offset;
+	} else if(strcmp(reg_or_value, "r0") == 0) {
+		return process->r0;
+	} else if(strcmp(reg_or_value, "r1") == 0) {
+		return process->r1;
+	} else if(strcmp(reg_or_value, "r2") == 0) {
+		return process->r2;
+	} else if(strcmp(reg_or_value, "r3") == 0) {
+		return process->r3;
+	} else {
+		process->val = atoi(reg_or_value);
+		return process->val;
+	}
 
 }
 
@@ -40,39 +73,46 @@ void op_exec(Process *process, char *op, char *a, char *b) {
 		printf("%s %s\n", op, a);
 	}
 	if(strcmp(op, "push") == 0) {
-		memcpy((void*)process->sp, get_reg(process, a), 8);
+		uint64_t *sp = (void*)process->sp;
+		*sp = get_reg(process, a);
 		process->sp += 8;
 	}
 	if(strcmp(op, "pop") == 0) {
 		process->sp -= 8;
-		memcpy(get_reg(process, a), (void*)process->sp, 8);
+		uint64_t num;
+		memcpy(&num, (void*)process->sp, 8);
+		put_reg(process, a, num);
 	}
 	if(strcmp(op, "mov") == 0) {
-		memcpy(get_reg(process, a), get_reg(process, b), 8);
+		put_reg(process, a, get_reg(process, b));
+	}
+	if(strcmp(op, "lea") == 0) {
+		uint64_t *ptr = (void*)get_reg(process, b);
+		put_reg(process, a, *ptr);
 	}
 	if(strcmp(op, "add") == 0) {
-		uint64_t *left  = get_reg(process, a);
-		uint64_t *right = get_reg(process, b);
-		uint64_t total = *left + *right;
-		memcpy(get_reg(process, a), &total, 8);
+		uint64_t left  = get_reg(process, a);
+		uint64_t right = get_reg(process, b);
+		uint64_t total = left + right;
+		put_reg(process, a, total);
 	}
 	if(strcmp(op, "sub") == 0) {
-		uint64_t *left  = get_reg(process, a);
-		uint64_t *right = get_reg(process, b);
-		uint64_t total = *left - *right;
-		memcpy(get_reg(process, a), &total, 8);
+		uint64_t left  = get_reg(process, a);
+		uint64_t right = get_reg(process, b);
+		uint64_t total = left - right;
+		put_reg(process, a, total);
 	}
 	if(strcmp(op, "mul") == 0) {
-		uint64_t *left  = get_reg(process, a);
-		uint64_t *right = get_reg(process, b);
-		uint64_t total = *left * *right;
-		memcpy(get_reg(process, a), &total, 8);
+		uint64_t left  = get_reg(process, a);
+		uint64_t right = get_reg(process, b);
+		uint64_t total = left * right;
+		put_reg(process, a, total);
 	}
 	if(strcmp(op, "div") == 0) {
-		uint64_t *left  = get_reg(process, a);
-		uint64_t *right = get_reg(process, b);
-		uint64_t total = *left / *right;
-		memcpy(get_reg(process, a), &total, 8);
+		uint64_t left  = get_reg(process, a);
+		uint64_t right = get_reg(process, b);
+		uint64_t total = left / right;
+		put_reg(process, a, total);
 	}
 }
 
@@ -86,7 +126,7 @@ void print_hex(const char *string) {
 
 	for (int i=0; i < 200; ++i) {
 	        if (! (i % 8) && i) {
-	            printf("\n");
+	            printf(" RW\n");
 	        }
 
 	        printf("%02x", p[i]);

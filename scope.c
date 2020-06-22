@@ -6,6 +6,7 @@
 Scope *scope_init() {
 	Scope *st = malloc(sizeof(Scope));
 	st->var = list_init();
+	st->offset = 0;
 	return st;
 }
 
