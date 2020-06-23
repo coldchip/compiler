@@ -2,6 +2,7 @@
 #define CHIPCODE_H
 
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdint.h>
 
 #define VERSION 1.0
@@ -192,8 +193,12 @@ API void free_process(Process *process);
 // codegen.c
 
 typedef struct _Generator {
-	Process *process;
+	FILE *file;
 } Generator;
+
+void emit(Generator *generator, const char *op, const char *a, const char *b);
+void emit_label(Generator *generator, const char *label);
+void emit_param(Generator *generator, const char *label);
 
 void enter_program(Generator *generator, Node *node);
 void enter_function(Generator *generator, Node *node);

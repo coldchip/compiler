@@ -3,6 +3,30 @@
 #include <stdlib.h>
 #include "chipcode.h"
 
+void emit(Generator *generator, const char *op, const char *a, const char *b) {
+	if(op) {
+		if(a && b) {
+			fprintf(generator->file, "\t%s %s %s\n", op, a, b);
+		} else if(a) {
+			fprintf(generator->file, "\t%s %s\n", op, a);
+		} else if(b) {
+			fprintf(generator->file, "\t%s %s\n", op, b);
+		} 
+	}
+}
+
+void emit_label(Generator *generator, const char *label) {
+	if(label) {
+		fprintf(generator->file, "%s:\n", label);
+	}
+}
+
+void emit_param(Generator *generator, const char *label) {
+	if(label) {
+		fprintf(generator->file, "%s\n", label);
+	}
+}
+
 void enter_program(Generator *generator, Node *node) {
 	ListEntry *entry = node->bodylist->start;
 	while(entry != NULL) {
@@ -13,15 +37,16 @@ void enter_program(Generator *generator, Node *node) {
 }
 
 void enter_function(Generator *generator, Node *node) {
-	op_exec(generator->process, "push", "fp", NULL);
-	op_exec(generator->process, "mov", "fp", "sp");
+	emit_label(generator, node->token->data);
+	emit(generator, "push", "fp", NULL);
+	emit(generator, "mov", "fp", "sp");
 	ListEntry *entry = node->bodylist->start;
 	while(entry != NULL) {
 		visitor(generator, entry->ptr);
 		entry = entry->next;
 	}
-	op_exec(generator->process, "mov", "sp", "fp");
-	op_exec(generator->process, "pop", "fp", NULL);
+	emit(generator, "mov", "sp", "fp");
+	emit(generator, "pop", "fp", NULL);
 	node_free(node);
 }
 
@@ -36,8 +61,8 @@ void enter_block(Generator *generator, Node *node) {
 
 void enter_decl(Generator *generator, Node *node) {
 	visitor(generator, node->body);
-	op_exec(generator->process, "pop", "r0", NULL);
-	op_exec(generator->process, "push", "r0", NULL);
+	emit(generator, "pop", "r0", NULL);
+	emit(generator, "push", "r0", NULL);
 	node_free(node);
 }
 
@@ -49,27 +74,27 @@ void enter_binexpr(Generator *generator, Node *node) {
 	if(node->left) {
 		visitor(generator, node->left);
 	}
-	op_exec(generator->process, "pop", "r0", NULL);
-	op_exec(generator->process, "pop", "r1", NULL);
+	emit(generator, "pop", "r0", NULL);
+	emit(generator, "pop", "r1", NULL);
 	switch(node->type) {
 		case AST_ADD:
 		{
-			op_exec(generator->process, "add", "r0", "r1");
+			emit(generator, "add", "r0", "r1");
 		}
 		break;
 		case AST_SUB:
 		{
-			op_exec(generator->process, "sub", "r0", "r1");
+			emit(generator, "sub", "r0", "r1");
 		}
 		break;
 		case AST_MUL:
 		{
-			op_exec(generator->process, "mul", "r0", "r1");
+			emit(generator, "mul", "r0", "r1");
 		}
 		break;
 		case AST_DIV:
 		{
-			op_exec(generator->process, "div", "r0", "r1");
+			emit(generator, "div", "r0", "r1");
 		}
 		break;
 		case AST_EQUAL:
@@ -84,20 +109,20 @@ void enter_binexpr(Generator *generator, Node *node) {
 		break;
 	}
 	// Push last result to stack
-	op_exec(generator->process, "push", "r0", NULL);
+	emit(generator, "push", "r0", NULL);
 	node_free(node);
 }
 
 void enter_literal(Generator *generator, Node *node) {
-	op_exec(generator->process, "push", (node->token->data), NULL);
+	emit(generator, "push", (node->token->data), NULL);
 	node_free(node);
 }
 
 void enter_ident(Generator *generator, Node *node) {
 	char offset_data[1000];
-	sprintf(offset_data, "fp+%li", node->offset);
-	op_exec(generator->process, "lea", "r0", offset_data);
-	op_exec(generator->process, "push", "r0", NULL);
+	sprintf(offset_data, "[fp+%li]", node->offset);
+	emit(generator, "lea", "r0", offset_data);
+	emit(generator, "push", "r0", NULL);
 	node_free(node);
 }
 
@@ -196,17 +221,8 @@ void visitor(Generator *generator, Node *node) {
 
 void generate(Node *node) {
 	Generator generator;
-	generator.process = new_process();
-
+	generator.file = fopen("bin/out.S", "wb");
+	emit_param(&generator, "[asm]");
 	visitor(&generator, node);
-
-	print_hex(generator.process->stack);
-
-	printf("Frame Pointer: %lu\n", generator.process->fp);
-
-	printf("Stack Pointer: %lu\n", generator.process->sp - (uint64_t)generator.process->stack);
-
-	printf("Result Yield (Register 0): %lu\n", generator.process->r0);
-
-	free_process(generator.process);
+	fclose(generator.file);
 }
