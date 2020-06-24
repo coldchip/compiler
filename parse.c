@@ -24,7 +24,7 @@ Node *parse_call(Parser *parser) {
 	node->token = ident;
 	expect_type(parser, TK_IDENT);
 	expect_string(parser, "(");
-	parse_args(parser);
+	node->args = parse_args(parser);
 	expect_string(parser, ")");
 	return node;
 }
@@ -49,11 +49,11 @@ Node *parse_declaration(Parser *parser) {
 	char *t = parser->token->data;
 	
 	expect_type(parser, TK_IDENT);
-	expect_string(parser, "=");
 	
-	node->body = parse_expr(parser);
-	scope_add_var(parser->scope, t, parser->scope->offset);
-	
+	if(consume_string(parser, "=")) {
+		node->body = parse_expr(parser);
+	}
+	scope_add_var(parser->scope, t, parser->scope->offset);	
 	parser->scope->offset += 8;
 	return node;
 }
@@ -128,7 +128,7 @@ Node *parse_function(Parser *parser) {
 
 	expect_string(parser, "(");
 
-	parse_params(parser);
+	node->args = parse_params(parser);
 
 	expect_string(parser, ")");
 

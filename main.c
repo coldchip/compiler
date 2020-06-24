@@ -38,15 +38,11 @@ int main(int argc, char const *argv[]) {
 		char *expanded = macro(buf);
 		printf("Lexing %s\n", file);
 		Token *token = lex(expanded);
+		printf("Parsing %s\n", file);
 		Node *node = parse(token);
+		printf("Code Generation %s\n", file);
 		generate(node);
-		//vm_exec();
-		/*
-		while(token != NULL) {
-			printf("%s\n", token->data);
-			token = token->next;
-		}
-		*/
+		printf("Done %s\n", file);
 		free(buf);
 		token_free(token);
 	} else {

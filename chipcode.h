@@ -101,7 +101,9 @@ typedef enum {
 	AST_IDENT,
 	AST_LITERAL,
 	AST_DECL,
-	AST_CALL
+	AST_CALL,
+	AST_ARG,
+	AST_PARAM
 } NodeType;
 
 typedef struct _Parser {
@@ -118,6 +120,8 @@ typedef struct _Node {
 
 	struct _Node *body;
 	struct _Node *alternate;
+
+	struct _Node *args;
 
 	uint64_t offset;
 
@@ -138,10 +142,10 @@ Node *parse_relational(Parser *parser);
 Node *parse_equality(Parser *parser);
 Node *parse_primary(Parser *parser);
 
-void parse_arg(Parser *parser);
-void parse_args(Parser *parser);
-void parse_param(Parser *parser);
-void parse_params(Parser *parser);
+Node *parse_arg(Parser *parser);
+Node *parse_args(Parser *parser);
+Node *parse_param(Parser *parser);
+Node *parse_params(Parser *parser);
 
 Node *parse_call(Parser *parser);
 Node *parse_declaration(Parser *parser);
@@ -210,6 +214,9 @@ void enter_ident(Generator *generator, Node *node);
 void enter_call(Generator *generator, Node *node);
 void enter_if(Generator *generator, Node *node);
 void enter_while(Generator *generator, Node *node);
+void enter_assign(Generator *generator, Node *node);
+void enter_param(Generator *generator, Node *node);
+void enter_arg(Generator *generator, Node *node);
 void visitor(Generator *generator, Node *node);
 void generate(Node *node);
 

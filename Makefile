@@ -7,7 +7,7 @@ else
 endif
 
 module:
-	$(COMPILER) *.c -o $(OUTPUT) -Wall -O3
+	$(COMPILER) *.c -o $(OUTPUT) -Wall -g
 run:
 	$(OUTPUT) data/test.c 
 test:

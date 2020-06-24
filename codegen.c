@@ -38,6 +38,9 @@ void enter_program(Generator *generator, Node *node) {
 
 void enter_function(Generator *generator, Node *node) {
 	emit_label(generator, node->token->data);
+	if(node->args) {
+		visitor(generator, node->args);
+	}
 	emit(generator, "push", "fp", NULL);
 	emit(generator, "mov", "fp", "sp");
 	ListEntry *entry = node->bodylist->start;
@@ -60,9 +63,11 @@ void enter_block(Generator *generator, Node *node) {
 }
 
 void enter_decl(Generator *generator, Node *node) {
-	visitor(generator, node->body);
-	emit(generator, "pop", "r0", NULL);
-	emit(generator, "push", "r0", NULL);
+	if(node->body) {
+		visitor(generator, node->body);
+		emit(generator, "pop", "r0", NULL);
+		emit(generator, "push", "r0", NULL);
+	}
 	node_free(node);
 }
 
@@ -120,13 +125,17 @@ void enter_literal(Generator *generator, Node *node) {
 
 void enter_ident(Generator *generator, Node *node) {
 	char offset_data[1000];
-	sprintf(offset_data, "[fp+%li]", node->offset);
+	sprintf(offset_data, "@fp+%li", node->offset);
 	emit(generator, "lea", "r0", offset_data);
 	emit(generator, "push", "r0", NULL);
 	node_free(node);
 }
 
 void enter_call(Generator *generator, Node *node) {
+	if(node->args) {
+		visitor(generator, node->args);
+	}
+	emit(generator, "call", node->token->data, NULL);
 	node_free(node);
 }
 
@@ -153,6 +162,39 @@ void enter_while(Generator *generator, Node *node) {
 	node_free(node);
 }
 
+void enter_assign(Generator *generator, Node *node) {
+	if(node->right) {
+		visitor(generator, node->right);
+		emit(generator, "pop", "r0", NULL);
+	}
+	if(node->left) {
+		char offset_data[1000];
+		sprintf(offset_data, "@fp+%li", node->left->offset);
+		emit(generator, "mov", offset_data, "r0");
+		node_free(node->left);
+	}
+	node_free(node);
+}
+
+void enter_param(Generator *generator, Node *node) {
+	ListEntry *entry = node->bodylist->start;
+	while(entry != NULL) {
+		visitor(generator, entry->ptr);
+		entry = entry->next;
+	}
+	node_free(node);
+}
+
+void enter_arg(Generator *generator, Node *node) {
+	emit(generator, "mov", "r5", "sp");
+	ListEntry *entry = node->bodylist->start;
+	while(entry != NULL) {
+		visitor(generator, entry->ptr);
+		entry = entry->next;
+	}
+	node_free(node);
+}
+
 void visitor(Generator *generator, Node *node) {
 	switch(node->type) {
 		case AST_PROGRAM:
@@ -165,7 +207,21 @@ void visitor(Generator *generator, Node *node) {
 			enter_function(generator, node);
 		}
 		break;
+		case AST_PARAM:
+		{
+			enter_param(generator, node);
+		}
+		break;
+		case AST_ARG:
+		{
+			enter_arg(generator, node);
+		}
+		break;
 		case AST_ASSIGN:
+		{
+			enter_assign(generator, node);
+		}
+		break;
 		case AST_ADD:
 		case AST_SUB:
 		case AST_MUL:
