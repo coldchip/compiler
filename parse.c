@@ -46,14 +46,14 @@ Node *parse_declaration(Parser *parser) {
 
 	parse_basetype(parser);
 
-	char *t = parser->token->data;
+	Token *token = parser->token;
 	
 	expect_type(parser, TK_IDENT);
 	
 	if(consume_string(parser, "=")) {
 		node->body = parse_expr(parser);
 	}
-	scope_add_var(parser->scope, t, parser->scope->offset);	
+	scope_add_var(parser->scope, token->data, parser->scope->offset);	
 	parser->scope->offset += 8;
 	return node;
 }

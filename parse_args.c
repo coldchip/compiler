@@ -8,6 +8,14 @@ Node *parse_param(Parser *parser) {
 	Node *node = new_node(AST_IDENT);
 	node->token = token;
 	node->offset = scope_get_offset(parser->scope, token->data);
+
+	if(scope_has_var(parser->scope, token->data)) {
+		c_error("Conflicting variable \"%s\"", token->data);
+	}
+
+	scope_add_var(parser->scope, token->data, parser->scope->offset);	
+	parser->scope->offset += 8;
+
 	return node;
 }
 

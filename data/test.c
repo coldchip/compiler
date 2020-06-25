@@ -1,7 +1,7 @@
 // Type your code here, or load an example.
 
 int test(int a, int b, int c, int d, int e, int f, int g, int h, int i, int j, int k, int l) {
-    
+    c = a + b;
 }
 int main() {
     int a = 64;

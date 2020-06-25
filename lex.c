@@ -71,7 +71,7 @@ Token *lex(char *data) {
 	while(*data != '\0') {
 		if(is_keyword(*data)) {
 			char *start = data;
-			while(is_keyword(*data)) {
+			while(is_keyword(*data) || is_number(*data)) {
 				data++;
 			}
 			char *keyword = malloc_strcpy(start, data - start);

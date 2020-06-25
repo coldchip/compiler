@@ -27,6 +27,31 @@ void emit_param(Generator *generator, const char *label) {
 	}
 }
 
+void gen_store(Generator *generator) {
+	emit(generator, "pop", "r0", NULL);
+	emit(generator, "pop", "r1", NULL);
+	emit(generator, "mov", "[r0], r1", NULL);
+}
+
+void gen_addr(Generator *generator, Node *node) {
+	char offset_data[1000];
+	sprintf(offset_data, "fp+%li", node->offset);
+	emit(generator, "mov", "r0", offset_data);
+	emit(generator, "push", "r0", NULL);
+	node_free(node);
+}
+
+void enter_assign(Generator *generator, Node *node) {
+	if(node->right) {
+		visitor(generator, node->right);
+	}
+	if(node->left) {
+		gen_addr(generator, node->left);
+	}
+	gen_store(generator);
+	node_free(node);
+}
+
 void enter_program(Generator *generator, Node *node) {
 	ListEntry *entry = node->bodylist->start;
 	while(entry != NULL) {
@@ -38,11 +63,11 @@ void enter_program(Generator *generator, Node *node) {
 
 void enter_function(Generator *generator, Node *node) {
 	emit_label(generator, node->token->data);
+	emit(generator, "push", "fp", NULL);
+	emit(generator, "mov", "fp", "sp");
 	if(node->args) {
 		visitor(generator, node->args);
 	}
-	emit(generator, "push", "fp", NULL);
-	emit(generator, "mov", "fp", "sp");
 	ListEntry *entry = node->bodylist->start;
 	while(entry != NULL) {
 		visitor(generator, entry->ptr);
@@ -65,8 +90,6 @@ void enter_block(Generator *generator, Node *node) {
 void enter_decl(Generator *generator, Node *node) {
 	if(node->body) {
 		visitor(generator, node->body);
-		emit(generator, "pop", "r0", NULL);
-		emit(generator, "push", "r0", NULL);
 	}
 	node_free(node);
 }
@@ -126,7 +149,7 @@ void enter_literal(Generator *generator, Node *node) {
 void enter_ident(Generator *generator, Node *node) {
 	char offset_data[1000];
 	sprintf(offset_data, "@fp+%li", node->offset);
-	emit(generator, "lea", "r0", offset_data);
+	emit(generator, "mov", "r0", offset_data);
 	emit(generator, "push", "r0", NULL);
 	node_free(node);
 }
@@ -162,25 +185,18 @@ void enter_while(Generator *generator, Node *node) {
 	node_free(node);
 }
 
-void enter_assign(Generator *generator, Node *node) {
-	if(node->right) {
-		visitor(generator, node->right);
-		emit(generator, "pop", "r0", NULL);
-	}
-	if(node->left) {
-		char offset_data[1000];
-		sprintf(offset_data, "@fp+%li", node->left->offset);
-		emit(generator, "mov", offset_data, "r0");
-		node_free(node->left);
-	}
-	node_free(node);
-}
-
 void enter_param(Generator *generator, Node *node) {
 	ListEntry *entry = node->bodylist->start;
+	int ptr = 0;
 	while(entry != NULL) {
-		visitor(generator, entry->ptr);
+		node_free(entry->ptr);
+		
+		char offset_data[1000];
+		sprintf(offset_data, "@r5+%i", ptr);
+		emit(generator, "mov", "r0", offset_data);
+		emit(generator, "push", "r0", NULL);
 		entry = entry->next;
+		ptr += 8;
 	}
 	node_free(node);
 }
