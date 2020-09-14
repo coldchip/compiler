@@ -10,15 +10,10 @@
 #include <stdbool.h>
 #include "chipcode.h"
 
-Token *new_token(Token *prev, TokenType type, char* data) {
-	// Updates previous entry->next pointer with the malloc'd entry pointer
+Token *new_token(TokenType type, char* data) {
 	Token *tok = malloc(sizeof(Token));
-	memset(tok, 0, sizeof(Token));
 	tok->data = data;
-	tok->line = prev->line;
 	tok->type = type;
-	tok->next = NULL;
-	prev->next = tok;
 	return tok;
 }
 
@@ -62,11 +57,8 @@ char *malloc_strcpy(char *data, int size) {
 	return keyword;
 }
 
-Token *lex(char *data) {
-	Token token;
-	Token *token_tracker = &token;
-	memset(token_tracker, 0, sizeof(token));
-	token_tracker->line = 1;
+void lex(List *tokens, char *data) {
+	list_clear(tokens);
 
 	while(*data != '\0') {
 		if(is_keyword(*data)) {
@@ -75,7 +67,7 @@ Token *lex(char *data) {
 				data++;
 			}
 			char *keyword = malloc_strcpy(start, data - start);
-			token_tracker = new_token(token_tracker, TK_IDENT, keyword);
+			list_insert(list_end(tokens), new_token(TK_IDENT, keyword));
 			continue;
 		} else if(is_number(*data)) {
 			char *start = data;
@@ -83,7 +75,7 @@ Token *lex(char *data) {
 				data++;
 			}
 			char *keyword = malloc_strcpy(start, data - start);
-			token_tracker = new_token(token_tracker, TK_NUMBER, keyword);
+			list_insert(list_end(tokens), new_token(TK_NUMBER, keyword));
 			continue;
 		} else if(*data == '"') {
 			data++;
@@ -101,7 +93,7 @@ Token *lex(char *data) {
 				data++;
 			}
 			char *keyword = malloc_strcpy(start, data - start);
-			token_tracker = new_token(token_tracker, TK_STRING, keyword);
+			list_insert(list_end(tokens), new_token(TK_STRING, keyword));
 			data++;
 			continue;
 		} else if(*data == '\'') {
@@ -120,7 +112,7 @@ Token *lex(char *data) {
 				data++;
 			}
 			char *keyword = malloc_strcpy(start, data - start);
-			token_tracker = new_token(token_tracker, TK_STRING, keyword);
+			list_insert(list_end(tokens), new_token(TK_STRING, keyword));
 			data++;
 			continue;
 		} else if (startswith(data, "//")) {
@@ -138,33 +130,31 @@ Token *lex(char *data) {
 			continue;
 		} else if(startswith(data, "==")) {
 			char *t = malloc_strcpy(data, 2);
-			token_tracker = new_token(token_tracker, TK_SPECIAL, t);
+			list_insert(list_end(tokens), new_token(TK_SPECIAL, t));
 			data += 2;
 			continue;
 		} else if(is_space(*data)) {
 			if(*data == '\n') {
-				token_tracker->line++;
+				
 			}
 			data++;
 			continue;
 		} else {
 			char *t = malloc_string_to_bit(data);
-			token_tracker = new_token(token_tracker, TK_SPECIAL, t);
+			list_insert(list_end(tokens), new_token(TK_SPECIAL, t));
 			data++;
 			continue;
 		}
 	}
-	token_tracker = new_token(token_tracker, TK_EOF, NULL);
-	return token.next;	
+	list_insert(list_end(tokens), new_token(TK_EOF, NULL));
 }
 
-void token_free(Token *token) {
-	while(token != NULL) {
-		Token *token_next = token->next;
-		if(token->data) {
-			free(token->data);
+void token_free(List *list) {
+	while(!list_empty(list)) {
+		Token *current = (Token*)list_remove(list_begin(list));
+		if(current->data != NULL) {
+			free(current->data);
 		}
-		free(token);
-		token = token_next;
+		free(current);
 	}
 }

@@ -4,7 +4,7 @@
 
 Node *new_node(NodeType type) {
 	Node *node = malloc(sizeof(Node));
-	node->bodylist = list_init();
+	list_clear(&node->bodylist);
 	node->left = NULL;
 	node->right = NULL;
 	node->type = type;
@@ -12,8 +12,10 @@ Node *new_node(NodeType type) {
 }
 
 void node_free(Node *node) {
-	if(node->bodylist) {
-		list_free(node->bodylist);
+	List *body = &node->bodylist;
+	while(!list_empty(body)) {
+		Node *current = (Node*)list_remove(list_begin(body));
+		
 	}
 	free(node);
 }
@@ -53,8 +55,6 @@ Node *parse_declaration(Parser *parser) {
 	if(consume_string(parser, "=")) {
 		node->body = parse_expr(parser);
 	}
-	scope_add_var(parser->scope, token->data, parser->scope->offset);	
-	parser->scope->offset += 8;
 	return node;
 }
 
@@ -76,18 +76,14 @@ Node *parse_stmt(Parser *parser) {
 
 		return node;
 	} else if(consume_string(parser, "{")) {
-		Scope *prev_scope = parser->scope;
-		parser->scope = scope_clone(prev_scope);
 
 		Node *node = new_node(AST_BLOCK);
 
 		while(!peek_string(parser, "}")) {
-			list_push(node->bodylist, parse_stmt(parser));
+			list_insert(list_end(&node->bodylist), parse_stmt(parser));
 		}
 		expect_string(parser, "}");
 
-		scope_free(parser->scope);
-		parser->scope = prev_scope;
 
 		return node;
 	} else if(consume_string(parser, "while")) {
@@ -115,9 +111,6 @@ Node *parse_stmt(Parser *parser) {
 }
 
 Node *parse_function(Parser *parser) {
-	Scope *prev_scope = parser->scope;
-	parser->scope = scope_clone(prev_scope);
-
 	Node *node = new_node(AST_FUNCTION);
 
 	parse_basetype(parser);
@@ -135,13 +128,10 @@ Node *parse_function(Parser *parser) {
 	expect_string(parser, "{");
 
 	while(!peek_string(parser, "}")) {
-		list_push(node->bodylist, parse_stmt(parser));
+		list_insert(list_end(&node->bodylist), parse_stmt(parser));
 	}
 
 	expect_string(parser, "}");
-
-	scope_free(parser->scope);
-	parser->scope = prev_scope;
 
 	return node;
 }
@@ -152,23 +142,19 @@ Node *parse_program(Parser *parser) {
 
 	while(!peek_type(parser, TK_EOF)) {
 		if(is_function(parser)) {
-			list_push(node->bodylist, parse_function(parser));
-		} else {
-
+			list_insert(list_end(&node->bodylist), parse_function(parser));
 		}
 	}
 
 	return node;
 }
 
-Node *parse(Token *token) {
+Node *parse(List *token) {
 	Parser parser;
-	parser.token = token;
-	parser.scope = scope_init();
+	parser.token = (Token*)list_begin(token);
 
 	Node *node = parse_program(&parser);
 	
-	scope_free(parser.scope);
 	return node;
 }
 
@@ -192,12 +178,12 @@ bool is_function(Parser *parser) {
 }
 
 void consume(Parser *parser) {
-	parser->token = parser->token->next;
+	parser->token = (Token*)list_next((ListNode*)parser->token);
 }
 
 bool consume_string(Parser *parser, const char *str) {
 	if(peek_string(parser, str)) {
-		parser->token = parser->token->next;
+		consume(parser);
 		return true;
 	} else {
 		return false;
@@ -206,7 +192,7 @@ bool consume_string(Parser *parser, const char *str) {
 
 bool consume_type(Parser *parser, TokenType type) {
 	if(peek_type(parser, type)) {
-		parser->token = parser->token->next;
+		consume(parser);
 		return true;
 	} else {
 		return false;
@@ -214,22 +200,33 @@ bool consume_type(Parser *parser, TokenType type) {
 }
 
 void expect_string(Parser *parser, const char *str) {
-	if(!consume_string(parser, str))
-		c_error("Parse Error: Expecting %s at line %i, got \"%s\"", str, parser->token->line, parser->token->data);
+	if(!consume_string(parser, str)) {
+		Token *token = parser->token;
+		c_error("Parse Error: Expecting %s at line %i, got \"%s\"", str, token->line, token->data);
+	}
 }
 
 void expect_type(Parser *parser, TokenType type) {
-	if(!consume_type(parser, type))
-		c_error("Parse Error: Expecting type %i at line %i", type, parser->token->line);
+	if(!consume_type(parser, type)) {
+		Token *token = parser->token;
+		c_error("Parse Error: Expecting type %i at line %i", type, token->line);
+	}
 }
 
 bool peek_type(Parser *parser, TokenType type) {
-	return parser->token->type == type;
+	Token *token = parser->token;
+	if(!token || token->type) {
+		return false;
+	}
+	return token->type == type;
 }
 
 bool peek_string(Parser *parser, const char *str) {
-	// printf("%s - %s\n", parser->token->data, str);
-	return strcmp(parser->token->data, str) == 0;
+	Token *token = parser->token;
+	if(!token || token->data == NULL) {
+		return false;
+	}
+	return strcmp(token->data, str) == 0;
 }
 
 bool is_typename(Parser *parser) {

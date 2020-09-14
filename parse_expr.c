@@ -87,19 +87,15 @@ Node *parse_equality(Parser *parser) {
 Node *parse_primary(Parser *parser) {
 	Token *token = parser->token;
 	if(consume_type(parser, TK_IDENT)) {
-		if(!scope_has_var(parser->scope, token->data)) {
-			c_error("Undefined variable \"%s\"", token->data);
-		}
 		Node *node = new_node(AST_IDENT);
 		node->token = token;
-		node->offset = scope_get_offset(parser->scope, token->data);
 		return node;	
 	} else if(consume_type(parser, TK_NUMBER)) {
 		Node *node = new_node(AST_LITERAL);
 		node->token = token;
 		return node;
 	} else {
-		c_error("Expecting Identifier or Literal at Line %i", parser->token->line);
+		c_error("Expecting Identifier or Literal at Line %i", token->line);
 	}
 	return NULL;
 }

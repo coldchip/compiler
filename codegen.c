@@ -53,10 +53,10 @@ void enter_assign(Generator *generator, Node *node) {
 }
 
 void enter_program(Generator *generator, Node *node) {
-	ListEntry *entry = node->bodylist->start;
-	while(entry != NULL) {
-		visitor(generator, entry->ptr);
-		entry = entry->next;
+	List *list = &node->bodylist;
+	while(!list_empty(list)) {
+		Node *entry = (Node*)list_remove(list_begin(list));
+		visitor(generator, entry);
 	}
 	node_free(node);
 }
@@ -68,10 +68,10 @@ void enter_function(Generator *generator, Node *node) {
 	if(node->args) {
 		visitor(generator, node->args);
 	}
-	ListEntry *entry = node->bodylist->start;
-	while(entry != NULL) {
-		visitor(generator, entry->ptr);
-		entry = entry->next;
+	List *list = &node->bodylist;
+	while(!list_empty(list)) {
+		Node *entry = (Node*)list_remove(list_begin(list));
+		visitor(generator, entry);
 	}
 	emit(generator, "mov", "sp", "fp");
 	emit(generator, "pop", "fp", NULL);
@@ -79,10 +79,10 @@ void enter_function(Generator *generator, Node *node) {
 }
 
 void enter_block(Generator *generator, Node *node) {
-	ListEntry *entry = node->bodylist->start;
-	while(entry != NULL) {
-		visitor(generator, entry->ptr);
-		entry = entry->next;
+	List *list = &node->bodylist;
+	while(!list_empty(list)) {
+		Node *entry = (Node*)list_remove(list_begin(list));
+		visitor(generator, entry);
 	}
 	node_free(node);
 }
@@ -186,16 +186,16 @@ void enter_while(Generator *generator, Node *node) {
 }
 
 void enter_param(Generator *generator, Node *node) {
-	ListEntry *entry = node->bodylist->start;
+	List *list = &node->bodylist;
 	int ptr = 0;
-	while(entry != NULL) {
-		node_free(entry->ptr);
+	while(!list_empty(list)) {
+		Node *entry = (Node*)list_remove(list_begin(list));
+		node_free(entry);
 		
 		char offset_data[1000];
 		sprintf(offset_data, "@r5+%i", ptr);
 		emit(generator, "mov", "r0", offset_data);
 		emit(generator, "push", "r0", NULL);
-		entry = entry->next;
 		ptr += 8;
 	}
 	node_free(node);
@@ -203,10 +203,10 @@ void enter_param(Generator *generator, Node *node) {
 
 void enter_arg(Generator *generator, Node *node) {
 	emit(generator, "mov", "r5", "sp");
-	ListEntry *entry = node->bodylist->start;
-	while(entry != NULL) {
-		visitor(generator, entry->ptr);
-		entry = entry->next;
+	List *list = &node->bodylist;
+	while(!list_empty(list)) {
+		Node *entry = (Node*)list_remove(list_begin(list));
+		visitor(generator, entry);
 	}
 	node_free(node);
 }

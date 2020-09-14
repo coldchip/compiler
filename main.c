@@ -37,14 +37,19 @@ int main(int argc, char const *argv[]) {
 		printf("Preprocessing %s\n", file);
 		char *expanded = macro(buf);
 		printf("Lexing %s\n", file);
-		Token *token = lex(expanded);
+
+		List tokens;
+		lex(&tokens, expanded);
+
+		
 		printf("Parsing %s\n", file);
-		Node *node = parse(token);
+		Node *node = parse(&tokens);
 		printf("Code Generation %s\n", file);
 		generate(node);
 		printf("Done %s\n", file);
 		free(buf);
-		token_free(token);
+		//token_free(tokens);
+		
 	} else {
 		printf("No input file(s) specified\n");
 	}

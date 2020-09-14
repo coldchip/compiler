@@ -10,42 +10,38 @@
 
 // llist.c
 
-typedef struct _List {
-	struct _ListEntry *entry;
-	struct _ListEntry *start;
+typedef struct _ListNode
+{
+   struct _ListNode * next;
+   struct _ListNode * previous;
+} ListNode;
+
+typedef struct _List
+{
+   ListNode sentinel;
 } List;
 
-typedef struct _ListEntry {
-	void *ptr;
-	struct _ListEntry *next;
-	struct _ListEntry *prev;
-} ListEntry;
+extern void list_clear (List *);
 
-API List *list_init();
-API List *list_clone(List *list);
-API void list_push(List *st, void *ptr);
-API void *list_pop(List *st);
-API void list_free_entry(ListEntry *le);
-API void list_free(List *st);
+extern ListNode * list_insert (ListNode *, void *);
+extern void * list_remove (ListNode *);
+extern ListNode * list_move (ListNode *, void *, void *);
+
+extern size_t list_size (List *);
+
+#define list_begin(list) ((list) -> sentinel.next)
+#define list_end(list) (& (list) -> sentinel)
+
+#define list_empty(list) (list_begin (list) == list_end (list))
+
+#define list_next(iterator) ((iterator) -> next)
+#define list_previous(iterator) ((iterator) -> previous)
+
+#define list_front(list) ((void *) (list) -> sentinel.next)
+#define list_back(list) ((void *) (list) -> sentinel.previous)
 
 // scope.c
 
-typedef struct _Scope {
-	List *var;
-	uint64_t offset;
-} Scope;
-
-typedef struct _Var {
-	char *var;
-	uint64_t offset;
-} Var;
-
-API Scope *scope_init();
-API Scope *scope_clone(Scope *scope);
-API void scope_add_var(Scope *scope, const char *var, uint64_t offset);
-API uint64_t scope_get_offset(Scope *scope, const char *var);
-API bool scope_has_var(Scope *scope, const char *var);
-API void scope_free(Scope *st);
 
 // chipcode.c
 
@@ -65,23 +61,23 @@ typedef enum {
 } TokenType;
 
 typedef struct _Token {
+	ListNode node;
 	char *data;
 	int line;
 	TokenType type;
-	struct _Token *next;
 } Token;
 
 char *malloc_string_to_bit(char *data);
 char *malloc_strcpy(char *data, int size);
 void assert_not_eof(char *bit);
-Token *new_token(Token *prev, TokenType type, char* data);
+Token *new_token(TokenType type, char* data);
 bool is_space(char bit);
 bool startswith(char *p, char *q);
 bool is_keyword(char bit);
 bool is_number(char bit);
 bool strmatch(char *a, char *b);
-API Token *lex(char *file);
-API void token_free(Token *token);
+API void lex(List *list, char *file);
+API void token_free(List *list);
 
 // parse.c
 
@@ -108,10 +104,10 @@ typedef enum {
 
 typedef struct _Parser {
 	Token *token;
-	Scope *scope;
 } Parser;
 
 typedef struct _Node {
+	ListNode node;
 	NodeType type;
 	struct _Node *condition;
 
@@ -125,7 +121,7 @@ typedef struct _Node {
 
 	uint64_t offset;
 
-	List *bodylist;
+	List bodylist;
 	Token *token;
 } Node;
 
@@ -166,7 +162,7 @@ bool peek_string(Parser *parser, const char *str);
 bool peek_type(Parser *parser, TokenType type);
 
 bool is_typename(Parser *parser);
-API Node *parse(Token *token);
+API Node *parse(List *token);
 
 // vm.c
 
