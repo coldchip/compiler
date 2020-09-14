@@ -97,7 +97,7 @@ Node *parse_primary(Parser *parser) {
 		node->token = token;
 		return node;
 	} else {
-		c_error("Expecting Identifier or Literal at Line %i", token->line);
+		c_error("Expecting Identifier or Literal at Line %i, got %i", token->line, token->type);
 	}
 	return NULL;
 }

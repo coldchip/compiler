@@ -148,6 +148,8 @@ Node *parse_program(Parser *parser) {
 	while(!peek_type(parser, TK_EOF)) {
 		if(is_function(parser)) {
 			list_insert(list_end(&node->bodylist), parse_function(parser));
+		} else {
+			c_error("Not a function!");
 		}
 	}
 
@@ -165,8 +167,7 @@ Node *parse(List *token) {
 
 bool is_call(Parser *parser) {
 	Parser rewind = *parser;
-	parse_declarator(&rewind);
-	if(consume_string(&rewind, "(")) {
+	if(consume_type(&rewind, TK_IDENT) && consume_string(&rewind, "(")) {
 		return true;
 	}
 	return false;
@@ -174,10 +175,11 @@ bool is_call(Parser *parser) {
 
 bool is_function(Parser *parser) {
 	Parser rewind = *parser;
-	parse_basetype(&rewind);
-	parse_declarator(&rewind);
-	if(consume_string(&rewind, "(")) {
-		return true;
+	if(is_typename(&rewind)) {
+		consume(&rewind);
+		if(consume_type(&rewind, TK_IDENT) && consume_string(&rewind, "(")) {
+			return true;
+		}
 	}
 	return false;
 }
@@ -221,7 +223,7 @@ void expect_type(Parser *parser, TokenType type) {
 		if(token->type == TK_EOF) {
 			c_error("Parse Error: Expecting type %i at line %i, but end of file is reached", type, token->line);
 		} else {
-			c_error("Parse Error: Expecting type %i at line %i", type, token->line);
+			c_error("Parse Error: Expecting type %i at line %i, got %i", type, token->line, token->type);
 		}
 	}
 }

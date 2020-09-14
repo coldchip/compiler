@@ -155,6 +155,7 @@ Node *parse_program(Parser *parser);
 bool is_function(Parser *parser);
 bool is_call(Parser *parser);
 
+void consume(Parser *parser);
 bool consume_string(Parser *parser, const char *str);
 bool consume_type(Parser *parser, TokenType type);
 void expect_string(Parser *parser, const char *str);
