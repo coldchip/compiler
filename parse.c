@@ -202,31 +202,39 @@ bool consume_type(Parser *parser, TokenType type) {
 void expect_string(Parser *parser, const char *str) {
 	if(!consume_string(parser, str)) {
 		Token *token = parser->token;
-		c_error("Parse Error: Expecting %s at line %i, got \"%s\"", str, token->line, token->data);
+		if(token->type == TK_EOF) {
+			c_error("Parse Error: Expecting %s at line %i, but end of file is reached", str, token->line, token->data);
+		} else {
+			c_error("Parse Error: Expecting %s at line %i, got \"%s\"", str, token->line, token->data);
+		}
 	}
 }
 
 void expect_type(Parser *parser, TokenType type) {
 	if(!consume_type(parser, type)) {
 		Token *token = parser->token;
-		c_error("Parse Error: Expecting type %i at line %i", type, token->line);
+		if(token->type == TK_EOF) {
+			c_error("Parse Error: Expecting type %i at line %i, but end of file is reached", type, token->line);
+		} else {
+			c_error("Parse Error: Expecting type %i at line %i", type, token->line);
+		}
 	}
 }
 
 bool peek_type(Parser *parser, TokenType type) {
 	Token *token = parser->token;
-	if(!token || token->type) {
-		return false;
+	if(token && token->type == type) {
+		return true;
 	}
-	return token->type == type;
+	return false;
 }
 
 bool peek_string(Parser *parser, const char *str) {
 	Token *token = parser->token;
-	if(!token || token->data == NULL) {
-		return false;
-	}
-	return strcmp(token->data, str) == 0;
+	if(token && token->data && strcmp(token->data, str) == 0) {
+		return true;
+	} 
+	return false;
 }
 
 bool is_typename(Parser *parser) {

@@ -70,7 +70,7 @@ typedef struct _Token {
 char *malloc_string_to_bit(char *data);
 char *malloc_strcpy(char *data, int size);
 void assert_not_eof(char *bit);
-Token *new_token(TokenType type, char* data);
+Token *new_token(TokenType type, char* data, int line);
 bool is_space(char bit);
 bool startswith(char *p, char *q);
 bool is_keyword(char bit);

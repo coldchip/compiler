@@ -10,11 +10,12 @@
 #include <stdbool.h>
 #include "chipcode.h"
 
-Token *new_token(TokenType type, char* data) {
-	Token *tok = malloc(sizeof(Token));
-	tok->data = data;
-	tok->type = type;
-	return tok;
+Token *new_token(TokenType type, char* data, int line) {
+	Token *token = malloc(sizeof(Token));
+	token->data = data;
+	token->type = type;
+	token->line = line;
+	return token;
 }
 
 void assert_not_eof(char *bit) {
@@ -60,6 +61,8 @@ char *malloc_strcpy(char *data, int size) {
 void lex(List *tokens, char *data) {
 	list_clear(tokens);
 
+	int line = 1;
+
 	while(*data != '\0') {
 		if(is_keyword(*data)) {
 			char *start = data;
@@ -67,7 +70,7 @@ void lex(List *tokens, char *data) {
 				data++;
 			}
 			char *keyword = malloc_strcpy(start, data - start);
-			list_insert(list_end(tokens), new_token(TK_IDENT, keyword));
+			list_insert(list_end(tokens), new_token(TK_IDENT, keyword, line));
 			continue;
 		} else if(is_number(*data)) {
 			char *start = data;
@@ -75,7 +78,7 @@ void lex(List *tokens, char *data) {
 				data++;
 			}
 			char *keyword = malloc_strcpy(start, data - start);
-			list_insert(list_end(tokens), new_token(TK_NUMBER, keyword));
+			list_insert(list_end(tokens), new_token(TK_NUMBER, keyword, line));
 			continue;
 		} else if(*data == '"') {
 			data++;
@@ -93,7 +96,7 @@ void lex(List *tokens, char *data) {
 				data++;
 			}
 			char *keyword = malloc_strcpy(start, data - start);
-			list_insert(list_end(tokens), new_token(TK_STRING, keyword));
+			list_insert(list_end(tokens), new_token(TK_STRING, keyword, line));
 			data++;
 			continue;
 		} else if(*data == '\'') {
@@ -112,7 +115,7 @@ void lex(List *tokens, char *data) {
 				data++;
 			}
 			char *keyword = malloc_strcpy(start, data - start);
-			list_insert(list_end(tokens), new_token(TK_STRING, keyword));
+			list_insert(list_end(tokens), new_token(TK_STRING, keyword, line));
 			data++;
 			continue;
 		} else if (startswith(data, "//")) {
@@ -120,6 +123,7 @@ void lex(List *tokens, char *data) {
 			while(*data != '\n' && *data != '\0') {
 				data++;
 			}
+
 			continue;
 		} else if(startswith(data, "/*")) {
 			char *q = strstr(data + 2, "*/");
@@ -130,23 +134,23 @@ void lex(List *tokens, char *data) {
 			continue;
 		} else if(startswith(data, "==")) {
 			char *t = malloc_strcpy(data, 2);
-			list_insert(list_end(tokens), new_token(TK_SPECIAL, t));
+			list_insert(list_end(tokens), new_token(TK_SPECIAL, t, line));
 			data += 2;
 			continue;
 		} else if(is_space(*data)) {
 			if(*data == '\n') {
-				
+				line++;
 			}
 			data++;
 			continue;
 		} else {
 			char *t = malloc_string_to_bit(data);
-			list_insert(list_end(tokens), new_token(TK_SPECIAL, t));
+			list_insert(list_end(tokens), new_token(TK_SPECIAL, t, line));
 			data++;
 			continue;
 		}
 	}
-	list_insert(list_end(tokens), new_token(TK_EOF, NULL));
+	list_insert(list_end(tokens), new_token(TK_EOF, NULL, line));
 }
 
 void token_free(List *list) {
