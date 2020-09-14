@@ -86,7 +86,9 @@ Node *parse_equality(Parser *parser) {
 
 Node *parse_primary(Parser *parser) {
 	Token *token = parser->token;
-	if(consume_type(parser, TK_IDENT)) {
+	if(is_call(parser)) {
+		return parse_call(parser);
+	} else if(consume_type(parser, TK_IDENT)) {
 		Node *node = new_node(AST_IDENT);
 		node->token = token;
 		return node;	

@@ -11,13 +11,15 @@ void emit(Generator *generator, const char *op, const char *a, const char *b) {
 			fprintf(generator->file, "\t%s %s\n", op, a);
 		} else if(b) {
 			fprintf(generator->file, "\t%s %s\n", op, b);
-		} 
+		} else {
+			fprintf(generator->file, "\t%s\n", op);
+		}
 	}
 }
 
-void emit_label(Generator *generator, const char *label) {
+void emit_procedure(Generator *generator, const char *label) {
 	if(label) {
-		fprintf(generator->file, "%s:\n", label);
+		fprintf(generator->file, "procedure %s:\n", label);
 	}
 }
 
@@ -62,9 +64,8 @@ void enter_program(Generator *generator, Node *node) {
 }
 
 void enter_function(Generator *generator, Node *node) {
-	emit_label(generator, node->token->data);
-	emit(generator, "push", "fp", NULL);
-	emit(generator, "mov", "fp", "sp");
+	emit_procedure(generator, node->token->data);
+	emit(generator, "pushstack", NULL, NULL);
 	if(node->args) {
 		visitor(generator, node->args);
 	}
@@ -73,8 +74,7 @@ void enter_function(Generator *generator, Node *node) {
 		Node *entry = (Node*)list_remove(list_begin(list));
 		visitor(generator, entry);
 	}
-	emit(generator, "mov", "sp", "fp");
-	emit(generator, "pop", "fp", NULL);
+	emit(generator, "popstack", NULL, NULL);
 	node_free(node);
 }
 
@@ -108,26 +108,37 @@ void enter_binexpr(Generator *generator, Node *node) {
 		case AST_ADD:
 		{
 			emit(generator, "add", "r0", "r1");
+			// Push results into r0 register
+			emit(generator, "push", "r0", NULL);
 		}
 		break;
 		case AST_SUB:
 		{
 			emit(generator, "sub", "r0", "r1");
+			// Push results into r0 register
+			emit(generator, "push", "r0", NULL);
 		}
 		break;
 		case AST_MUL:
 		{
 			emit(generator, "mul", "r0", "r1");
+			// Push results into r0 register
+			emit(generator, "push", "r0", NULL);
 		}
 		break;
 		case AST_DIV:
 		{
 			emit(generator, "div", "r0", "r1");
+			// Push results into r0 register
+			emit(generator, "push", "r0", NULL);
 		}
 		break;
 		case AST_EQUAL:
 		{
-
+			// Compare r0 and r1
+			emit(generator, "cmp", "r0", "r1");
+			// Push true/false flag into r0 register
+			emit(generator, "sete", "r0", NULL);
 		}
 		break;
 		default:
@@ -137,7 +148,6 @@ void enter_binexpr(Generator *generator, Node *node) {
 		break;
 	}
 	// Push last result to stack
-	emit(generator, "push", "r0", NULL);
 	node_free(node);
 }
 
@@ -166,6 +176,9 @@ void enter_if(Generator *generator, Node *node) {
 	if(node->condition) {
 		visitor(generator, node->condition);
 	}
+	// True or false is set into r0
+	emit(generator, "cmp", "r0", "0");
+	emit(generator, "jne", "@???", NULL);
 	if(node->body) {
 		visitor(generator, node->body);
 	}
@@ -208,6 +221,15 @@ void enter_arg(Generator *generator, Node *node) {
 		Node *entry = (Node*)list_remove(list_begin(list));
 		visitor(generator, entry);
 	}
+	node_free(node);
+}
+
+void enter_return(Generator *generator, Node *node) {
+	if(node->body) {
+		visitor(generator, node->body);
+	}
+	emit(generator, "pop", "r0", NULL);
+	emit(generator, "push", "j0", NULL);
 	node_free(node);
 }
 
@@ -281,6 +303,11 @@ void visitor(Generator *generator, Node *node) {
 		case AST_CALL:
 		{
 			enter_call(generator, node);
+		}
+		break;
+		case AST_RETURN:
+		{
+			enter_return(generator, node);
 		}
 		break;
 		default:

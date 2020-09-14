@@ -51,6 +51,12 @@ Node *parse_declaration(Parser *parser) {
 	Token *token = parser->token;
 	
 	expect_type(parser, TK_IDENT);
+
+	if(peek_string(parser, "[")) {
+		consume_string(parser, "[");
+		expect_string(parser, "]");
+		consume_string(parser, "]");
+	}
 	
 	if(consume_string(parser, "=")) {
 		node->body = parse_expr(parser);
@@ -88,15 +94,14 @@ Node *parse_stmt(Parser *parser) {
 		return node;
 	} else if(consume_string(parser, "while")) {
 		Node *node = new_node(AST_WHILE);
-
 		expect_string(parser, "(");
 		node->condition = parse_expr(parser);
 		expect_string(parser, ")");
 		node->body = parse_stmt(parser);
-
 		return node;
-	} else if(is_call(parser)) {
-		Node *node = parse_call(parser);
+	} else if(consume_string(parser, "return")) {
+		Node *node = new_node(AST_RETURN);
+		node->body = parse_expr(parser);
 		expect_string(parser, ";");
 		return node;
 	} else if(is_typename(parser)) {

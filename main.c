@@ -41,14 +41,18 @@ int main(int argc, char const *argv[]) {
 		List tokens;
 		lex(&tokens, expanded);
 
-		
 		printf("Parsing %s\n", file);
+
 		Node *node = parse(&tokens);
+
 		printf("Code Generation %s\n", file);
+
 		generate(node);
+
 		printf("Done %s\n", file);
+
 		free(buf);
-		//token_free(tokens);
+		token_free(&tokens);
 		
 	} else {
 		printf("No input file(s) specified\n");

@@ -98,6 +98,7 @@ typedef enum {
 	AST_LITERAL,
 	AST_DECL,
 	AST_CALL,
+	AST_RETURN,
 	AST_ARG,
 	AST_PARAM
 } NodeType;
@@ -166,29 +167,8 @@ API Node *parse(List *token);
 
 // vm.c
 
-typedef struct _Process {
-	uint64_t sp;
-	uint64_t fp;
-	uint64_t r0;
-	uint64_t r1;
-	uint64_t r2;
-	uint64_t r3;
-	char *stack;
-
-	uint64_t val;
-} Process;
-
-API Process *new_process();
-
-void put_reg(Process *process, char *reg_or_value, uint64_t data);
-
-uint64_t get_reg(Process *process, char *a);
-
-API void op_exec(Process *process, char *op, char *a, char *b);
-
 API void print_hex(const char *string);
 
-API void free_process(Process *process);
 
 // codegen.c
 
@@ -197,7 +177,7 @@ typedef struct _Generator {
 } Generator;
 
 void emit(Generator *generator, const char *op, const char *a, const char *b);
-void emit_label(Generator *generator, const char *label);
+void emit_procedure(Generator *generator, const char *label);
 void emit_param(Generator *generator, const char *label);
 
 void gen_store(Generator *generator);
@@ -216,6 +196,7 @@ void enter_if(Generator *generator, Node *node);
 void enter_while(Generator *generator, Node *node);
 void enter_param(Generator *generator, Node *node);
 void enter_arg(Generator *generator, Node *node);
+void enter_return(Generator *generator, Node *node);
 void visitor(Generator *generator, Node *node);
 void generate(Node *node);
 
