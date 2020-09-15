@@ -168,6 +168,39 @@ API Node *parse(List *token);
 
 // vm.c
 
+typedef enum {
+	NONE,
+	R0,
+	R1,
+	R2,
+	R3,
+	R4,
+	R5
+} Reg;
+
+typedef enum {
+	PUSH,
+	POP,
+	MOV,
+	ADD,
+	JMP,
+	
+	INTERUPT,
+	PUSHSTACK,
+	POPSTACK,
+} InsType;
+
+typedef struct _OP {
+	ListNode node;
+	InsType ins;
+	Reg left;
+	Reg right;
+	int rval;
+	int lval;
+} OP;
+
+API void exec();
+
 API void print_hex(const char *string);
 
 

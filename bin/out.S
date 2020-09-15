@@ -18,12 +18,14 @@ procedure add:
 	popstack
 procedure main:
 	pushstack
-	push 0
-	push 1
-	mov r5 sp
+	push 256
+	push 256
 	mov r0 @fp+0
 	push r0
 	mov r0 @fp+0
 	push r0
-	call add
+	pop r0
+	pop r1
+	add r0 r1
+	push r0
 	popstack

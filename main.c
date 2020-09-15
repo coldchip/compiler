@@ -51,6 +51,8 @@ int main(int argc, char const *argv[]) {
 
 		printf("Done %s\n", file);
 
+		exec();
+
 		free(buf);
 		token_free(&tokens);
 		
