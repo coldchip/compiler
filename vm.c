@@ -1,7 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include "chipcode.h"
+#include "vm.h"
 
 OP *new_op(InsType ins, Reg left, Reg right, int lval, int rval) {
 	OP *op = malloc(sizeof(OP));

@@ -2,13 +2,7 @@
 	ColdChip inc. 
 	@Author Ryan
 */
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <stdbool.h>
-#include "chipcode.h"
+#include "lex.h"
 
 Token *new_token(TokenType type, char* data, int line) {
 	Token *token = malloc(sizeof(Token));

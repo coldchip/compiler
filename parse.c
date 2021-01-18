@@ -1,6 +1,6 @@
 #include <string.h>
 #include <stdlib.h>
-#include "chipcode.h"
+#include "parse.h"
 
 Node *new_node(NodeType type) {
 	Node *node = malloc(sizeof(Node));

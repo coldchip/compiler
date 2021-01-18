@@ -1,5 +1,4 @@
-#include <string.h>
-#include "chipcode.h"
+#include "parse.h"
 
 Node *parse_param(Parser *parser) {
 	parse_basetype(parser);

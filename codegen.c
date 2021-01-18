@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
-#include "chipcode.h"
+#include "codegen.h"
 
 void emit(Generator *generator, const char *op, const char *a, const char *b) {
 	if(op) {

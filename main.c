@@ -3,6 +3,10 @@
 #include <string.h>
 #include <time.h>
 #include "chipcode.h"
+#include "lex.h"
+#include "parse.h"
+#include "codegen.h"
+#include "vm.h"
 
 char *read_file_into_buffer(char *file) {
 	FILE *infp = fopen(file, "rb");

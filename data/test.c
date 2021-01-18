@@ -3,8 +3,5 @@ int add(int a, int b) {
 }
 
 int main() {
-	int a = 256;
-	int b = 256;
-	//int c = add(a, b);
-	int c = a + b;
+	int a = 1 + 2 + 3 + 4 + 5 + 6;
 }
