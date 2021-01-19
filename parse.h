@@ -2,6 +2,7 @@
 #define PARSE_H
 
 #include <string.h>
+#include <stdlib.h>
 #include "lex.h"
 
 typedef enum {
@@ -60,14 +61,14 @@ typedef struct _Node {
 Node *new_node(NodeType type);
 void node_free(Node *node);
 
-// parse_string_expr.c
+/* parse_string_expr.c */
 
 Node *parse_string_expr(Parser *parser);
 Node *parse_string_assign(Parser *parser);
 Node *parse_string_concat(Parser *parser);
 Node *parse_string_primary(Parser *parser);
 
-// parse_expr.c
+/* parse_expr.c */
 
 Node *parse_expr(Parser *parser);
 Node *parse_assign(Parser *parser);
@@ -79,14 +80,14 @@ Node *parse_relational(Parser *parser);
 Node *parse_equality(Parser *parser);
 Node *parse_primary(Parser *parser);
 
-// parse_args.c
+/* parse_args.c */
 
 Node *parse_arg(Parser *parser);
 Node *parse_args(Parser *parser);
 Node *parse_param(Parser *parser);
 Node *parse_params(Parser *parser);
 
-// parse.c
+/* parse.c */
 
 Node *parse_call(Parser *parser);
 Node *parse_declaration(Parser *parser);

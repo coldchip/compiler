@@ -5,7 +5,7 @@ Node *parse_string_expr(Parser *parser) {
 	return node;
 }
 
-// Parses "aa" = "aa" ...
+/* Parses "aa" = "aa" ... */
 
 Node *parse_string_assign(Parser *parser) {
 	Node *left = parse_string_concat(parser);
@@ -18,7 +18,7 @@ Node *parse_string_assign(Parser *parser) {
 	return left;
 }
 
-// Parses "aa" + "aa"
+/* Parses "aa" + "aa" */
 
 Node *parse_string_concat(Parser *parser) {
 	Node *left = parse_string_primary(parser);
@@ -30,6 +30,8 @@ Node *parse_string_concat(Parser *parser) {
 	}
 	return left;
 }
+
+/* Parses "aa" */
 
 Node *parse_string_primary(Parser *parser) {
 	Token *token = parser->token;

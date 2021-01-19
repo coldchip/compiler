@@ -67,7 +67,7 @@ void enter_decl(Generator *generator, Node *node) {
 }
 
 void enter_binexpr(Generator *generator, Node *node) {
-	// Enter deepest first
+	/* Enter deepest first */
 	if(node->right) {
 		visitor(generator, node->right);
 	}
@@ -97,7 +97,6 @@ void enter_binexpr(Generator *generator, Node *node) {
 		break;
 		case AST_EQUAL:
 		{
-			// Compare r0 and r1
 			emit(generator, "\tcmp\n");
 		}
 		break;
@@ -107,7 +106,6 @@ void enter_binexpr(Generator *generator, Node *node) {
 		}
 		break;
 	}
-	// Push last result to stack
 	node_free(node);
 }
 

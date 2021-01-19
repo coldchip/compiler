@@ -1,7 +1,3 @@
-/*
-	ColdChip inc. 
-	@Author Ryan
-*/
 #include "lex.h"
 
 Token *new_token(TokenType type, char* data, int line) {

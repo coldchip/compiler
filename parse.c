@@ -1,5 +1,3 @@
-#include <string.h>
-#include <stdlib.h>
 #include "parse.h"
 
 Node *new_node(NodeType type) {
@@ -39,7 +37,7 @@ DataType parse_basetype(Parser *parser) {
 	return DATA_VOID;
 }
 
-// Parses any string/number declaration
+/* Parses any string/number declaration */
 
 Node *parse_declaration(Parser *parser) {
 	Node *node = new_node(AST_DECL);
@@ -57,10 +55,10 @@ Node *parse_declaration(Parser *parser) {
 	
 	if(consume_string(parser, "=")) {
 		if(type == DATA_STRING) {
-			// "hello" + "hello"
+			/* "hello" + "hello" */
 			node->body = parse_string_expr(parser);
 		} else {
-			// 1 + 2 + 3 ...
+			/* 1 + 2 + 3 ... */
 			node->body = parse_expr(parser);
 		}
 	}
