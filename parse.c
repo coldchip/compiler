@@ -12,11 +12,6 @@ Node *new_node(NodeType type) {
 }
 
 void node_free(Node *node) {
-	List *body = &node->bodylist;
-	while(!list_empty(body)) {
-		Node *current = (Node*)list_remove(list_begin(body));
-		
-	}
 	free(node);
 }
 
@@ -31,35 +26,43 @@ Node *parse_call(Parser *parser) {
 	return node;
 }
 
-void parse_basetype(Parser *parser) {
-	if(peek_string(parser, "int") || peek_string(parser, "void")) {
-		if(consume_string(parser, "int")) {
-
-		} else if(consume_string(parser, "void")) {
-
-		}
+DataType parse_basetype(Parser *parser) {
+	if(consume_string(parser, "string")) {
+		return DATA_STRING;
+	} else if(consume_string(parser, "int")) {
+		return DATA_NUMBER;
+	} else if(consume_string(parser, "void")) {
+		return DATA_VOID;
 	} else {
 		c_error("Invalid base type");
 	}
+	return DATA_VOID;
 }
+
+// Parses any string/number declaration
 
 Node *parse_declaration(Parser *parser) {
 	Node *node = new_node(AST_DECL);
 
-	parse_basetype(parser);
+	DataType type = parse_basetype(parser);
 
 	Token *token = parser->token;
 	
 	expect_type(parser, TK_IDENT);
-
-	if(peek_string(parser, "[")) {
-		consume_string(parser, "[");
+	node->token = token;
+	if(consume_string(parser, "[")) {
+		expect_type(parser, TK_NUMBER);
 		expect_string(parser, "]");
-		consume_string(parser, "]");
 	}
 	
 	if(consume_string(parser, "=")) {
-		node->body = parse_expr(parser);
+		if(type == DATA_STRING) {
+			// "hello" + "hello"
+			node->body = parse_string_expr(parser);
+		} else {
+			// 1 + 2 + 3 ...
+			node->body = parse_expr(parser);
+		}
 	}
 	return node;
 }
@@ -248,5 +251,6 @@ bool is_typename(Parser *parser) {
 	return 
 	peek_string(parser, "void") || 
 	peek_string(parser, "int") || 
-	peek_string(parser, "char");
+	peek_string(parser, "char") || 
+	peek_string(parser, "string");
 }

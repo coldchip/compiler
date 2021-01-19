@@ -1,45 +1,18 @@
-#include <stdio.h>
-#include <stdarg.h>
-#include <stdlib.h>
 #include "codegen.h"
 
-void emit(Generator *generator, const char *op, const char *a, const char *b) {
-	if(op) {
-		if(a && b) {
-			fprintf(generator->file, "\t%s %s %s\n", op, a, b);
-		} else if(a) {
-			fprintf(generator->file, "\t%s %s\n", op, a);
-		} else if(b) {
-			fprintf(generator->file, "\t%s %s\n", op, b);
-		} else {
-			fprintf(generator->file, "\t%s\n", op);
-		}
-	}
-}
-
-void emit_procedure(Generator *generator, const char *label) {
-	if(label) {
-		fprintf(generator->file, "procedure %s:\n", label);
-	}
-}
-
-void emit_param(Generator *generator, const char *label) {
-	if(label) {
-		fprintf(generator->file, "%s\n", label);
-	}
+void emit(Generator *generator, const char *format, ...) {
+	va_list args;
+    va_start(args, format);
+    vfprintf(stdout, format, args);
+    va_end(args);
 }
 
 void gen_store(Generator *generator) {
-	emit(generator, "pop", "r0", NULL);
-	emit(generator, "pop", "r1", NULL);
-	emit(generator, "mov", "[r0], r1", NULL);
+	
 }
 
 void gen_addr(Generator *generator, Node *node) {
-	char offset_data[1000];
-	sprintf(offset_data, "fp+%li", node->offset);
-	emit(generator, "mov", "r0", offset_data);
-	emit(generator, "push", "r0", NULL);
+
 	node_free(node);
 }
 
@@ -64,8 +37,7 @@ void enter_program(Generator *generator, Node *node) {
 }
 
 void enter_function(Generator *generator, Node *node) {
-	emit_procedure(generator, node->token->data);
-	emit(generator, "pushstack", NULL, NULL);
+	emit(generator, "func %s\n", node->token->data);
 	if(node->args) {
 		visitor(generator, node->args);
 	}
@@ -74,7 +46,6 @@ void enter_function(Generator *generator, Node *node) {
 		Node *entry = (Node*)list_remove(list_begin(list));
 		visitor(generator, entry);
 	}
-	emit(generator, "popstack", NULL, NULL);
 	node_free(node);
 }
 
@@ -90,6 +61,7 @@ void enter_block(Generator *generator, Node *node) {
 void enter_decl(Generator *generator, Node *node) {
 	if(node->body) {
 		visitor(generator, node->body);
+		emit(generator, "\tstore %s\n", node->token->data);
 	}
 	node_free(node);
 }
@@ -102,43 +74,31 @@ void enter_binexpr(Generator *generator, Node *node) {
 	if(node->left) {
 		visitor(generator, node->left);
 	}
-	emit(generator, "pop", "r0", NULL);
-	emit(generator, "pop", "r1", NULL);
 	switch(node->type) {
 		case AST_ADD:
 		{
-			emit(generator, "add", "r0", "r1");
-			// Push results into r0 register
-			emit(generator, "push", "r0", NULL);
+			emit(generator, "\tadd\n");
 		}
 		break;
 		case AST_SUB:
 		{
-			emit(generator, "sub", "r0", "r1");
-			// Push results into r0 register
-			emit(generator, "push", "r0", NULL);
+			emit(generator, "\tsub\n");
 		}
 		break;
 		case AST_MUL:
 		{
-			emit(generator, "mul", "r0", "r1");
-			// Push results into r0 register
-			emit(generator, "push", "r0", NULL);
+			emit(generator, "\tmul\n");
 		}
 		break;
 		case AST_DIV:
 		{
-			emit(generator, "div", "r0", "r1");
-			// Push results into r0 register
-			emit(generator, "push", "r0", NULL);
+			emit(generator, "\tdiv\n");
 		}
 		break;
 		case AST_EQUAL:
 		{
 			// Compare r0 and r1
-			emit(generator, "cmp", "r0", "r1");
-			// Push true/false flag into r0 register
-			emit(generator, "sete", "r0", NULL);
+			emit(generator, "\tcmp\n");
 		}
 		break;
 		default:
@@ -152,15 +112,12 @@ void enter_binexpr(Generator *generator, Node *node) {
 }
 
 void enter_literal(Generator *generator, Node *node) {
-	emit(generator, "push", (node->token->data), NULL);
+	emit(generator, "\tpush %s\n", (node->token->data));
 	node_free(node);
 }
 
 void enter_ident(Generator *generator, Node *node) {
-	char offset_data[1000];
-	sprintf(offset_data, "@fp+%li", node->offset);
-	emit(generator, "mov", "r0", offset_data);
-	emit(generator, "push", "r0", NULL);
+	emit(generator, "\tload %s\n", node->token->data);
 	node_free(node);
 }
 
@@ -168,7 +125,7 @@ void enter_call(Generator *generator, Node *node) {
 	if(node->args) {
 		visitor(generator, node->args);
 	}
-	emit(generator, "call", node->token->data, NULL);
+	emit(generator, "\tcall %s\n", node->token->data);
 	node_free(node);
 }
 
@@ -176,9 +133,6 @@ void enter_if(Generator *generator, Node *node) {
 	if(node->condition) {
 		visitor(generator, node->condition);
 	}
-	// True or false is set into r0
-	emit(generator, "cmp", "r0", "0");
-	emit(generator, "jne", "@???", NULL);
 	if(node->body) {
 		visitor(generator, node->body);
 	}
@@ -200,22 +154,14 @@ void enter_while(Generator *generator, Node *node) {
 
 void enter_param(Generator *generator, Node *node) {
 	List *list = &node->bodylist;
-	int ptr = 0;
 	while(!list_empty(list)) {
 		Node *entry = (Node*)list_remove(list_begin(list));
 		node_free(entry);
-		
-		char offset_data[1000];
-		sprintf(offset_data, "@r5+%i", ptr);
-		emit(generator, "mov", "r0", offset_data);
-		emit(generator, "push", "r0", NULL);
-		ptr += 8;
 	}
 	node_free(node);
 }
 
 void enter_arg(Generator *generator, Node *node) {
-	emit(generator, "mov", "r5", "sp");
 	List *list = &node->bodylist;
 	while(!list_empty(list)) {
 		Node *entry = (Node*)list_remove(list_begin(list));
@@ -228,8 +174,22 @@ void enter_return(Generator *generator, Node *node) {
 	if(node->body) {
 		visitor(generator, node->body);
 	}
-	emit(generator, "pop", "r0", NULL);
-	emit(generator, "push", "j0", NULL);
+	node_free(node);
+}
+
+void enter_string_concat(Generator *generator, Node *node) {
+	if(node->right) {
+		visitor(generator, node->right);
+	}
+	if(node->left) {
+		visitor(generator, node->left);
+	}
+	emit(generator, "\tstr_concat\n");
+	node_free(node);
+}
+
+void enter_string(Generator *generator, Node *node) {
+	emit(generator, "\tpush_str %s\n", node->token->data);
 	node_free(node);
 }
 
@@ -310,6 +270,16 @@ void visitor(Generator *generator, Node *node) {
 			enter_return(generator, node);
 		}
 		break;
+		case AST_STRING_CONCAT:
+		{
+			enter_string_concat(generator, node);
+		}
+		break;
+		case AST_STRING:
+		{
+			enter_string(generator, node);
+		}
+		break;
 		default:
 		{
 			
@@ -320,8 +290,6 @@ void visitor(Generator *generator, Node *node) {
 
 void generate(Node *node) {
 	Generator generator;
-	generator.file = fopen("bin/out.S", "wb");
-	emit_param(&generator, "[asm]");
+	generator.file = stdout;
 	visitor(&generator, node);
-	fclose(generator.file);
 }

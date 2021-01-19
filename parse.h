@@ -23,8 +23,16 @@ typedef enum {
 	AST_CALL,
 	AST_RETURN,
 	AST_ARG,
-	AST_PARAM
+	AST_PARAM,
+	AST_STRING_CONCAT,
+	AST_STRING
 } NodeType;
+
+typedef enum {
+	DATA_STRING,
+	DATA_NUMBER,
+	DATA_VOID
+} DataType;
 
 typedef struct _Parser {
 	Token *token;
@@ -52,6 +60,15 @@ typedef struct _Node {
 Node *new_node(NodeType type);
 void node_free(Node *node);
 
+// parse_string_expr.c
+
+Node *parse_string_expr(Parser *parser);
+Node *parse_string_assign(Parser *parser);
+Node *parse_string_concat(Parser *parser);
+Node *parse_string_primary(Parser *parser);
+
+// parse_expr.c
+
 Node *parse_expr(Parser *parser);
 Node *parse_assign(Parser *parser);
 Node *parse_plus(Parser *parser);
@@ -62,15 +79,19 @@ Node *parse_relational(Parser *parser);
 Node *parse_equality(Parser *parser);
 Node *parse_primary(Parser *parser);
 
+// parse_args.c
+
 Node *parse_arg(Parser *parser);
 Node *parse_args(Parser *parser);
 Node *parse_param(Parser *parser);
 Node *parse_params(Parser *parser);
 
+// parse.c
+
 Node *parse_call(Parser *parser);
 Node *parse_declaration(Parser *parser);
 void parse_declarator(Parser *parser);
-void parse_basetype(Parser *parser);
+DataType parse_basetype(Parser *parser);
 Node *parse_stmt(Parser *parser);
 Node *parse_function(Parser *parser);
 Node *parse_program(Parser *parser);

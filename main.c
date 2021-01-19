@@ -6,7 +6,6 @@
 #include "lex.h"
 #include "parse.h"
 #include "codegen.h"
-#include "vm.h"
 
 char *read_file_into_buffer(char *file) {
 	FILE *infp = fopen(file, "rb");
@@ -19,14 +18,16 @@ char *read_file_into_buffer(char *file) {
 	char *p = malloc(fsize + 1);
 	fseek(infp, 0, SEEK_SET);
 
-	fread((char*)p, 1, fsize, infp);
+	if(fread((char*)p, 1, fsize, infp) != fsize) {
+		c_error("Unable to load file");
+	}
 	fclose(infp);
 	*(p + fsize) = '\0';
 
 
 	for(char *check = p; check < p + fsize; check++) {
 		if(*check == '\0') {
-			printf("Cannot compiler because file %s contains NULL character(s)\n", file);
+			printf("Cannot compile because file %s contains NULL character(s)\n", file);
     		exit(0);
 		}
 	}
@@ -37,13 +38,11 @@ int main(int argc, char const *argv[]) {
 	char *file = (char*)argv[1];
 	if(file != NULL) {
 		printf("Attempting to compile %s\n", file);
-		char *buf = read_file_into_buffer(file);
-		printf("Preprocessing %s\n", file);
-		char *expanded = macro(buf);
-		printf("Lexing %s\n", file);
+		char *input = read_file_into_buffer(file);
 
+		printf("Lexing %s\n", file);
 		List tokens;
-		lex(&tokens, expanded);
+		lex(&tokens, input);
 
 		printf("Parsing %s\n", file);
 
@@ -55,9 +54,7 @@ int main(int argc, char const *argv[]) {
 
 		printf("Done %s\n", file);
 
-		exec();
-
-		free(buf);
+		free(input);
 		token_free(&tokens);
 		
 	} else {

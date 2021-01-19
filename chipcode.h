@@ -12,8 +12,4 @@
 
 API void c_error(char *format, ...);
 
-// macro.c
-
-API char *macro(char *input);
-
 #endif
