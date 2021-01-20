@@ -3,16 +3,12 @@
 void emit(Generator *generator, const char *format, ...) {
 	va_list args;
     va_start(args, format);
-    vfprintf(stdout, format, args);
+    vfprintf(generator->file, format, args);
     va_end(args);
 }
 
-void gen_store(Generator *generator) {
-	
-}
-
-void gen_addr(Generator *generator, Node *node) {
-
+void gen_store(Generator *generator, Node *node) {
+	emit(generator, "\tstore %s\n", node->token->data);
 	node_free(node);
 }
 
@@ -21,9 +17,8 @@ void enter_assign(Generator *generator, Node *node) {
 		visitor(generator, node->right);
 	}
 	if(node->left) {
-		gen_addr(generator, node->left);
+		gen_store(generator, node->left);
 	}
-	gen_store(generator);
 	node_free(node);
 }
 
@@ -37,7 +32,7 @@ void enter_program(Generator *generator, Node *node) {
 }
 
 void enter_function(Generator *generator, Node *node) {
-	emit(generator, "func %s\n", node->token->data);
+	emit(generator, "@func %s\n", node->token->data);
 	if(node->args) {
 		visitor(generator, node->args);
 	}
@@ -153,7 +148,10 @@ void enter_while(Generator *generator, Node *node) {
 void enter_param(Generator *generator, Node *node) {
 	List *list = &node->bodylist;
 	while(!list_empty(list)) {
-		Node *entry = (Node*)list_remove(list_begin(list));
+		Node *entry = (Node*)list_remove(list_back(list)); // begin with end
+		if(entry->type == AST_IDENT) {
+			emit(generator, "\tstore %s\n", entry->token->data);
+		}
 		node_free(entry);
 	}
 	node_free(node);
@@ -172,6 +170,7 @@ void enter_return(Generator *generator, Node *node) {
 	if(node->body) {
 		visitor(generator, node->body);
 	}
+	emit(generator, "\tret\n");
 	node_free(node);
 }
 
@@ -288,6 +287,7 @@ void visitor(Generator *generator, Node *node) {
 
 void generate(Node *node) {
 	Generator generator;
-	generator.file = stdout;
+	generator.file = fopen("data/out.code", "wb");
 	visitor(&generator, node);
+	fclose(generator.file);
 }

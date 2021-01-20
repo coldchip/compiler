@@ -26,11 +26,7 @@ Node *parse_params(Parser *parser) {
 }
 
 Node *parse_arg(Parser *parser) {
-	Token *token = parser->token;
-	expect_type(parser, TK_IDENT);
-
-	Node *node = new_node(AST_IDENT);
-	node->token = token;
+	Node *node = parse_expr(parser);
 	return node;
 }
 

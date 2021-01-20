@@ -13,8 +13,7 @@ typedef struct _Generator {
 
 void emit(Generator *generator, const char *format, ...);
 
-void gen_store(Generator *generator);
-void gen_addr(Generator *generator, Node *node);
+void gen_store(Generator *generator, Node *node);
 
 void enter_assign(Generator *generator, Node *node);
 void enter_program(Generator *generator, Node *node);

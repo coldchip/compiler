@@ -42,6 +42,7 @@ typedef struct _Parser {
 typedef struct _Node {
 	ListNode node;
 	NodeType type;
+	DataType data_type;
 	struct _Node *condition;
 
 	struct _Node *left;

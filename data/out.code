@@ -1,0 +1,30 @@
+@func add
+	store b
+	store a
+	load b
+	load a
+	mul
+	ret
+@func main
+	push 2
+	store a
+	push 2
+	store b
+	load a
+	load a
+	load a
+	load a
+	load a
+	load a
+	load a
+	load a
+	load b
+	call add
+	call add
+	call add
+	call add
+	call add
+	call add
+	call add
+	call add
+	call print
