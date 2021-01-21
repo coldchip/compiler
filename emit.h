@@ -18,7 +18,9 @@ typedef enum {
 	BC_SUB,
 	BC_MUL,
 	BC_DIV,
-	BC_CALL
+	BC_CALL,
+	BC_RET,
+	BC_GOTO
 } ByteCode;
 
 typedef struct _ConstantPoolRow {
@@ -34,14 +36,23 @@ typedef struct _OP {
 	int right;
 } OP;
 
+typedef struct _Function {
+	ListNode node;
+	char *name;
+	List code;
+} Function;
+
 typedef struct _Emit {
 	unsigned constant_pool_index;
 	List constant_pool;
-	List code;
+	List functions;
+	Function *current_function;
 } Emit;
 
 Emit *new_emit();
 int emit_add_to_constant_pool(Emit *emit, char *string);
+void emit_select_function(Emit *emit, char *name);
+unsigned emit_get_current_line(Emit *emit);
 void emit_opcode(Emit *emit, ByteCode op, int left, int right);
 void emit_build(Emit *emit, char *file);
 void free_emit(Emit *emit);

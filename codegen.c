@@ -9,6 +9,8 @@ void emit(Generator *generator, const char *format, ...) {
 
 void gen_store(Generator *generator, Node *node) {
 	emit(generator, "\tstore %s\n", node->token->data);
+	int i = emit_add_to_constant_pool(generator->emit, node->token->data);
+	emit_opcode(generator->emit, BC_STORE, i, 0);
 	node_free(node);
 }
 
@@ -33,6 +35,7 @@ void enter_program(Generator *generator, Node *node) {
 
 void enter_function(Generator *generator, Node *node) {
 	emit(generator, "@func %s\n", node->token->data);
+	emit_select_function(generator->emit, node->token->data);
 	if(node->args) {
 		visitor(generator, node->args);
 	}
@@ -147,11 +150,13 @@ void enter_if(Generator *generator, Node *node) {
 }
 
 void enter_while(Generator *generator, Node *node) {
-	if(node->condition) {
-		visitor(generator, node->condition);
-	}
+	unsigned line = emit_get_current_line(generator->emit);
 	if(node->body) {
 		visitor(generator, node->body);
+	}
+	if(node->condition) {
+		//visitor(generator, node->condition);
+		emit_opcode(generator->emit, BC_GOTO, line, 0);
 	}
 	node_free(node);
 }
@@ -162,6 +167,8 @@ void enter_param(Generator *generator, Node *node) {
 		Node *entry = (Node*)list_remove(list_back(list)); // begin with end
 		if(entry->type == AST_IDENT) {
 			emit(generator, "\tstore %s\n", entry->token->data);
+			int i = emit_add_to_constant_pool(generator->emit, entry->token->data);
+			emit_opcode(generator->emit, BC_STORE, i, 0);
 		}
 		node_free(entry);
 	}
@@ -170,10 +177,13 @@ void enter_param(Generator *generator, Node *node) {
 
 void enter_arg(Generator *generator, Node *node) {
 	List *list = &node->bodylist;
+	int count = 0;
 	while(!list_empty(list)) {
 		Node *entry = (Node*)list_remove(list_begin(list));
 		visitor(generator, entry);
+		count++;
 	}
+	emit_opcode(generator->emit, BC_PUSH, count, 0);
 	node_free(node);
 }
 
@@ -182,6 +192,7 @@ void enter_return(Generator *generator, Node *node) {
 		visitor(generator, node->body);
 	}
 	emit(generator, "\tret\n");
+	emit_opcode(generator->emit, BC_RET, 0, 0);
 	node_free(node);
 }
 
