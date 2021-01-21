@@ -127,6 +127,8 @@ function loadInstructions(ins) {
 						var f = getFunction(op[1]);
 						const stack_copy = [];
 						Object.assign(stack_copy, stack);
+						stack.pop();
+						stack.pop();
 						stack.push(exec(f, stack_copy));	
 					}
 				}

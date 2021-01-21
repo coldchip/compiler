@@ -5,10 +5,12 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include "parse.h"
+#include "emit.h"
 
 typedef struct _Generator {
 	int var_select;
 	FILE *file;
+	Emit *emit;
 } Generator;
 
 void emit(Generator *generator, const char *format, ...);

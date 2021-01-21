@@ -1,30 +1,49 @@
-@func add
-	store b
-	store a
-	load b
-	load a
-	mul
-	ret
 @func main
 	push 2
 	store a
 	push 2
+	load a
+	add
 	store b
-	load a
-	load a
-	load a
-	load a
-	load a
-	load a
-	load a
-	load a
+	push 2
 	load b
-	call add
-	call add
-	call add
-	call add
-	call add
-	call add
-	call add
-	call add
-	call print
+	add
+	load a
+	add
+	store c
+	push 2
+	load c
+	add
+	load b
+	add
+	load a
+	add
+	store d
+	push 2
+	load d
+	add
+	load c
+	add
+	load b
+	add
+	load a
+	add
+	store e
+	push 1000000
+	push 100
+	add
+	load e
+	add
+	store f
+	load a
+	call printf
+	load b
+	call printf
+	load c
+	call printf
+	load d
+	call printf
+	load e
+	call printf
+	load f
+	call printf

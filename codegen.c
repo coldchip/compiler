@@ -57,6 +57,8 @@ void enter_decl(Generator *generator, Node *node) {
 	if(node->body) {
 		visitor(generator, node->body);
 		emit(generator, "\tstore %s\n", node->token->data);
+		int i = emit_add_to_constant_pool(generator->emit, node->token->data);
+		emit_opcode(generator->emit, BC_STORE, i, 0);
 	}
 	node_free(node);
 }
@@ -73,21 +75,25 @@ void enter_binexpr(Generator *generator, Node *node) {
 		case AST_ADD:
 		{
 			emit(generator, "\tadd\n");
+			emit_opcode(generator->emit, BC_ADD, 0, 0);
 		}
 		break;
 		case AST_SUB:
 		{
 			emit(generator, "\tsub\n");
+			emit_opcode(generator->emit, BC_SUB, 0, 0);
 		}
 		break;
 		case AST_MUL:
 		{
 			emit(generator, "\tmul\n");
+			emit_opcode(generator->emit, BC_MUL, 0, 0);
 		}
 		break;
 		case AST_DIV:
 		{
 			emit(generator, "\tdiv\n");
+			emit_opcode(generator->emit, BC_DIV, 0, 0);
 		}
 		break;
 		case AST_EQUAL:
@@ -106,11 +112,14 @@ void enter_binexpr(Generator *generator, Node *node) {
 
 void enter_literal(Generator *generator, Node *node) {
 	emit(generator, "\tpush %s\n", (node->token->data));
+	emit_opcode(generator->emit, BC_PUSH, atoi(node->token->data), 0);
 	node_free(node);
 }
 
 void enter_ident(Generator *generator, Node *node) {
 	emit(generator, "\tload %s\n", node->token->data);
+	int i = emit_add_to_constant_pool(generator->emit, node->token->data);
+	emit_opcode(generator->emit, BC_LOAD, i, 0);
 	node_free(node);
 }
 
@@ -119,6 +128,8 @@ void enter_call(Generator *generator, Node *node) {
 		visitor(generator, node->args);
 	}
 	emit(generator, "\tcall %s\n", node->token->data);
+	int i = emit_add_to_constant_pool(generator->emit, node->token->data);
+	emit_opcode(generator->emit, BC_CALL, i, 0);
 	node_free(node);
 }
 
@@ -182,11 +193,14 @@ void enter_string_concat(Generator *generator, Node *node) {
 		visitor(generator, node->left);
 	}
 	emit(generator, "\tstr_concat\n");
+	emit_opcode(generator->emit, BC_STRCONCAT, 0, 0);
 	node_free(node);
 }
 
 void enter_string(Generator *generator, Node *node) {
 	emit(generator, "\tpush_str %s\n", node->token->data);
+	int i = emit_add_to_constant_pool(generator->emit, node->token->data);
+	emit_opcode(generator->emit, BC_PUSHSTR, i, 0);
 	node_free(node);
 }
 
@@ -288,6 +302,9 @@ void visitor(Generator *generator, Node *node) {
 void generate(Node *node) {
 	Generator generator;
 	generator.file = fopen("data/out.code", "wb");
+	generator.emit = new_emit();
 	visitor(&generator, node);
+	emit_build(generator.emit, "data/out.bin");
+	free_emit(generator.emit);
 	fclose(generator.file);
 }
