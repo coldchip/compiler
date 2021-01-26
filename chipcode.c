@@ -23,3 +23,30 @@ char *strmalloc (const char *s) {
     return NULL;
   return (char *) memcpy (new, s, len);
 }
+
+char *read_file_into_buffer(char *file) {
+	FILE *infp = fopen(file, "rb");
+    if (!infp) {
+    	printf("Cannot open %s\n", file);
+    	exit(0);
+    }
+    fseek(infp, 0, SEEK_END);
+	long fsize = ftell(infp);
+	char *p = malloc(fsize + 1);
+	fseek(infp, 0, SEEK_SET);
+
+	if(fread((char*)p, 1, fsize, infp) != fsize) {
+		c_error("Unable to load file");
+	}
+	fclose(infp);
+	*(p + fsize) = '\0';
+
+	
+	for(char *check = p; check < p + fsize; check++) {
+		if(*check == '\0') {
+			printf("Cannot compile because file %s contains NULL character(s)\n", file);
+    		exit(0);
+		}
+	}
+	return p;
+}

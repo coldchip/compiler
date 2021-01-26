@@ -8,4 +8,4 @@ done
 
 echo gcc -o bin/chipcode bin/*.o
 
-gcc -o bin/chipcode bin/*.o
+gcc -o bin/chipcode bin/*.o -s -Ofast

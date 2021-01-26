@@ -1,24 +1,83 @@
+@func strlen
+	store str
+	load str
+	call __callinternal__strlen
+	ret
+@func charat
+	store index
+	store str
+	load str
+	load index
+	call __callinternal__charat
+	ret
 @func main
+	push_str Fibonacci number
+	store motd
+	load motd
+	call strlen
+	store len
+	push 0
+	store i
+	load len
+	load i
+	cmplt
+	push 0
+	jmpifeq ???
+	load motd
+	load i
+	call charat
+	call printf
+	push 1
+	load i
+	add
+	store i
+	goto 8
+	load len
+	store f
+	push 0
+	load f
+	cmpgt
+	push 0
+	jmpifeq ???
+	load motd
+	load f
+	call charat
+	call printf
+	load f
+	push 1
+	sub
+	store f
+	goto 26
 	push 0
 	store o
-	push 100
+	push 10
 	load o
 	cmplt
 	push 0
 	jmpifeq ???
-	load o
-	call printf
 	push 0
 	store a
 	push 1
 	store b
 	push 0
 	store c
-	push 100000
+	push 10000000000
 	load a
 	cmplt
 	push 0
 	jmpifeq ???
+	push 1
+	store g
+	push 100000
+	load g
+	cmplt
+	push 0
+	jmpifeq ???
+	push 1
+	load g
+	add
+	store g
+	goto 62
 	load b
 	load a
 	add
@@ -29,9 +88,13 @@
 	store b
 	load a
 	call printf
-	goto 16
+	goto 55
 	push 1
 	load o
 	add
 	store o
-	goto 2
+	goto 44
+	push_str DONE
+	store done
+	load done
+	call printf
