@@ -11,11 +11,8 @@ endif
 
 .PHONY: clean install
 
-all: $(EXE)
-
-$(EXE): $(SRCS) | $(BIN)
-	$(CC) $(CFLAGS) $(SRCS) $(LIBS) -o $@
-	rm -rf $(BIN)/tmp_*
+all: 
+	./build.sh
 run:
 	$(EXE) data/test.c
 clean:

@@ -17,6 +17,7 @@ typedef enum {
 	AST_MUL,
 	AST_DIV,
 	AST_LT,
+	AST_GT,
 	AST_EQUAL,
 	AST_IDENT,
 	AST_LITERAL,

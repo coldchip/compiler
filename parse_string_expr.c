@@ -41,6 +41,10 @@ Node *parse_string_primary(Parser *parser) {
 		Node *node = new_node(AST_STRING);
 		node->token = token;
 		return node;	
+	} else if(consume_type(parser, TK_IDENT)) {
+		Node *node = new_node(AST_IDENT);
+		node->token = token;
+		return node;	
 	} else {
 		c_error("Expecting string at line %i, got %i", token->line, token->type);
 	}

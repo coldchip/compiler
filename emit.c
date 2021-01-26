@@ -38,13 +38,14 @@ unsigned emit_get_current_line(Emit *emit) {
 	return list_size(&emit->current_function->code);
 }
 
-void emit_opcode(Emit *emit, ByteCode op, int left, int right) {
+OP *emit_opcode(Emit *emit, ByteCode op, int left, int right) {
 	OP *row = malloc(sizeof(OP));
 	row->op = op;
 	row->left = left;
 	row->right = right;
 
 	list_insert(list_end(&emit->current_function->code), row);
+	return row;
 }
 
 void emit_build(Emit *emit, char *file) {

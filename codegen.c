@@ -104,6 +104,18 @@ void enter_binexpr(Generator *generator, Node *node) {
 			emit(generator, "\tcmp\n");
 		}
 		break;
+		case AST_GT:
+		{
+			emit(generator, "\tcmpgt\n");
+			emit_opcode(generator->emit, BC_CMPGT, 0, 0);
+		}
+		break;
+		case AST_LT:
+		{
+			emit(generator, "\tcmplt\n");
+			emit_opcode(generator->emit, BC_CMPLT, 0, 0);
+		}
+		break;
 		default:
 		{
 			c_error("%i\n", node->type);
@@ -151,12 +163,22 @@ void enter_if(Generator *generator, Node *node) {
 
 void enter_while(Generator *generator, Node *node) {
 	unsigned line = emit_get_current_line(generator->emit);
+	OP *jmp = NULL;
+	if(node->condition) {
+		visitor(generator, node->condition);
+		emit_opcode(generator->emit, BC_PUSH, 0, 0);
+		emit(generator, "\tpush %i\n", 0);
+		jmp = emit_opcode(generator->emit, BC_JMPIFEQ, 0, 0);
+		emit(generator, "\tjmpifeq ???\n");
+	}
 	if(node->body) {
 		visitor(generator, node->body);
 	}
-	if(node->condition) {
-		//visitor(generator, node->condition);
-		emit_opcode(generator->emit, BC_GOTO, line, 0);
+	emit_opcode(generator->emit, BC_GOTO, line, 0);
+	emit(generator, "\tgoto %i\n", line);
+	unsigned finish_line = emit_get_current_line(generator->emit);
+	if(jmp) {
+		jmp->left = finish_line;
 	}
 	node_free(node);
 }
@@ -246,6 +268,7 @@ void visitor(Generator *generator, Node *node) {
 		case AST_SUB:
 		case AST_MUL:
 		case AST_DIV:
+		case AST_GT:
 		case AST_LT:
 		case AST_EQUAL:
 		{

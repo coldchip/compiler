@@ -68,6 +68,12 @@ Node *parse_relational(Parser *parser) {
 		node->right = parse_relational(parser);
 		return node;
 	}
+	if(consume_string(parser, ">")) {
+		Node *node = new_node(AST_GT);
+		node->left = left;
+		node->right = parse_relational(parser);
+		return node;
+	}
 	return left;
 }
 
