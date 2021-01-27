@@ -73,6 +73,7 @@ void lex(List *tokens, char *data) {
 		} else if(*data == '"') {
 			data++;
 			assert_not_eof(data);
+			StringBuilder *sb = sb_create();
 			char *start = data;
 			for(;;) {
 				if(*data == '\0') {
@@ -80,12 +81,23 @@ void lex(List *tokens, char *data) {
 					break;
 				} else if(*data == '\\') {
 					data++;
+					assert_not_eof(data);
+					if(*data == 'n') {
+						sb_append(sb, "\n");
+						data++;
+					} else if(*data == 'r') {
+						sb_append(sb, "\r");
+						data++;
+					}
 				} else if(*data == '"') {
 					break;
+				} else {
+					sb_appendf(sb, "%c", *data);
+					data++;
 				}
-				data++;
 			}
-			char *keyword = malloc_strcpy(start, data - start);
+			char *keyword = sb_concat(sb);
+			sb_free(sb);
 			list_insert(list_end(tokens), new_token(TK_STRING, keyword, line));
 			data++;
 			continue;
@@ -93,19 +105,13 @@ void lex(List *tokens, char *data) {
 			data++;
 			assert_not_eof(data);
 			char *start = data;
-			for(;;) {
-				if(*data == '\0') {
-					c_error("Unclosed char literal");
-					break;
-				} else if(*data == '\\') {
-					data++;
-				} else if(*data == '\'') {
-					break;
-				}
-				data++;
+			data++;
+			assert_not_eof(data);
+			if(*data != '\'') {
+				c_error("Unclosed char literal");
 			}
 			char *keyword = malloc_strcpy(start, data - start);
-			list_insert(list_end(tokens), new_token(TK_STRING, keyword, line));
+			list_insert(list_end(tokens), new_token(TK_CHAR, keyword, line));
 			data++;
 			continue;
 		} else if (startswith(data, "//")) {
@@ -123,6 +129,11 @@ void lex(List *tokens, char *data) {
 			data = q + 2;
 			continue;
 		} else if(startswith(data, "==")) {
+			char *t = malloc_strcpy(data, 2);
+			list_insert(list_end(tokens), new_token(TK_SPECIAL, t, line));
+			data += 2;
+			continue;
+		} else if(startswith(data, "!=")) {
 			char *t = malloc_strcpy(data, 2);
 			list_insert(list_end(tokens), new_token(TK_SPECIAL, t, line));
 			data += 2;

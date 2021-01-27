@@ -1,39 +1,34 @@
 #include "string.c"
+#include "number.c"
+#include "socket.c"
 
 int main() {
-	string motd = "Fibonacci number";
-	int len = strlen(motd);
-	int i = 0;
-	while(i < len) {
-		printf(charat(motd, i));
-		i = i + 1;
-	}
+	printf("HTTP Server 1.0");
+	int fd = new_socket();
+	if(socket_bind(fd, "0.0.0.0", 8012) == 1) {
+		printf("socket bind success");
+		while(1) {
+			int client = socket_accept(fd);
+			string data = socket_read(client, 8192);
+			printf(data);
 
-	int f = len;
-	while(f > 0) {
-		printf(charat(motd, f));
-		f = 1 - f;
-	}
-
-	int o = 0;
-	while(o < 10) {
-		int a = 0;
-		int b = 1;
-		int c = 0;
-		while(a < 10000000000) {
-			int g = 1;
-			while(g < 100000) {
-				g = g + 1;
+			int a = 0;
+			int b = 1;
+			int c = 0;
+			string r = "";
+			while(a < 100000000) {
+				string tmp = r + itos(a) + "\n";
+				r = tmp;
+				c = a + b;
+				a = b;
+				b = c;
 			}
-			c = a + b;
-			a = b;
-			b = c;
-			printf(a);
+
+			string len = itos(strlen(r));
+			string response = "HTTP/1.0 200 OK\r\nConnection: close\r\nContent-Length: " + len;
+			string response2 = "\r\n\r\n" + r;
+			string response3 = response + response2;
+			int s = socket_write(client, response3);
 		}
-		o = o + 1;
 	}
-
-	string done = "DONE";
-
-	printf(done);
 }

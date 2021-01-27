@@ -38,7 +38,7 @@ Node *parse_string_primary(Parser *parser) {
 	if(is_call(parser)) {
 		return parse_call(parser);
 	} else if(consume_type(parser, TK_STRING)) {
-		Node *node = new_node(AST_STRING);
+		Node *node = new_node(AST_STRING_LITERAL);
 		node->token = token;
 		return node;	
 	} else if(consume_type(parser, TK_IDENT)) {

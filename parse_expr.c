@@ -1,8 +1,14 @@
 #include "parse.h"
 
 Node *parse_expr(Parser *parser) {
-	Node *node = parse_assign(parser);
-	return node;
+	if(consume_type(parser, TK_STRING)) {
+		unconsume(parser);
+		Node *node = parse_string_expr(parser);
+		return node;
+	} else {
+		Node *node = parse_assign(parser);
+		return node;
+	}
 }
 
 Node *parse_assign(Parser *parser) {
@@ -85,9 +91,14 @@ Node *parse_equality(Parser *parser) {
 		node->right = parse_equality(parser);
 		return node;
 	}
+	if(consume_string(parser, "!=")) {
+		Node *node = new_node(AST_NOTEQUAL);
+		node->left = left;
+		node->right = parse_equality(parser);
+		return node;
+	}
 	return left;
 }
-
 
 Node *parse_primary(Parser *parser) {
 	Token *token = parser->token;
@@ -97,6 +108,10 @@ Node *parse_primary(Parser *parser) {
 		Node *node = new_node(AST_IDENT);
 		node->token = token;
 		return node;	
+	} else if(consume_type(parser, TK_CHAR)) {
+		Node *node = new_node(AST_CHAR_LITERAL);
+		node->token = token;
+		return node;
 	} else if(consume_type(parser, TK_NUMBER)) {
 		Node *node = new_node(AST_LITERAL);
 		node->token = token;

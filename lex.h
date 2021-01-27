@@ -6,6 +6,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdbool.h>
+#include "sb.h"
 #include "chipcode.h"
 #include "list.h"
 
@@ -13,6 +14,7 @@ typedef enum {
 	TK_IDENT,
 	TK_NUMBER,
 	TK_STRING,
+	TK_CHAR,
 	TK_SPECIAL,
 	TK_EOF
 } TokenType;

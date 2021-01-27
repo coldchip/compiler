@@ -31,6 +31,8 @@ DataType parse_basetype(Parser *parser) {
 		return DATA_NUMBER;
 	} else if(consume_string(parser, "void")) {
 		return DATA_VOID;
+	} else if(consume_string(parser, "char")) {
+		return DATA_CHAR;
 	} else {
 		c_error("Invalid base type");
 	}
@@ -42,7 +44,7 @@ DataType parse_basetype(Parser *parser) {
 Node *parse_declaration(Parser *parser) {
 	Node *node = new_node(AST_DECL);
 
-	DataType type = parse_basetype(parser);
+	node->data_type = parse_basetype(parser);
 
 	Token *token = parser->token;
 	
@@ -54,7 +56,7 @@ Node *parse_declaration(Parser *parser) {
 	}
 	
 	if(consume_string(parser, "=")) {
-		if(type == DATA_STRING) {
+		if(node->data_type == DATA_STRING) {
 			/* "hello" + "hello" */
 			node->body = parse_string_expr(parser);
 		} else {
@@ -167,22 +169,33 @@ Node *parse(List *token) {
 }
 
 bool is_call(Parser *parser) {
-	Parser rewind = *parser;
-	if(consume_type(&rewind, TK_IDENT) && consume_string(&rewind, "(")) {
-		return true;
+	if(consume_type(parser, TK_IDENT)) {
+		if(consume_string(parser, "(")) {
+			unconsume(parser); unconsume(parser);
+			return true;
+		}
+		unconsume(parser);
 	}
 	return false;
 }
 
 bool is_function(Parser *parser) {
-	Parser rewind = *parser;
-	if(is_typename(&rewind)) {
-		consume(&rewind);
-		if(consume_type(&rewind, TK_IDENT) && consume_string(&rewind, "(")) {
-			return true;
+	if(is_typename(parser)) {
+		consume(parser);
+		if(consume_type(parser, TK_IDENT)) {
+			if(consume_string(parser, "(")) {
+				unconsume(parser); unconsume(parser); unconsume(parser);
+				return true;
+			}
+			unconsume(parser);
 		}
+		unconsume(parser);
 	}
 	return false;
+}
+
+void unconsume(Parser *parser) {
+	parser->token = (Token*)list_previous((ListNode*)parser->token);
 }
 
 void consume(Parser *parser) {

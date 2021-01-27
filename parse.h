@@ -19,20 +19,23 @@ typedef enum {
 	AST_LT,
 	AST_GT,
 	AST_EQUAL,
+	AST_NOTEQUAL,
 	AST_IDENT,
 	AST_LITERAL,
+	AST_CHAR_LITERAL,
 	AST_DECL,
 	AST_CALL,
 	AST_RETURN,
 	AST_ARG,
 	AST_PARAM,
 	AST_STRING_CONCAT,
-	AST_STRING
+	AST_STRING_LITERAL
 } NodeType;
 
 typedef enum {
 	DATA_STRING,
 	DATA_NUMBER,
+	DATA_CHAR,
 	DATA_VOID
 } DataType;
 
@@ -102,6 +105,7 @@ Node *parse_program(Parser *parser);
 bool is_function(Parser *parser);
 bool is_call(Parser *parser);
 
+void unconsume(Parser *parser);
 void consume(Parser *parser);
 bool consume_string(Parser *parser, const char *str);
 bool consume_type(Parser *parser, TokenType type);

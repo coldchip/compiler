@@ -20,6 +20,8 @@ typedef enum {
 	BC_DIV,
 	BC_CALL,
 	BC_RET,
+	BC_CMPEQ,
+	BC_CMPNEQ,
 	BC_CMPGT,
 	BC_CMPLT,
 	BC_JMPIFEQ,

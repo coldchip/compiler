@@ -22,8 +22,10 @@ char *preprocess(char *dir, char *input) {
 				char *name = sb_concat(sb_name);
 				sb_free(sb_name);
 				char *include_file = read_file_into_buffer(name);
-				sb_appendf(sb, "%s", include_file);
+				char *preprocessed_input = preprocess(dir, include_file);
+				sb_appendf(sb, "%s", preprocessed_input);
 				free(include_file);
+				free(preprocessed_input);
 				free(name);
 			} else {
 				c_error("Unable to preprocess");

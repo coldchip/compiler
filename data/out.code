@@ -10,74 +10,210 @@
 	load index
 	call __callinternal__charat
 	ret
-@func main
-	push_str Fibonacci number
-	store motd
-	load motd
-	call strlen
-	store len
+@func strstr
+	store needle
+	store haystack
 	push 0
 	store i
-	load len
+	load haystack
+	call strlen
 	load i
 	cmplt
 	push 0
 	jmpifeq ???
-	load motd
+	load haystack
 	load i
 	call charat
-	call printf
+	store at
+	load needle
+	load at
+	cmpeq
+	push 0
+	jmpifeq ???
+	push 1
+	ret
 	push 1
 	load i
 	add
 	store i
-	goto 8
-	load len
-	store f
+	goto 4
 	push 0
-	load f
-	cmpgt
+	ret
+@func strcmp
+	store b
+	store a
+	load a
+	call strlen
+	store a_len
+	load b
+	call strlen
+	store b_len
+	load b_len
+	load a_len
+	cmpeq
 	push 0
 	jmpifeq ???
-	load motd
-	load f
-	call charat
-	call printf
-	load f
-	push 1
-	sub
-	store f
-	goto 26
 	push 0
-	store o
-	push 10
-	load o
+	store i
+	load a_len
+	load i
 	cmplt
 	push 0
 	jmpifeq ???
+	load b
+	load i
+	call charat
+	load a
+	load i
+	call charat
+	cmpneq
+	push 0
+	jmpifeq ???
+	push 1
+	ret
+	push 1
+	load i
+	add
+	store i
+	goto 17
+	push 0
+	ret
+	push 1
+	ret
+@func itos
+	store n
+	load n
+	call __callinternal__itos
+	ret
+@func stoi
+	store str
+	push 0
+	store res
+	push 1
+	store sign
+	push 0
+	store i
+	push 45
+	load str
+	push 0
+	call charat
+	cmpeq
+	push 0
+	jmpifeq ???
+	load sign
+	push 2
+	sub
+	store sign
+	push 1
+	load i
+	add
+	store i
+	load str
+	call strlen
+	load i
+	cmplt
+	push 0
+	jmpifeq ???
+	push 48
+	load str
+	load i
+	call charat
+	sub
+	push 10
+	load res
+	mul
+	add
+	store res
+	push 1
+	load i
+	add
+	store i
+	goto 23
+	load res
+	load sign
+	mul
+	ret
+@func new_socket
+	call __callinternal__new_socket
+	ret
+@func socket_bind
+	store port
+	store ip
+	store fd
+	load fd
+	load ip
+	load port
+	call __callinternal__socket_bind
+	ret
+@func socket_accept
+	store fd
+	load fd
+	call __callinternal__socket_accept
+	ret
+@func socket_read
+	store size
+	store fd
+	load fd
+	load size
+	call __callinternal__socket_read
+	ret
+@func socket_write
+	store data
+	store fd
+	load fd
+	load data
+	call __callinternal__socket_write
+	ret
+@func main
+	push_str HTTP Server 1.0
+	call printf
+	call new_socket
+	store fd
+	push 1
+	load fd
+	push_str 0.0.0.0
+	push 8012
+	call socket_bind
+	cmpeq
+	push 0
+	jmpifeq ???
+	push_str socket bind success
+	call printf
+	push 1
+	push 0
+	jmpifeq ???
+	load fd
+	call socket_accept
+	store client
+	load client
+	push 8192
+	call socket_read
+	store data
+	load data
+	call printf
 	push 0
 	store a
 	push 1
 	store b
 	push 0
 	store c
-	push 10000000000
+	push_str 
+	store r
+	push 100000000
 	load a
 	cmplt
 	push 0
 	jmpifeq ???
-	push 1
-	store g
-	push 100000
-	load g
-	cmplt
-	push 0
-	jmpifeq ???
-	push 1
-	load g
-	add
-	store g
-	goto 62
+	push_str 
+
+	load a
+	call itos
+	str_concat
+	load r
+	str_concat
+	store tmp
+	load tmp
+	store r
 	load b
 	load a
 	add
@@ -86,15 +222,29 @@
 	store a
 	load c
 	store b
-	load a
-	call printf
-	goto 55
-	push 1
-	load o
-	add
-	store o
-	goto 44
-	push_str DONE
-	store done
-	load done
-	call printf
+	goto 41
+	load r
+	call strlen
+	call itos
+	store len
+	load len
+	push_str HTTP/1.0 200 OK
+Connection: close
+Content-Length: 
+	str_concat
+	store response
+	load r
+	push_str 
+
+
+	str_concat
+	store response2
+	load response2
+	load response
+	str_concat
+	store response3
+	load client
+	load response3
+	call socket_write
+	store s
+	goto 18

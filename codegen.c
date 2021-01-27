@@ -101,7 +101,14 @@ void enter_binexpr(Generator *generator, Node *node) {
 		break;
 		case AST_EQUAL:
 		{
-			emit(generator, "\tcmp\n");
+			emit(generator, "\tcmpeq\n");
+			emit_opcode(generator->emit, BC_CMPEQ, 0, 0);
+		}
+		break;
+		case AST_NOTEQUAL:
+		{
+			emit(generator, "\tcmpneq\n");
+			emit_opcode(generator->emit, BC_CMPNEQ, 0, 0);
 		}
 		break;
 		case AST_GT:
@@ -131,6 +138,12 @@ void enter_literal(Generator *generator, Node *node) {
 	node_free(node);
 }
 
+void enter_char_literal(Generator *generator, Node *node) {
+	emit(generator, "\tpush %i\n", (int)*(node->token->data));
+	emit_opcode(generator->emit, BC_PUSH, (int)*(node->token->data), 0);
+	node_free(node);
+}
+
 void enter_ident(Generator *generator, Node *node) {
 	emit(generator, "\tload %s\n", node->token->data);
 	int i = emit_add_to_constant_pool(generator->emit, node->token->data);
@@ -149,14 +162,24 @@ void enter_call(Generator *generator, Node *node) {
 }
 
 void enter_if(Generator *generator, Node *node) {
+	unsigned line = emit_get_current_line(generator->emit);
+	OP *jmp = NULL;
 	if(node->condition) {
 		visitor(generator, node->condition);
+		emit_opcode(generator->emit, BC_PUSH, 0, 0);
+		emit(generator, "\tpush %i\n", 0);
+		jmp = emit_opcode(generator->emit, BC_JMPIFEQ, 0, 0);
+		emit(generator, "\tjmpifeq ???\n");
 	}
 	if(node->body) {
 		visitor(generator, node->body);
 	}
 	if(node->alternate) {
-		visitor(generator, node->alternate);
+		//visitor(generator, node->alternate);
+	}
+	unsigned finish_line = emit_get_current_line(generator->emit);
+	if(jmp) {
+		jmp->left = finish_line;
 	}
 	node_free(node);
 }
@@ -230,7 +253,7 @@ void enter_string_concat(Generator *generator, Node *node) {
 	node_free(node);
 }
 
-void enter_string(Generator *generator, Node *node) {
+void enter_string_literal(Generator *generator, Node *node) {
 	emit(generator, "\tpush_str %s\n", node->token->data);
 	int i = emit_add_to_constant_pool(generator->emit, node->token->data);
 	emit_opcode(generator->emit, BC_PUSHSTR, i, 0);
@@ -271,6 +294,7 @@ void visitor(Generator *generator, Node *node) {
 		case AST_GT:
 		case AST_LT:
 		case AST_EQUAL:
+		case AST_NOTEQUAL:
 		{
 			enter_binexpr(generator, node);
 		}
@@ -278,6 +302,11 @@ void visitor(Generator *generator, Node *node) {
 		case AST_LITERAL:
 		{
 			enter_literal(generator, node);
+		}
+		break;
+		case AST_CHAR_LITERAL:
+		{
+			enter_char_literal(generator, node);
 		}
 		break;
 		case AST_IDENT:
@@ -320,9 +349,9 @@ void visitor(Generator *generator, Node *node) {
 			enter_string_concat(generator, node);
 		}
 		break;
-		case AST_STRING:
+		case AST_STRING_LITERAL:
 		{
-			enter_string(generator, node);
+			enter_string_literal(generator, node);
 		}
 		break;
 		default:
