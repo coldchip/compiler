@@ -180,6 +180,8 @@
 	push_str socket bind success
 	call printf
 	push 1
+	push 1
+	cmpeq
 	push 0
 	jmpifeq ???
 	load fd
@@ -192,14 +194,21 @@
 	load data
 	call printf
 	push 0
+	store t
+	push_str 
+	store r
+	push 500
+	load t
+	cmplt
+	push 0
+	jmpifeq ???
+	push 0
 	store a
 	push 1
 	store b
 	push 0
 	store c
-	push_str 
-	store r
-	push 100000000
+	push 1000000000
 	load a
 	cmplt
 	push 0
@@ -222,29 +231,31 @@
 	store a
 	load c
 	store b
-	goto 41
+	goto 50
+	push 1
+	load t
+	add
+	store t
+	goto 39
 	load r
 	call strlen
 	call itos
 	store len
-	load len
-	push_str HTTP/1.0 200 OK
-Connection: close
-Content-Length: 
-	str_concat
-	store response
 	load r
 	push_str 
 
 
 	str_concat
-	store response2
-	load response2
-	load response
+	load len
 	str_concat
-	store response3
+	push_str HTTP/1.0 200 OK
+Connection: close
+Content-Type: application/json
+Content-Length: 
+	str_concat
+	store response
 	load client
-	load response3
+	load response
 	call socket_write
 	store s
 	goto 18

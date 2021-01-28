@@ -44,24 +44,28 @@ DataType parse_basetype(Parser *parser) {
 Node *parse_declaration(Parser *parser) {
 	Node *node = new_node(AST_DECL);
 
-	node->data_type = parse_basetype(parser);
+	node->data_type = 0;
+	node->data_type |= parse_basetype(parser);
 
 	Token *token = parser->token;
 	
 	expect_type(parser, TK_IDENT);
 	node->token = token;
 	if(consume_string(parser, "[")) {
+		node->data_type |= DATA_ARRAY_MASK;
+		int size = atoi(parser->token->data);
+		node->size = size;
 		expect_type(parser, TK_NUMBER);
 		expect_string(parser, "]");
-	}
-	
-	if(consume_string(parser, "=")) {
-		if(node->data_type == DATA_STRING) {
-			/* "hello" + "hello" */
-			node->body = parse_string_expr(parser);
-		} else {
-			/* 1 + 2 + 3 ... */
-			node->body = parse_expr(parser);
+	} else {
+		if(consume_string(parser, "=")) {
+			if(node->data_type & DATA_STRING) {
+				/* "hello" + "hello" */
+				node->body = parse_string_expr(parser);
+			} else {
+				/* 1 + 2 + 3 ... */
+				node->body = parse_expr(parser);
+			}
 		}
 	}
 	return node;

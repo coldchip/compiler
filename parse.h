@@ -33,10 +33,11 @@ typedef enum {
 } NodeType;
 
 typedef enum {
-	DATA_STRING,
-	DATA_NUMBER,
-	DATA_CHAR,
-	DATA_VOID
+	DATA_STRING = 1 << 0,
+	DATA_NUMBER = 2 << 0,
+	DATA_CHAR = 3 << 0,
+	DATA_VOID = 4 << 0,
+	DATA_ARRAY_MASK = 1 << 5
 } DataType;
 
 typedef struct _Parser {
@@ -46,6 +47,7 @@ typedef struct _Parser {
 typedef struct _Node {
 	ListNode node;
 	NodeType type;
+	int size;
 	DataType data_type;
 	struct _Node *condition;
 
@@ -56,8 +58,6 @@ typedef struct _Node {
 	struct _Node *alternate;
 
 	struct _Node *args;
-
-	uint64_t offset;
 
 	List bodylist;
 	Token *token;

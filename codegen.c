@@ -57,11 +57,22 @@ void enter_block(Generator *generator, Node *node) {
 }
 
 void enter_decl(Generator *generator, Node *node) {
-	if(node->body) {
-		visitor(generator, node->body);
+	if(node->data_type & DATA_ARRAY_MASK) {
+		// type a[x];
+		node->data_type &= ~(DATA_ARRAY_MASK);
+		emit(generator, "\tnewarray @type[%i]\n", node->data_type);
+		emit_opcode(generator->emit, BC_NEWARRAY, node->data_type, 0);
 		emit(generator, "\tstore %s\n", node->token->data);
 		int i = emit_add_to_constant_pool(generator->emit, node->token->data);
 		emit_opcode(generator->emit, BC_STORE, i, 0);
+	} else {
+		// type a; or type a = xxx;
+		if(node->body) {
+			visitor(generator, node->body);
+			emit(generator, "\tstore %s\n", node->token->data);
+			int i = emit_add_to_constant_pool(generator->emit, node->token->data);
+			emit_opcode(generator->emit, BC_STORE, i, 0);
+		}
 	}
 	node_free(node);
 }
