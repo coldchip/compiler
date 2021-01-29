@@ -105,9 +105,18 @@ Node *parse_primary(Parser *parser) {
 	if(is_call(parser)) {
 		return parse_call(parser);
 	} else if(consume_type(parser, TK_IDENT)) {
-		Node *node = new_node(AST_IDENT);
-		node->token = token;
-		return node;	
+		if(consume_string(parser, "[")) {
+			Node *node = new_node(AST_IDENT_MEMBER);
+			int index = atoi(parser->token->data);
+			node->index = parse_expr(parser);
+			node->token = token;
+			expect_string(parser, "]");
+			return node;
+		} else {
+			Node *node = new_node(AST_IDENT);
+			node->token = token;
+			return node;
+		}	
 	} else if(consume_type(parser, TK_CHAR)) {
 		Node *node = new_node(AST_CHAR_LITERAL);
 		node->token = token;

@@ -5,8 +5,6 @@
 int main() {
 	printf("HTTP Server 1.0");
 
-	//char arr[100];
-
 	int fd = new_socket();
 	if(socket_bind(fd, "0.0.0.0", 8012) == 1) {
 		printf("socket bind success");
@@ -16,23 +14,33 @@ int main() {
 			printf(data);
 
 			int t = 0;
-			string r = "";
-			while(t < 500) {
-				int a = 0;
-				int b = 1;
-				int c = 0;
-				while(a < 1000000000) {
-					string tmp = r + itos(a) + "\n";
-					r = tmp;
-					c = a + b;
-					a = b;
-					b = c;
-				}
+			string result = "";
+
+			int arr_len = 100;
+
+			char arr[arr_len];
+			int a = 0;
+			int b = 1;
+			int c = 0;
+
+			while(t < arr_len) {
+				arr[t] = a;
+				c = a + b;
+				a = b;
+				b = c;
 				t = t + 1;
 			}
 
-			string len = itos(strlen(r));
-			string response = "HTTP/1.0 200 OK\r\nConnection: close\r\nContent-Type: application/json\r\nContent-Length: " + len + "\r\n\r\n" + r;
+			int o = 0;
+			while(o < arr_len) { 
+				string tmp = result + itos(arr[o]) + "\r";
+				result = tmp;
+				o = o + 1;
+			}
+			
+
+			string len = itos(strlen(result));
+			string response = "HTTP/1.0 200 OK\r\nConnection: close\r\nContent-Type: application/json\r\nContent-Length: " + len + "\r\n\r\n" + result;
 			int s = socket_write(client, response);
 		}
 	}

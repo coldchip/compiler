@@ -21,6 +21,7 @@ typedef enum {
 	AST_EQUAL,
 	AST_NOTEQUAL,
 	AST_IDENT,
+	AST_IDENT_MEMBER,
 	AST_LITERAL,
 	AST_CHAR_LITERAL,
 	AST_DECL,
@@ -47,7 +48,8 @@ typedef struct _Parser {
 typedef struct _Node {
 	ListNode node;
 	NodeType type;
-	int size;
+	struct _Node *size;
+	struct _Node *index; // arr[index<--];
 	DataType data_type;
 	struct _Node *condition;
 

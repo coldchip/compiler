@@ -8,9 +8,18 @@ void emit(Generator *generator, const char *format, ...) {
 }
 
 void gen_store(Generator *generator, Node *node) {
-	emit(generator, "\tstore %s\n", node->token->data);
-	int i = emit_add_to_constant_pool(generator->emit, node->token->data);
-	emit_opcode(generator->emit, BC_STORE, i, 0);
+	if(node->type == AST_IDENT_MEMBER) {
+		if(node->index) {
+			visitor(generator, node->index);
+		}
+		emit(generator, "\tarr_store %s\n", node->token->data);
+		int i = emit_add_to_constant_pool(generator->emit, node->token->data);
+		emit_opcode(generator->emit, BC_ARR_STORE, i, 0);
+	} else {
+		emit(generator, "\tstore %s\n", node->token->data);
+		int i = emit_add_to_constant_pool(generator->emit, node->token->data);
+		emit_opcode(generator->emit, BC_STORE, i, 0);
+	}
 	node_free(node);
 }
 
@@ -60,6 +69,9 @@ void enter_decl(Generator *generator, Node *node) {
 	if(node->data_type & DATA_ARRAY_MASK) {
 		// type a[x];
 		node->data_type &= ~(DATA_ARRAY_MASK);
+		if(node->size) {
+			visitor(generator, node->size);
+		}
 		emit(generator, "\tnewarray @type[%i]\n", node->data_type);
 		emit_opcode(generator->emit, BC_NEWARRAY, node->data_type, 0);
 		emit(generator, "\tstore %s\n", node->token->data);
@@ -159,6 +171,16 @@ void enter_ident(Generator *generator, Node *node) {
 	emit(generator, "\tload %s\n", node->token->data);
 	int i = emit_add_to_constant_pool(generator->emit, node->token->data);
 	emit_opcode(generator->emit, BC_LOAD, i, 0);
+	node_free(node);
+}
+
+void enter_ident_member(Generator *generator, Node *node) {
+	if(node->index) {
+		visitor(generator, node->index);
+	}
+	emit(generator, "\tarr_load %s\n", node->token->data);
+	int i = emit_add_to_constant_pool(generator->emit, node->token->data);
+	emit_opcode(generator->emit, BC_ARR_LOAD, i, 0);
 	node_free(node);
 }
 
@@ -323,6 +345,11 @@ void visitor(Generator *generator, Node *node) {
 		case AST_IDENT:
 		{
 			enter_ident(generator, node);
+		}
+		break;
+		case AST_IDENT_MEMBER:
+		{
+			enter_ident_member(generator, node);
 		}
 		break;
 		case AST_DECL:

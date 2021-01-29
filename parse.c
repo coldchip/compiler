@@ -54,8 +54,7 @@ Node *parse_declaration(Parser *parser) {
 	if(consume_string(parser, "[")) {
 		node->data_type |= DATA_ARRAY_MASK;
 		int size = atoi(parser->token->data);
-		node->size = size;
-		expect_type(parser, TK_NUMBER);
+		node->size = parse_expr(parser);
 		expect_string(parser, "]");
 	} else {
 		if(consume_string(parser, "=")) {

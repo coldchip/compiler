@@ -196,33 +196,26 @@
 	push 0
 	store t
 	push_str 
-	store r
-	push 500
-	load t
-	cmplt
-	push 0
-	jmpifeq ???
+	store result
+	push 100
+	store arr_len
+	load arr_len
+	newarray @type[3]
+	store arr
 	push 0
 	store a
 	push 1
 	store b
 	push 0
 	store c
-	push 1000000000
-	load a
+	load arr_len
+	load t
 	cmplt
 	push 0
 	jmpifeq ???
-	push_str 
-
 	load a
-	call itos
-	str_concat
-	load r
-	str_concat
-	store tmp
-	load tmp
-	store r
+	load t
+	arr_store arr
 	load b
 	load a
 	add
@@ -231,17 +224,38 @@
 	store a
 	load c
 	store b
-	goto 50
 	push 1
 	load t
 	add
 	store t
-	goto 39
-	load r
+	goto 50
+	push 0
+	store o
+	load arr_len
+	load o
+	cmplt
+	push 0
+	jmpifeq ???
+	push_str 
+	load o
+	arr_load arr
+	call itos
+	str_concat
+	load result
+	str_concat
+	store tmp
+	load tmp
+	store result
+	push 1
+	load o
+	add
+	store o
+	goto 73
+	load result
 	call strlen
 	call itos
 	store len
-	load r
+	load result
 	push_str 
 
 

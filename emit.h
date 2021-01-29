@@ -26,7 +26,9 @@ typedef enum {
 	BC_CMPLT,
 	BC_JMPIFEQ,
 	BC_GOTO,
-	BC_NEWARRAY
+	BC_NEWARRAY,
+	BC_ARR_STORE,
+	BC_ARR_LOAD
 } ByteCode;
 
 typedef struct _ConstantPoolRow {

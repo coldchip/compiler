@@ -26,6 +26,7 @@ void enter_binexpr(Generator *generator, Node *node);
 void enter_literal(Generator *generator, Node *node);
 void enter_char_literal(Generator *generator, Node *node);
 void enter_ident(Generator *generator, Node *node);
+void enter_ident_member(Generator *generator, Node *node);
 void enter_call(Generator *generator, Node *node);
 void enter_if(Generator *generator, Node *node);
 void enter_while(Generator *generator, Node *node);
