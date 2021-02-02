@@ -13,3 +13,7 @@ int stoi(string str) {
 
 	return sign * res;
 }
+
+int rand(int min, int max) {
+	return __callinternal__rand(min, max);
+}

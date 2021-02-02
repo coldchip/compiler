@@ -37,3 +37,60 @@ int strcmp(string a, string b) {
 string itos(int n) {
 	return __callinternal__itos(n);
 }
+
+int sizeof(int arr) {
+	return __callinternal__sizeof(arr);
+}
+
+int to_array(string str) {
+	int len = strlen(str);
+	int[] data = [len];
+	int i = 0;
+	while(i < len) {
+		data[i] = charat(str, i);
+		i = i + 1;
+	}
+	return data;
+}
+
+string char_to_string(int byte) {
+	int size = sizeof(byte);
+	string data = "";
+	int i = 0;
+	while(i < size) {
+		string temp = data + __callinternal__char_to_str_cast(byte[i]);
+		data = temp;
+		i = i + 1;
+	}
+	return data;
+}
+
+int char_to_int(char c) {
+	return __callinternal__char_to_int_cast(c);
+}
+
+void explode(string data, string delim, int y) {
+	string result = "";
+	int data_len = strlen(data);
+	int i = 0;
+	int f = 0;
+	while(i < data_len) {
+		int g = 0;
+		string tmp = result + __callinternal__char_to_str_cast(charat(data, i));
+		result = tmp;
+		i = i + 1;
+		while(charat(data, i) == charat(delim, g)) {
+			i = i + 1;
+			g = g + 1;
+			if(g == strlen(delim)) {
+				if(f == y) {
+					return result;
+				}
+				string empty = "";
+				result = empty;
+				f = f + 1;
+			}
+		}
+	}
+	return "";
+}

@@ -42,6 +42,7 @@ typedef struct _OP {
 	ByteCode op;
 	int left;
 	int right;
+	int size;
 } OP;
 
 typedef struct _Function {
@@ -63,6 +64,7 @@ void emit_select_function(Emit *emit, char *name);
 unsigned emit_get_current_line(Emit *emit);
 OP *emit_opcode(Emit *emit, ByteCode op, int left, int right);
 void emit_build(Emit *emit, char *file);
+void emit_build2(Emit *emit, char *file);
 void free_emit(Emit *emit);
 
 #endif

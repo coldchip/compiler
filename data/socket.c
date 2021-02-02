@@ -17,3 +17,7 @@ string socket_read(int fd, int size) {
 int socket_write(int fd, string data) {
 	return __callinternal__socket_write(fd, data);
 }
+
+void socket_close(int fd) {
+	__callinternal__socket_close(fd);
+}

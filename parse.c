@@ -2,9 +2,8 @@
 
 Node *new_node(NodeType type) {
 	Node *node = malloc(sizeof(Node));
+	memset(node, 0, sizeof(Node));
 	list_clear(&node->bodylist);
-	node->left = NULL;
-	node->right = NULL;
 	node->type = type;
 	return node;
 }
@@ -25,18 +24,24 @@ Node *parse_call(Parser *parser) {
 }
 
 DataType parse_basetype(Parser *parser) {
+	DataType type;
 	if(consume_string(parser, "string")) {
-		return DATA_STRING;
+		type = DATA_STRING;
 	} else if(consume_string(parser, "int")) {
-		return DATA_NUMBER;
+		type = DATA_NUMBER;
 	} else if(consume_string(parser, "void")) {
-		return DATA_VOID;
+		type = DATA_VOID;
 	} else if(consume_string(parser, "char")) {
-		return DATA_CHAR;
+		type = DATA_CHAR;
 	} else {
 		c_error("Invalid base type");
 	}
-	return DATA_VOID;
+
+	if(consume_string(parser, "[")) {
+		type |= DATA_ARRAY_MASK;
+		expect_string(parser, "]");
+	}
+	return type;
 }
 
 /* Parses any string/number declaration */
@@ -44,16 +49,16 @@ DataType parse_basetype(Parser *parser) {
 Node *parse_declaration(Parser *parser) {
 	Node *node = new_node(AST_DECL);
 
-	node->data_type = 0;
-	node->data_type |= parse_basetype(parser);
+	node->data_type = parse_basetype(parser);
 
-	Token *token = parser->token;
-	
+	Token *token = parser->token;	
 	expect_type(parser, TK_IDENT);
 	node->token = token;
-	if(consume_string(parser, "[")) {
-		node->data_type |= DATA_ARRAY_MASK;
-		int size = atoi(parser->token->data);
+
+	if(node->data_type & DATA_ARRAY_MASK) {
+		// = [10]
+		expect_string(parser, "=");
+		expect_string(parser, "[");
 		node->size = parse_expr(parser);
 		expect_string(parser, "]");
 	} else {
@@ -67,6 +72,7 @@ Node *parse_declaration(Parser *parser) {
 			}
 		}
 	}
+	
 	return node;
 }
 
@@ -85,7 +91,6 @@ Node *parse_stmt(Parser *parser) {
 		if(consume_string(parser, "else")) {
 			node->alternate = parse_stmt(parser);
 		}
-
 		return node;
 	} else if(consume_string(parser, "{")) {
 

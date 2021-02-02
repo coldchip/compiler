@@ -72,6 +72,67 @@ void emit_build(Emit *emit, char *file) {
 			uint8_t op = (uint8_t)row->op;
 			int left = (int)row->left;
 			int right = (int)row->right;
+			if(fwrite(&op, sizeof(uint8_t), 1, fp) != 1) {
+				c_error("unable to emit bytecode to file");
+			}
+			if(fwrite(&left, sizeof(int), 1, fp) != 1) {
+				c_error("unable to emit bytecode to file");
+			}
+			if(fwrite(&right, sizeof(int), 1, fp) != 1) {
+				c_error("unable to emit bytecode to file");
+			}
+			list_remove(&row->node);
+			free(row);
+		}
+
+		list_remove(&function->node);
+		free(function->name);
+		free(function);
+	}
+
+	fwrite(&emit->constant_pool_index, sizeof(unsigned), 1, fp);
+
+	ListNode *i = list_begin(&emit->constant_pool);
+	while(i != list_end(&emit->constant_pool)) {
+		ConstantPoolRow *row = (ConstantPoolRow*)i;
+		i = list_next(i);
+
+		unsigned str_len = strlen(row->data);
+		char *data = row->data;
+		fwrite(&str_len, sizeof(unsigned), 1, fp);
+		fwrite(data, sizeof(char), str_len, fp);
+
+		list_remove(&row->node);
+		free(row->data);
+		free(row);
+	}
+	fclose(fp);
+}
+
+void emit_build2(Emit *emit, char *file) {
+	FILE *fp = fopen(file, "wb");
+	fprintf(fp, "CHIPCODE");
+
+	unsigned f_count = list_size(&emit->functions);
+	fwrite(&f_count, sizeof(unsigned), 1, fp);
+
+	ListNode *f = list_begin(&emit->functions);
+	while(f != list_end(&emit->functions)) {
+		Function *function = (Function*)f;
+		f = list_next(f);
+
+		unsigned f_index = emit_add_to_constant_pool(emit, function->name);
+		unsigned f_length = list_size(&function->code);
+		fwrite(&f_index, sizeof(unsigned), 1, fp);
+		fwrite(&f_length, sizeof(unsigned), 1, fp);
+
+		ListNode *c = list_begin(&function->code);
+		while(c != list_end(&function->code)) {
+			OP *row = (OP*)c;
+			c = list_next(c);
+			uint8_t op = (uint8_t)row->op;
+			int left = (int)row->left;
+			int right = (int)row->right;
 			fwrite(&op, sizeof(uint8_t), 1, fp);
 			//fprintf(fp, "L");
 			fwrite(&left, sizeof(int), 1, fp);

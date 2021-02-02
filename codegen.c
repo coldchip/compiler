@@ -68,7 +68,7 @@ void enter_block(Generator *generator, Node *node) {
 void enter_decl(Generator *generator, Node *node) {
 	if(node->data_type & DATA_ARRAY_MASK) {
 		// type a[x];
-		node->data_type &= ~(DATA_ARRAY_MASK);
+		node->data_type &= ~(DATA_ARRAY_MASK); // remove array bitmask
 		if(node->size) {
 			visitor(generator, node->size);
 		}
@@ -196,23 +196,28 @@ void enter_call(Generator *generator, Node *node) {
 
 void enter_if(Generator *generator, Node *node) {
 	unsigned line = emit_get_current_line(generator->emit);
-	OP *jmp = NULL;
+	OP *jmp_exit = NULL;
+	OP *jmp_exit_no_else = NULL;
 	if(node->condition) {
 		visitor(generator, node->condition);
 		emit_opcode(generator->emit, BC_PUSH, 0, 0);
 		emit(generator, "\tpush %i\n", 0);
-		jmp = emit_opcode(generator->emit, BC_JMPIFEQ, 0, 0);
+		jmp_exit = emit_opcode(generator->emit, BC_JMPIFEQ, 0, 0);
 		emit(generator, "\tjmpifeq ???\n");
 	}
 	if(node->body) {
 		visitor(generator, node->body);
+		jmp_exit_no_else = emit_opcode(generator->emit, BC_GOTO, 0, 0);
+		emit(generator, "\tgoto ???\n");
 	}
 	if(node->alternate) {
-		//visitor(generator, node->alternate);
+		jmp_exit->left = emit_get_current_line(generator->emit);
+		visitor(generator, node->alternate);
+	} else {
+		jmp_exit->left = emit_get_current_line(generator->emit);
 	}
-	unsigned finish_line = emit_get_current_line(generator->emit);
-	if(jmp) {
-		jmp->left = finish_line;
+	if(jmp_exit_no_else) {
+		jmp_exit_no_else->left = emit_get_current_line(generator->emit);
 	}
 	node_free(node);
 }
@@ -261,6 +266,7 @@ void enter_arg(Generator *generator, Node *node) {
 		visitor(generator, entry);
 		count++;
 	}
+	emit(generator, "\tpush %i #args count\n", count);
 	emit_opcode(generator->emit, BC_PUSH, count, 0);
 	node_free(node);
 }
@@ -406,6 +412,7 @@ void generate(Node *node) {
 	generator.emit = new_emit();
 	visitor(&generator, node);
 	emit_build(generator.emit, "data/out.bin");
+	//emit_build2(generator.emit, "data/beta_bin.bin");
 	free_emit(generator.emit);
 	fclose(generator.file);
 }

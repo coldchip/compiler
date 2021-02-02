@@ -17,6 +17,3 @@ run:
 	$(EXE) data/test.c
 clean:
 	rm -rf bin/*
-
-upload:
-	scp -r /home/ryan/chiphttp/* ryan@192.168.0.100:/home/ryan/chipdrive
