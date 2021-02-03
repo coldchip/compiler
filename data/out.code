@@ -1,7 +1,7 @@
 @func strlen
 	store str
 	load str
-	push 1 #args count
+	push_i 1 #args count
 	call __callinternal__strlen
 	ret
 @func charat
@@ -9,123 +9,123 @@
 	store str
 	load str
 	load index
-	push 2 #args count
+	push_i 2 #args count
 	call __callinternal__charat
 	ret
 @func strstr
 	store needle
 	store haystack
-	push 0
+	push_i 0
 	store i
 	load haystack
-	push 1 #args count
+	push_i 1 #args count
 	call strlen
 	load i
 	cmplt
-	push 0
+	push_i 0
 	jmpifeq ???
 	load haystack
 	load i
-	push 2 #args count
+	push_i 2 #args count
 	call charat
 	store at
 	load needle
 	load at
 	cmpeq
-	push 0
+	push_i 0
 	jmpifeq ???
-	push 1
+	push_i 1
 	ret
 	goto ???
-	push 1
+	push_i 1
 	load i
 	add
 	store i
 	goto 4
-	push 0
+	push_i 0
 	ret
 @func strcmp
 	store b
 	store a
 	load a
-	push 1 #args count
+	push_i 1 #args count
 	call strlen
 	store a_len
 	load b
-	push 1 #args count
+	push_i 1 #args count
 	call strlen
 	store b_len
 	load b_len
 	load a_len
 	cmpeq
-	push 0
+	push_i 0
 	jmpifeq ???
-	push 0
+	push_i 0
 	store i
 	load a_len
 	load i
 	cmplt
-	push 0
+	push_i 0
 	jmpifeq ???
 	load b
 	load i
-	push 2 #args count
+	push_i 2 #args count
 	call charat
 	load a
 	load i
-	push 2 #args count
+	push_i 2 #args count
 	call charat
 	cmpneq
-	push 0
+	push_i 0
 	jmpifeq ???
-	push 1
+	push_i 1
 	ret
 	goto ???
-	push 1
+	push_i 1
 	load i
 	add
 	store i
 	goto 17
-	push 0
+	push_i 0
 	ret
 	goto ???
-	push 1
+	push_i 1
 	ret
 @func itos
 	store n
 	load n
-	push 1 #args count
+	push_i 1 #args count
 	call __callinternal__itos
 	ret
 @func sizeof
 	store arr
 	load arr
-	push 1 #args count
+	push_i 1 #args count
 	call __callinternal__sizeof
 	ret
 @func to_array
 	store str
 	load str
-	push 1 #args count
+	push_i 1 #args count
 	call strlen
 	store len
 	load len
 	newarray @type[2]
 	store data
-	push 0
+	push_i 0
 	store i
 	load len
 	load i
 	cmplt
-	push 0
+	push_i 0
 	jmpifeq ???
 	load str
 	load i
-	push 2 #args count
+	push_i 2 #args count
 	call charat
 	load i
 	arr_store data
-	push 1
+	push_i 1
 	load i
 	add
 	store i
@@ -135,28 +135,28 @@
 @func char_to_string
 	store byte
 	load byte
-	push 1 #args count
+	push_i 1 #args count
 	call sizeof
 	store size
-	push_str 
+	push_s 
 	store data
-	push 0
+	push_i 0
 	store i
 	load size
 	load i
 	cmplt
-	push 0
+	push_i 0
 	jmpifeq ???
 	load i
 	arr_load byte
-	push 1 #args count
+	push_i 1 #args count
 	call __callinternal__char_to_str_cast
 	load data
 	str_concat
 	store temp
 	load temp
 	store data
-	push 1
+	push_i 1
 	load i
 	add
 	store i
@@ -166,136 +166,136 @@
 @func char_to_int
 	store c
 	load c
-	push 1 #args count
+	push_i 1 #args count
 	call __callinternal__char_to_int_cast
 	ret
 @func explode
 	store y
 	store delim
 	store data
-	push_str 
+	push_s 
 	store result
 	load data
-	push 1 #args count
+	push_i 1 #args count
 	call strlen
 	store data_len
-	push 0
+	push_i 0
 	store i
-	push 0
+	push_i 0
 	store f
 	load data_len
 	load i
 	cmplt
-	push 0
+	push_i 0
 	jmpifeq ???
-	push 0
+	push_i 0
 	store g
 	load data
 	load i
-	push 2 #args count
+	push_i 2 #args count
 	call charat
-	push 1 #args count
+	push_i 1 #args count
 	call __callinternal__char_to_str_cast
 	load result
 	str_concat
 	store tmp
 	load tmp
 	store result
-	push 1
+	push_i 1
 	load i
 	add
 	store i
 	load delim
 	load g
-	push 2 #args count
+	push_i 2 #args count
 	call charat
 	load data
 	load i
-	push 2 #args count
+	push_i 2 #args count
 	call charat
 	cmpeq
-	push 0
+	push_i 0
 	jmpifeq ???
-	push 1
+	push_i 1
 	load i
 	add
 	store i
-	push 1
+	push_i 1
 	load g
 	add
 	store g
 	load delim
-	push 1 #args count
+	push_i 1 #args count
 	call strlen
 	load g
 	cmpeq
-	push 0
+	push_i 0
 	jmpifeq ???
 	load y
 	load f
 	cmpeq
-	push 0
+	push_i 0
 	jmpifeq ???
 	load result
 	ret
 	goto ???
-	push_str 
+	push_s 
 	store empty
 	load empty
 	store result
-	push 1
+	push_i 1
 	load f
 	add
 	store f
 	goto ???
 	goto 35
 	goto 13
-	push_str 
+	push_s 
 	ret
 @func stoi
 	store str
-	push 0
+	push_i 0
 	store res
-	push 1
+	push_i 1
 	store sign
-	push 0
+	push_i 0
 	store i
-	push 45
+	push_i 45
 	load str
-	push 0
-	push 2 #args count
+	push_i 0
+	push_i 2 #args count
 	call charat
 	cmpeq
-	push 0
+	push_i 0
 	jmpifeq ???
 	load sign
-	push 2
+	push_i 2
 	sub
 	store sign
-	push 1
+	push_i 1
 	load i
 	add
 	store i
 	goto ???
 	load str
-	push 1 #args count
+	push_i 1 #args count
 	call strlen
 	load i
 	cmplt
-	push 0
+	push_i 0
 	jmpifeq ???
-	push 48
+	push_i 48
 	load str
 	load i
-	push 2 #args count
+	push_i 2 #args count
 	call charat
 	sub
-	push 10
+	push_i 10
 	load res
 	mul
 	add
 	store res
-	push 1
+	push_i 1
 	load i
 	add
 	store i
@@ -309,11 +309,11 @@
 	store min
 	load min
 	load max
-	push 2 #args count
+	push_i 2 #args count
 	call __callinternal__rand
 	ret
 @func new_socket
-	push 0 #args count
+	push_i 0 #args count
 	call __callinternal__new_socket
 	ret
 @func socket_bind
@@ -323,13 +323,13 @@
 	load fd
 	load ip
 	load port
-	push 3 #args count
+	push_i 3 #args count
 	call __callinternal__socket_bind
 	ret
 @func socket_accept
 	store fd
 	load fd
-	push 1 #args count
+	push_i 1 #args count
 	call __callinternal__socket_accept
 	ret
 @func socket_read
@@ -337,7 +337,7 @@
 	store fd
 	load fd
 	load size
-	push 2 #args count
+	push_i 2 #args count
 	call __callinternal__socket_read
 	ret
 @func socket_write
@@ -345,18 +345,18 @@
 	store fd
 	load fd
 	load data
-	push 2 #args count
+	push_i 2 #args count
 	call __callinternal__socket_write
 	ret
 @func socket_close
 	store fd
 	load fd
-	push 1 #args count
+	push_i 1 #args count
 	call __callinternal__socket_close
 @func exec
 	store data
 	load data
-	push 1 #args count
+	push_i 1 #args count
 	call __callinternal__exec
 	ret
 @func fopen
@@ -364,7 +364,7 @@
 	store file
 	load file
 	load mode
-	push 2 #args count
+	push_i 2 #args count
 	call __callinternal__fopen
 	ret
 @func fread
@@ -372,234 +372,18 @@
 	store fp
 	load fp
 	load size
-	push 2 #args count
+	push_i 2 #args count
 	call __callinternal__fread
 	ret
 @func fclose
 	store fd
 	load fd
-	push 1 #args count
+	push_i 1 #args count
 	call __callinternal__fclose
 @func main
-	push_str ChipCode HTTP Server 1.0
-	push 1 #args count
-	call printf
-	push 8012
-	store port
-	push 0 #args count
-	call new_socket
-	store fd
-	push 1
-	load fd
-	push_str 0.0.0.0
-	load port
-	push 3 #args count
-	call socket_bind
-	cmpeq
-	push 0
-	jmpifeq ???
-	push_str socket bind success
-	push 1 #args count
-	call printf
-	push 1
-	push 0
-	jmpifeq ???
-	load fd
-	push 1 #args count
-	call socket_accept
-	store client
-	load client
-	push 8192
-	push 2 #args count
-	call socket_read
-	store data
-	load data
-	push_str 
-
-	push 0
-	push 3 #args count
-	call explode
-	store head
-	load head
-	push_str  
-	push 0
-	push 3 #args count
-	call explode
-	store method
-	load head
-	push_str  
-	push 1
-	push 3 #args count
-	call explode
-	store path
-	load head
-	push_str  
-	push 2
-	push 3 #args count
-	call explode
-	store version
-	push 0
-	load path
-	push_str /
-	push 2 #args count
-	call strcmp
-	cmpeq
-	push 0
-	jmpifeq ???
-	push_str index.html
-	load path
+	push_i 97
+	store a
+	load a
+	push_s hello
 	str_concat
-	store index
-	load index
-	store path
-	goto ???
-	load path
-	push_str .
-	str_concat
-	store prefix
-	load prefix
-	store path
-	load path
-	push 1 #args count
-	call printf
-	load path
-	push_str rb
-	push 2 #args count
-	call fopen
-	store fs
-	push 1
-	load fs
-	cmpeq
-	push 0
-	jmpifeq ???
-	load fs
-	push 1000000
-	push 2 #args count
-	call fread
-	store data
-	load fs
-	push 1 #args count
-	call fclose
-	push_str </textarea></body>
-	load data
-	str_concat
-	push_str <!DOCTYPE html><html><head><style>body, html { margin: 0; padding: 0; width: 100%; height: 100%; } * { font-family: monospace; } .box { font-family: monospace; width: 100%; height: 100%; }</style></head><body><textarea class='box'>
-	str_concat
-	store result
-	load result
-	push 1 #args count
-	call strlen
-	push 1 #args count
-	call itos
-	store len
-	load result
-	push_str 
-
-
-	str_concat
-	load len
-	str_concat
-	push_str HTTP/1.0 200 OK
-Connection: close
-Content-Type: text/html
-Content-Length: 
-	str_concat
-	store response
-	load client
-	load response
-	push 2 #args count
-	call socket_write
-	store s
-	load client
-	push 1 #args count
-	call socket_close
-	goto ???
-	push_str ls .
-	push 1 #args count
-	call exec
-	store list
-	push 0
-	store g
-	push_str 
-	store res
-	push_str 0
-	store elem
-	push 1
-	load elem
-	push_str 
-	push 2 #args count
-	call strcmp
-	cmpeq
-	push 0
-	jmpifeq ???
-	load list
-	push_str 
-
-	load g
-	push 3 #args count
-	call explode
-	store tmp
-	load tmp
-	store elem
-	load elem
-	push 1 #args count
-	call printf
-	push_str </a><br>
-	load elem
-	str_concat
-	push_str '>
-	str_concat
-	load elem
-	str_concat
-	push_str <a href='
-	str_concat
-	load res
-	str_concat
-	store tmp2
-	load tmp2
-	store res
-	push 1
-	load g
-	add
-	store g
-	goto 137
-	push_str </div></body>
-	load res
-	str_concat
-	push_str <!DOCTYPE html><html><head><style>* { font-family: monospace; } .box { font-family: monospace; }</style></head><body><div class='box'>
-	str_concat
-	store result
-	load result
-	push 1 #args count
-	call strlen
-	push 1 #args count
-	call itos
-	store len
-	load result
-	push_str 
-
-
-	str_concat
-	load len
-	str_concat
-	push_str HTTP/1.0 200 OK
-Connection: close
-Content-Type: text/html
-Content-Length: 
-	str_concat
-	store response
-	load client
-	load response
-	push 2 #args count
-	call socket_write
-	store s
-	load client
-	push 1 #args count
-	call socket_close
-	goto 20
-	goto ???
-	load port
-	push_str Unable to bind to port 
-	str_concat
-	push 1 #args count
-	call printf
+	store b

@@ -9,11 +9,11 @@
 #include "list.h"
 
 typedef enum {
-	BC_PUSHSTR,
 	BC_STRCONCAT,
 	BC_STORE,
 	BC_LOAD,
-	BC_PUSH,
+	BC_PUSH_I,
+	BC_PUSH_S,
 	BC_ADD,
 	BC_SUB,
 	BC_MUL,

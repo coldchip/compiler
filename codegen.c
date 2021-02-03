@@ -156,14 +156,14 @@ void enter_binexpr(Generator *generator, Node *node) {
 }
 
 void enter_literal(Generator *generator, Node *node) {
-	emit(generator, "\tpush %s\n", (node->token->data));
-	emit_opcode(generator->emit, BC_PUSH, atoi(node->token->data), 0);
+	emit(generator, "\tpush_i %s\n", (node->token->data));
+	emit_opcode(generator->emit, BC_PUSH_I, atoi(node->token->data), 0);
 	node_free(node);
 }
 
 void enter_char_literal(Generator *generator, Node *node) {
-	emit(generator, "\tpush %i\n", (int)*(node->token->data));
-	emit_opcode(generator->emit, BC_PUSH, (int)*(node->token->data), 0);
+	emit(generator, "\tpush_i %i\n", (int)*(node->token->data));
+	emit_opcode(generator->emit, BC_PUSH_I, (int)*(node->token->data), 0);
 	node_free(node);
 }
 
@@ -195,13 +195,12 @@ void enter_call(Generator *generator, Node *node) {
 }
 
 void enter_if(Generator *generator, Node *node) {
-	unsigned line = emit_get_current_line(generator->emit);
 	OP *jmp_exit = NULL;
 	OP *jmp_exit_no_else = NULL;
 	if(node->condition) {
 		visitor(generator, node->condition);
-		emit_opcode(generator->emit, BC_PUSH, 0, 0);
-		emit(generator, "\tpush %i\n", 0);
+		emit_opcode(generator->emit, BC_PUSH_I, 0, 0);
+		emit(generator, "\tpush_i %i\n", 0);
 		jmp_exit = emit_opcode(generator->emit, BC_JMPIFEQ, 0, 0);
 		emit(generator, "\tjmpifeq ???\n");
 	}
@@ -227,8 +226,8 @@ void enter_while(Generator *generator, Node *node) {
 	OP *jmp = NULL;
 	if(node->condition) {
 		visitor(generator, node->condition);
-		emit_opcode(generator->emit, BC_PUSH, 0, 0);
-		emit(generator, "\tpush %i\n", 0);
+		emit_opcode(generator->emit, BC_PUSH_I, 0, 0);
+		emit(generator, "\tpush_i %i\n", 0);
 		jmp = emit_opcode(generator->emit, BC_JMPIFEQ, 0, 0);
 		emit(generator, "\tjmpifeq ???\n");
 	}
@@ -266,8 +265,8 @@ void enter_arg(Generator *generator, Node *node) {
 		visitor(generator, entry);
 		count++;
 	}
-	emit(generator, "\tpush %i #args count\n", count);
-	emit_opcode(generator->emit, BC_PUSH, count, 0);
+	emit(generator, "\tpush_i %i #args count\n", count);
+	emit_opcode(generator->emit, BC_PUSH_I, count, 0);
 	node_free(node);
 }
 
@@ -293,9 +292,9 @@ void enter_string_concat(Generator *generator, Node *node) {
 }
 
 void enter_string_literal(Generator *generator, Node *node) {
-	emit(generator, "\tpush_str %s\n", node->token->data);
+	emit(generator, "\tpush_s %s\n", node->token->data);
 	int i = emit_add_to_constant_pool(generator->emit, node->token->data);
-	emit_opcode(generator->emit, BC_PUSHSTR, i, 0);
+	emit_opcode(generator->emit, BC_PUSH_S, i, 0);
 	node_free(node);
 }
 

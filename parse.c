@@ -24,7 +24,7 @@ Node *parse_call(Parser *parser) {
 }
 
 DataType parse_basetype(Parser *parser) {
-	DataType type;
+	DataType type = DATA_VOID;
 	if(consume_string(parser, "string")) {
 		type = DATA_STRING;
 	} else if(consume_string(parser, "int")) {
@@ -63,7 +63,7 @@ Node *parse_declaration(Parser *parser) {
 		expect_string(parser, "]");
 	} else {
 		if(consume_string(parser, "=")) {
-			if(node->data_type & DATA_STRING) {
+			if(node->data_type == DATA_STRING) {
 				/* "hello" + "hello" */
 				node->body = parse_string_expr(parser);
 			} else {

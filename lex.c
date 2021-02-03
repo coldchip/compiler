@@ -74,7 +74,6 @@ void lex(List *tokens, char *data) {
 			data++;
 			assert_not_eof(data);
 			StringBuilder *sb = sb_create();
-			char *start = data;
 			for(;;) {
 				if(*data == '\0') {
 					c_error("Unclosed string literal");
@@ -134,6 +133,16 @@ void lex(List *tokens, char *data) {
 			data += 2;
 			continue;
 		} else if(startswith(data, "!=")) {
+			char *t = malloc_strcpy(data, 2);
+			list_insert(list_end(tokens), new_token(TK_SPECIAL, t, line));
+			data += 2;
+			continue;
+		} else if(startswith(data, ">=")) {
+			char *t = malloc_strcpy(data, 2);
+			list_insert(list_end(tokens), new_token(TK_SPECIAL, t, line));
+			data += 2;
+			continue;
+		} else if(startswith(data, "<=")) {
 			char *t = malloc_strcpy(data, 2);
 			list_insert(list_end(tokens), new_token(TK_SPECIAL, t, line));
 			data += 2;
