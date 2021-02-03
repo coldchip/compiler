@@ -194,8 +194,6 @@
 	load i
 	push_i 2 #args count
 	call charat
-	push_i 1 #args count
-	call __callinternal__char_to_str_cast
 	load result
 	str_concat
 	store tmp
@@ -248,7 +246,7 @@
 	add
 	store f
 	goto ???
-	goto 35
+	goto 33
 	goto 13
 	push_s 
 	ret
@@ -381,9 +379,231 @@
 	push_i 1 #args count
 	call __callinternal__fclose
 @func main
-	push_i 97
-	store a
-	load a
-	push_s hello
+	push_s ChipCode HTTP Server 1.0
+	push_i 1 #args count
+	call printf
+	push_i 8192
+	newarray @type[2]
+	store buf
+	push_i 0
+	push_i 0
+	arr_store buf
+	push_i 8012
+	store port
+	push_i 0 #args count
+	call new_socket
+	store fd
+	push_i 1
+	load fd
+	push_s 0.0.0.0
+	load port
+	push_i 3 #args count
+	call socket_bind
+	cmpeq
+	push_i 0
+	jmpifeq ???
+	push_s socket bind success
+	push_i 1 #args count
+	call printf
+	push_i 1
+	push_i 0
+	jmpifeq ???
+	load fd
+	push_i 1 #args count
+	call socket_accept
+	store client
+	load client
+	push_i 8192
+	push_i 2 #args count
+	call socket_read
+	store data
+	load data
+	push_s 
+
+	push_i 0
+	push_i 3 #args count
+	call explode
+	store head
+	load head
+	push_s  
+	push_i 0
+	push_i 3 #args count
+	call explode
+	store method
+	load head
+	push_s  
+	push_i 1
+	push_i 3 #args count
+	call explode
+	store path
+	load head
+	push_s  
+	push_i 2
+	push_i 3 #args count
+	call explode
+	store version
+	push_i 0
+	load path
+	push_s /
+	push_i 2 #args count
+	call strcmp
+	cmpeq
+	push_i 0
+	jmpifeq ???
+	push_s index.html
+	load path
 	str_concat
-	store b
+	store index
+	load index
+	store path
+	goto ???
+	load path
+	push_s .
+	str_concat
+	store prefix
+	load prefix
+	store path
+	load path
+	push_i 1 #args count
+	call printf
+	load path
+	push_s rb
+	push_i 2 #args count
+	call fopen
+	store fs
+	push_i 1
+	load fs
+	cmpeq
+	push_i 0
+	jmpifeq ???
+	load fs
+	push_i 1000000
+	push_i 2 #args count
+	call fread
+	store data
+	load fs
+	push_i 1 #args count
+	call fclose
+	push_s </textarea></body>
+	load data
+	str_concat
+	push_s <!DOCTYPE html><html><head><style>body, html { margin: 0; padding: 0; width: 100%; height: 100%; } * { font-family: monospace; } .box { font-family: monospace; width: 100%; height: 100%; }</style></head><body><textarea class='box'>
+	str_concat
+	store result
+	load result
+	push_i 1 #args count
+	call strlen
+	push_i 1 #args count
+	call itos
+	store len
+	load result
+	push_s 
+
+
+	str_concat
+	load len
+	str_concat
+	push_s HTTP/1.0 200 OK
+Connection: close
+Content-Type: text/html
+Content-Length: 
+	str_concat
+	store response
+	load client
+	load response
+	push_i 2 #args count
+	call socket_write
+	store s
+	load client
+	push_i 1 #args count
+	call socket_close
+	goto ???
+	push_s ls .
+	push_i 1 #args count
+	call exec
+	store list
+	push_i 0
+	store g
+	push_s 
+	store res
+	push_s 0
+	store elem
+	push_i 1
+	load elem
+	push_s 
+	push_i 2 #args count
+	call strcmp
+	cmpeq
+	push_i 0
+	jmpifeq ???
+	load list
+	push_s 
+
+	load g
+	push_i 3 #args count
+	call explode
+	store tmp
+	load tmp
+	store elem
+	load elem
+	push_i 1 #args count
+	call printf
+	push_s </a><br>
+	load elem
+	str_concat
+	push_s '>
+	str_concat
+	load elem
+	str_concat
+	push_s <a href='
+	str_concat
+	load res
+	str_concat
+	store tmp2
+	load tmp2
+	store res
+	push_i 1
+	load g
+	add
+	store g
+	goto 143
+	push_s </div></body>
+	load res
+	str_concat
+	push_s <!DOCTYPE html><html><head><style>* { font-family: monospace; } .box { font-family: monospace; }</style></head><body><div class='box'>
+	str_concat
+	store result
+	load result
+	push_i 1 #args count
+	call strlen
+	push_i 1 #args count
+	call itos
+	store len
+	load result
+	push_s 
+
+
+	str_concat
+	load len
+	str_concat
+	push_s HTTP/1.0 200 OK
+Connection: close
+Content-Type: text/html
+Content-Length: 
+	str_concat
+	store response
+	load client
+	load response
+	push_i 2 #args count
+	call socket_write
+	store s
+	load client
+	push_i 1 #args count
+	call socket_close
+	goto 26
+	goto ???
+	load port
+	push_s Unable to bind to port 
+	str_concat
+	push_i 1 #args count
+	call printf

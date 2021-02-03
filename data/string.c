@@ -76,7 +76,7 @@ void explode(string data, string delim, int y) {
 	int f = 0;
 	while(i < data_len) {
 		int g = 0;
-		string tmp = result + __callinternal__char_to_str_cast(charat(data, i));
+		string tmp = result + charat(data, i); // please implement casts -.-
 		result = tmp;
 		i = i + 1;
 		while(charat(data, i) == charat(delim, g)) {

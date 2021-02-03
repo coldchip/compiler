@@ -7,6 +7,9 @@
 int main() {
 	printf("ChipCode HTTP Server 1.0");
 
+	int[] buf = [8192];
+	buf[0] = 0;
+
 	int port = 8012;
 
 	int fd = new_socket();
