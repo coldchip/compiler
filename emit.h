@@ -12,7 +12,7 @@ typedef enum {
 	BC_STRCONCAT,
 	BC_STORE,
 	BC_LOAD,
-	BC_PUSH_I,
+	BC_PUSH_I, // for numbers and char
 	BC_PUSH_S,
 	BC_ADD,
 	BC_SUB,

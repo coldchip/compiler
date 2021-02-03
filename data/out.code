@@ -110,7 +110,7 @@
 	call strlen
 	store len
 	load len
-	newarray @type[2]
+	newarray @type[3]
 	store data
 	push_i 0
 	store i
@@ -149,8 +149,8 @@
 	jmpifeq ???
 	load i
 	arr_load byte
-	push_i 1 #args count
-	call __callinternal__char_to_str_cast
+	store b
+	load b
 	load data
 	str_concat
 	store temp
@@ -382,12 +382,6 @@
 	push_s ChipCode HTTP Server 1.0
 	push_i 1 #args count
 	call printf
-	push_i 8192
-	newarray @type[2]
-	store buf
-	push_i 0
-	push_i 0
-	arr_store buf
 	push_i 8012
 	store port
 	push_i 0 #args count
@@ -416,8 +410,12 @@
 	push_i 8192
 	push_i 2 #args count
 	call socket_read
-	store data
-	load data
+	store header_buf
+	load header_buf
+	push_i 1 #args count
+	call char_to_string
+	store header
+	load header
 	push_s 
 
 	push_i 0
@@ -464,9 +462,6 @@
 	load prefix
 	store path
 	load path
-	push_i 1 #args count
-	call printf
-	load path
 	push_s rb
 	push_i 2 #args count
 	call fopen
@@ -477,7 +472,7 @@
 	push_i 0
 	jmpifeq ???
 	load fs
-	push_i 1000000
+	push_i 99999
 	push_i 2 #args count
 	call fread
 	store data
@@ -486,6 +481,8 @@
 	call fclose
 	push_s </textarea></body>
 	load data
+	push_i 1 #args count
+	call char_to_string
 	str_concat
 	push_s <!DOCTYPE html><html><head><style>body, html { margin: 0; padding: 0; width: 100%; height: 100%; } * { font-family: monospace; } .box { font-family: monospace; width: 100%; height: 100%; }</style></head><body><textarea class='box'>
 	str_concat
@@ -511,6 +508,8 @@ Content-Length:
 	store response
 	load client
 	load response
+	push_i 1 #args count
+	call to_array
 	push_i 2 #args count
 	call socket_write
 	store s
@@ -545,9 +544,6 @@ Content-Length:
 	store tmp
 	load tmp
 	store elem
-	load elem
-	push_i 1 #args count
-	call printf
 	push_s </a><br>
 	load elem
 	str_concat
@@ -566,7 +562,7 @@ Content-Length:
 	load g
 	add
 	store g
-	goto 143
+	goto 142
 	push_s </div></body>
 	load res
 	str_concat
@@ -594,13 +590,15 @@ Content-Length:
 	store response
 	load client
 	load response
+	push_i 1 #args count
+	call to_array
 	push_i 2 #args count
 	call socket_write
 	store s
 	load client
 	push_i 1 #args count
 	call socket_close
-	goto 26
+	goto 20
 	goto ???
 	load port
 	push_s Unable to bind to port 

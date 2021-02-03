@@ -10,11 +10,11 @@ int socket_accept(int fd) {
 	return __callinternal__socket_accept(fd);
 }
 
-string socket_read(int fd, int size) {
+char socket_read(int fd, int size) {
 	return __callinternal__socket_read(fd, size);
 }
 
-int socket_write(int fd, string data) {
+int socket_write(int fd, char data) {
 	return __callinternal__socket_write(fd, data);
 }
 

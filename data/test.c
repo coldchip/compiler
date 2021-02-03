@@ -7,9 +7,6 @@
 int main() {
 	printf("ChipCode HTTP Server 1.0");
 
-	int[] buf = [8192];
-	buf[0] = 0;
-
 	int port = 8012;
 
 	int fd = new_socket();
@@ -17,9 +14,10 @@ int main() {
 		printf("socket bind success");
 		while(1) {
 			int client = socket_accept(fd);
-			string data = socket_read(client, 8192);
+			char header_buf = socket_read(client, 8192);
+			string header = char_to_string(header_buf);
 
-			string head = explode(data, "\r\n", 0);
+			string head = explode(header, "\r\n", 0);
 
 			string method = explode(head, " ", 0);
 			string path = explode(head, " ", 1);
@@ -33,18 +31,16 @@ int main() {
 			string prefix = "." + path;
 			path = prefix;
 
-			printf(path);
-
 			int fs = fopen(path, "rb");
 			if(fs == 1) {
-				string data = fread(fs, 1000000);
+				char data = fread(fs, 99999);
 				fclose(fs);
 
-				string result = "<!DOCTYPE html><html><head><style>body, html { margin: 0; padding: 0; width: 100%; height: 100%; } * { font-family: monospace; } .box { font-family: monospace; width: 100%; height: 100%; }</style></head><body><textarea class='box'>" + data + "</textarea></body>";
+				string result = "<!DOCTYPE html><html><head><style>body, html { margin: 0; padding: 0; width: 100%; height: 100%; } * { font-family: monospace; } .box { font-family: monospace; width: 100%; height: 100%; }</style></head><body><textarea class='box'>" + char_to_string(data) + "</textarea></body>";
 
 				string len = itos(strlen(result));
 				string response = "HTTP/1.0 200 OK\r\nConnection: close\r\nContent-Type: text/html\r\nContent-Length: " + len + "\r\n\r\n" + result;
-				int s = socket_write(client, response);
+				int s = socket_write(client, to_array(response));
 				socket_close(client);
 			} else {
 				string list = exec("ls .");
@@ -56,8 +52,6 @@ int main() {
 					string tmp = explode(list, "\n", g);
 					elem = tmp;
 
-					printf(elem);
-
 					string tmp2 = res + "<a href='" + elem + "'>" + elem + "</a><br>";
 					res = tmp2;
 
@@ -67,7 +61,7 @@ int main() {
 
 				string len = itos(strlen(result));
 				string response = "HTTP/1.0 200 OK\r\nConnection: close\r\nContent-Type: text/html\r\nContent-Length: " + len + "\r\n\r\n" + result;
-				int s = socket_write(client, response);
+				int s = socket_write(client, to_array(response));
 				socket_close(client);
 			}
 

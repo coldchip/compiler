@@ -42,9 +42,9 @@ int sizeof(int arr) {
 	return __callinternal__sizeof(arr);
 }
 
-int to_array(string str) {
+char to_array(string str) {
 	int len = strlen(str);
-	int[] data = [len];
+	char[] data = [len];
 	int i = 0;
 	while(i < len) {
 		data[i] = charat(str, i);
@@ -58,7 +58,8 @@ string char_to_string(int byte) {
 	string data = "";
 	int i = 0;
 	while(i < size) {
-		string temp = data + __callinternal__char_to_str_cast(byte[i]);
+		char b = byte[i];
+		string temp = data + b;
 		data = temp;
 		i = i + 1;
 	}
