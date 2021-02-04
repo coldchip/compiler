@@ -5,8 +5,15 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h> 
+#include <time.h>
 #include "chipcode.h"
 #include "list.h"
+
+typedef struct _Header {
+	int magic;
+	int version;
+	uint64_t time;
+} Header;
 
 typedef enum {
 	BC_STRCONCAT,
@@ -31,10 +38,17 @@ typedef enum {
 	BC_ARR_LOAD
 } ByteCode;
 
+typedef enum {
+	CT_VARIABLE,
+	CT_STRING,
+	CT_FNAME
+} ConstantType;
+
 typedef struct _ConstantPoolRow {
 	ListNode node;
 	unsigned index;
 	char *data;
+	ConstantType type;
 } ConstantPoolRow;
 
 typedef struct _OP {
@@ -59,12 +73,11 @@ typedef struct _Emit {
 } Emit;
 
 Emit *new_emit();
-int emit_add_to_constant_pool(Emit *emit, char *string);
+int emit_add_to_constant_pool(Emit *emit, char *string, ConstantType type);
 void emit_select_function(Emit *emit, char *name);
 unsigned emit_get_current_line(Emit *emit);
 OP *emit_opcode(Emit *emit, ByteCode op, int left, int right);
 void emit_build(Emit *emit, char *file);
-void emit_build2(Emit *emit, char *file);
 void free_emit(Emit *emit);
 
 #endif

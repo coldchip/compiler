@@ -58,9 +58,13 @@ Node *parse_declaration(Parser *parser) {
 	if(node->data_type & DATA_ARRAY_MASK) {
 		// = [10]
 		expect_string(parser, "=");
-		expect_string(parser, "[");
-		node->size = parse_expr(parser);
-		expect_string(parser, "]");
+		if(peek_type(parser, TK_STRING)) {
+			node->body = parse_string_expr(parser);
+		} else {
+			expect_string(parser, "[");
+			node->size = parse_expr(parser);
+			expect_string(parser, "]");
+		}
 	} else {
 		if(consume_string(parser, "=")) {
 			if(node->data_type == DATA_STRING) {

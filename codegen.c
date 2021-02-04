@@ -13,11 +13,11 @@ void gen_store(Generator *generator, Node *node) {
 			visitor(generator, node->index);
 		}
 		emit(generator, "\tarr_store %s\n", node->token->data);
-		int i = emit_add_to_constant_pool(generator->emit, node->token->data);
+		int i = emit_add_to_constant_pool(generator->emit, node->token->data, CT_VARIABLE);
 		emit_opcode(generator->emit, BC_ARR_STORE, i, 0);
 	} else {
 		emit(generator, "\tstore %s\n", node->token->data);
-		int i = emit_add_to_constant_pool(generator->emit, node->token->data);
+		int i = emit_add_to_constant_pool(generator->emit, node->token->data, CT_VARIABLE);
 		emit_opcode(generator->emit, BC_STORE, i, 0);
 	}
 	node_free(node);
@@ -69,20 +69,25 @@ void enter_decl(Generator *generator, Node *node) {
 	if(node->data_type & DATA_ARRAY_MASK) {
 		// type a[x];
 		node->data_type &= ~(DATA_ARRAY_MASK); // remove array bitmask
-		if(node->size) {
+		if(node->body) {
+			// char[] x = "abc";
+			visitor(generator, node->body);
+		} else if(node->size) {
 			visitor(generator, node->size);
+			emit(generator, "\tnewarray @type[%i]\n", node->data_type);
+			emit_opcode(generator->emit, BC_NEWARRAY, node->data_type, 0);
+			emit(generator, "\tstore %s\n", node->token->data);
+			int i = emit_add_to_constant_pool(generator->emit, node->token->data, CT_VARIABLE);
+			emit_opcode(generator->emit, BC_STORE, i, 0);
+		} else {
+			c_error("unable to emit array");
 		}
-		emit(generator, "\tnewarray @type[%i]\n", node->data_type);
-		emit_opcode(generator->emit, BC_NEWARRAY, node->data_type, 0);
-		emit(generator, "\tstore %s\n", node->token->data);
-		int i = emit_add_to_constant_pool(generator->emit, node->token->data);
-		emit_opcode(generator->emit, BC_STORE, i, 0);
 	} else {
 		// type a; or type a = xxx;
 		if(node->body) {
 			visitor(generator, node->body);
 			emit(generator, "\tstore %s\n", node->token->data);
-			int i = emit_add_to_constant_pool(generator->emit, node->token->data);
+			int i = emit_add_to_constant_pool(generator->emit, node->token->data, CT_VARIABLE);
 			emit_opcode(generator->emit, BC_STORE, i, 0);
 		}
 	}
@@ -169,7 +174,7 @@ void enter_char_literal(Generator *generator, Node *node) {
 
 void enter_ident(Generator *generator, Node *node) {
 	emit(generator, "\tload %s\n", node->token->data);
-	int i = emit_add_to_constant_pool(generator->emit, node->token->data);
+	int i = emit_add_to_constant_pool(generator->emit, node->token->data, CT_VARIABLE);
 	emit_opcode(generator->emit, BC_LOAD, i, 0);
 	node_free(node);
 }
@@ -179,7 +184,7 @@ void enter_ident_member(Generator *generator, Node *node) {
 		visitor(generator, node->index);
 	}
 	emit(generator, "\tarr_load %s\n", node->token->data);
-	int i = emit_add_to_constant_pool(generator->emit, node->token->data);
+	int i = emit_add_to_constant_pool(generator->emit, node->token->data, CT_VARIABLE);
 	emit_opcode(generator->emit, BC_ARR_LOAD, i, 0);
 	node_free(node);
 }
@@ -189,7 +194,12 @@ void enter_call(Generator *generator, Node *node) {
 		visitor(generator, node->args);
 	}
 	emit(generator, "\tcall %s\n", node->token->data);
-	int i = emit_add_to_constant_pool(generator->emit, node->token->data);
+	int i = 0;
+	if(strstr(node->token->data, "__callinternal__") != NULL) {
+		i = emit_add_to_constant_pool(generator->emit, node->token->data, CT_STRING); // no obfuscation
+	} else {
+		i = emit_add_to_constant_pool(generator->emit, node->token->data, CT_FNAME); // obfuscated
+	}
 	emit_opcode(generator->emit, BC_CALL, i, 0);
 	node_free(node);
 }
@@ -249,7 +259,7 @@ void enter_param(Generator *generator, Node *node) {
 		Node *entry = (Node*)list_remove(list_back(list)); // begin with end
 		if(entry->type == AST_IDENT) {
 			emit(generator, "\tstore %s\n", entry->token->data);
-			int i = emit_add_to_constant_pool(generator->emit, entry->token->data);
+			int i = emit_add_to_constant_pool(generator->emit, entry->token->data, CT_VARIABLE);
 			emit_opcode(generator->emit, BC_STORE, i, 0);
 		}
 		node_free(entry);
@@ -293,7 +303,7 @@ void enter_string_concat(Generator *generator, Node *node) {
 
 void enter_string_literal(Generator *generator, Node *node) {
 	emit(generator, "\tpush_s %s\n", node->token->data);
-	int i = emit_add_to_constant_pool(generator->emit, node->token->data);
+	int i = emit_add_to_constant_pool(generator->emit, node->token->data, CT_STRING);
 	emit_opcode(generator->emit, BC_PUSH_S, i, 0);
 	node_free(node);
 }
@@ -410,7 +420,7 @@ void generate(Node *node) {
 	generator.file = fopen("data/out.code", "wb");
 	generator.emit = new_emit();
 	visitor(&generator, node);
-	emit_build(generator.emit, "data/out.bin");
+	emit_build(generator.emit, "data/out.chip");
 	//emit_build2(generator.emit, "data/beta_bin.bin");
 	free_emit(generator.emit);
 	fclose(generator.file);

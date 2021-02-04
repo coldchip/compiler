@@ -378,6 +378,11 @@
 	load fd
 	push_i 1 #args count
 	call __callinternal__fclose
+@func printf
+	store str
+	load str
+	push_i 1 #args count
+	call __callinternal__printf
 @func main
 	push_s ChipCode HTTP Server 1.0
 	push_i 1 #args count

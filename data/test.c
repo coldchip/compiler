@@ -3,6 +3,7 @@
 #include "socket.c"
 #include "system.c"
 #include "fs.c"
+#include "io.c"
 
 int main() {
 	printf("ChipCode HTTP Server 1.0");
