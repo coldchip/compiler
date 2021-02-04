@@ -6,7 +6,7 @@
 #include "io.c"
 
 int main() {
-	printf("ChipCode HTTP Server 1.0");
+	printf("ChipCode HTTP Server 1.0\n");
 
 	int port = 8012;
 
@@ -69,6 +69,6 @@ int main() {
 			
 		}
 	} else {
-		printf("Unable to bind to port " + port);
+		printf("Unable to bind to port " + itos(port) + "\n");
 	}
 }

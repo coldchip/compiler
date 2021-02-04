@@ -9,6 +9,6 @@ The bytecodes are very similar to Java. In the future I may write a transpiler t
 
 This compiler generates bytecodes without any optimization. 
 
-This program is meant to for educational purposes only and for fun, please DO NOT use it for serious applications. Your program might crash. 
+This program is meant for educational purposes only and for fun, please DO NOT use it for serious applications. Your program might crash. 
 
 Please check out the VM(if you are planning to run it) https://github.com/coldchip/chipengine

@@ -385,6 +385,7 @@
 	call __callinternal__printf
 @func main
 	push_s ChipCode HTTP Server 1.0
+
 	push_i 1 #args count
 	call printf
 	push_i 8012
@@ -605,7 +606,12 @@ Content-Length:
 	call socket_close
 	goto 20
 	goto ???
+	push_s 
+
 	load port
+	push_i 1 #args count
+	call itos
+	str_concat
 	push_s Unable to bind to port 
 	str_concat
 	push_i 1 #args count
