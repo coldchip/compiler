@@ -103,71 +103,17 @@
 	push_i 1 #args count
 	call __callinternal__sizeof
 	ret
-@func to_array
+@func string_to_array
 	store str
 	load str
 	push_i 1 #args count
-	call strlen
-	store len
-	load len
-	newarray @type[3]
-	store data
-	push_i 0
-	store i
-	load len
-	load i
-	cmplt
-	push_i 0
-	jmpifeq ???
-	load str
-	load i
-	push_i 2 #args count
-	call charat
-	load i
-	arr_store data
-	push_i 1
-	load i
-	add
-	store i
-	goto 10
-	load data
+	call __callinternal__string_to_array
 	ret
-@func char_to_string
+@func array_to_string
 	store byte
 	load byte
 	push_i 1 #args count
-	call sizeof
-	store size
-	push_s 
-	store data
-	push_i 0
-	store i
-	load size
-	load i
-	cmplt
-	push_i 0
-	jmpifeq ???
-	load i
-	arr_load byte
-	store b
-	load b
-	load data
-	str_concat
-	store temp
-	load temp
-	store data
-	push_i 1
-	load i
-	add
-	store i
-	goto 9
-	load data
-	ret
-@func char_to_int
-	store c
-	load c
-	push_i 1 #args count
-	call __callinternal__char_to_int_cast
+	call __callinternal__array_to_string
 	ret
 @func explode
 	store y
@@ -403,6 +349,7 @@
 	push_i 0
 	jmpifeq ???
 	push_s socket bind success
+
 	push_i 1 #args count
 	call printf
 	push_i 1
@@ -419,7 +366,7 @@
 	store header_buf
 	load header_buf
 	push_i 1 #args count
-	call char_to_string
+	call array_to_string
 	store header
 	load header
 	push_s 
@@ -478,7 +425,7 @@
 	push_i 0
 	jmpifeq ???
 	load fs
-	push_i 99999
+	push_i 999999
 	push_i 2 #args count
 	call fread
 	store data
@@ -488,7 +435,7 @@
 	push_s </textarea></body>
 	load data
 	push_i 1 #args count
-	call char_to_string
+	call array_to_string
 	str_concat
 	push_s <!DOCTYPE html><html><head><style>body, html { margin: 0; padding: 0; width: 100%; height: 100%; } * { font-family: monospace; } .box { font-family: monospace; width: 100%; height: 100%; }</style></head><body><textarea class='box'>
 	str_concat
@@ -515,7 +462,7 @@ Content-Length:
 	load client
 	load response
 	push_i 1 #args count
-	call to_array
+	call string_to_array
 	push_i 2 #args count
 	call socket_write
 	store s
@@ -597,7 +544,7 @@ Content-Length:
 	load client
 	load response
 	push_i 1 #args count
-	call to_array
+	call string_to_array
 	push_i 2 #args count
 	call socket_write
 	store s

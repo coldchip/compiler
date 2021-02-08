@@ -9,6 +9,9 @@
 #include "chipcode.h"
 #include "list.h"
 
+#define OBFUSCATION 1
+#define OPTIMIZATION 1
+
 typedef struct _Header {
 	int magic;
 	int version;
@@ -16,15 +19,21 @@ typedef struct _Header {
 } Header;
 
 typedef enum {
-	BC_STRCONCAT,
-	BC_STORE,
-	BC_LOAD,
-	BC_PUSH_I, // for numbers and char
-	BC_PUSH_S,
+	BC_NOP, // do nothing
+	BC_NEWARRAY,
+	BC_ARR_STORE,
+	BC_ARR_LOAD,
 	BC_ADD,
 	BC_SUB,
 	BC_MUL,
 	BC_DIV,
+	BC_SHL,
+	BC_SHR,
+	BC_STRCONCAT,
+	BC_STORE,
+	BC_LOAD,
+	BC_PUSH_I, // for numbers and char
+	BC_PUSH_S, // string
 	BC_CALL,
 	BC_RET,
 	BC_CMPEQ,
@@ -32,11 +41,8 @@ typedef enum {
 	BC_CMPGT,
 	BC_CMPLT,
 	BC_JMPIFEQ,
-	BC_GOTO,
-	BC_NEWARRAY,
-	BC_ARR_STORE,
-	BC_ARR_LOAD
-} ByteCode;
+	BC_GOTO
+} ByteCode; // max 64 bytecodes (00111111) 2 bits used for size
 
 typedef enum {
 	CT_VARIABLE,
@@ -76,8 +82,11 @@ Emit *new_emit();
 int emit_add_to_constant_pool(Emit *emit, char *string, ConstantType type);
 void emit_select_function(Emit *emit, char *name);
 unsigned emit_get_current_line(Emit *emit);
-OP *emit_opcode(Emit *emit, ByteCode op, int left, int right);
+OP *emit_opcode_0(Emit *emit, ByteCode op);
+OP *emit_opcode_1(Emit *emit, ByteCode op, int left);
+OP *emit_opcode_2(Emit *emit, ByteCode op, int left, int right);
 void emit_build(Emit *emit, char *file);
+void emit_build2(Emit *emit, char *file);
 void free_emit(Emit *emit);
 
 #endif

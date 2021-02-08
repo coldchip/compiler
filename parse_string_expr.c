@@ -42,9 +42,17 @@ Node *parse_string_primary(Parser *parser) {
 		node->token = token;
 		return node;	
 	} else if(consume_type(parser, TK_IDENT)) {
-		Node *node = new_node(AST_IDENT);
-		node->token = token;
-		return node;	
+		if(consume_string(parser, "[")) {
+			Node *node = new_node(AST_IDENT_MEMBER);
+			node->index = parse_expr(parser);
+			node->token = token;
+			expect_string(parser, "]");
+			return node;
+		} else {
+			Node *node = new_node(AST_IDENT);
+			node->token = token;
+			return node;
+		}		
 	} else {
 		c_error("Expecting string at line %i, got %i", token->line, token->type);
 	}

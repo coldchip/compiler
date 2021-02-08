@@ -42,32 +42,12 @@ int sizeof(int arr) {
 	return __callinternal__sizeof(arr);
 }
 
-char to_array(string str) {
-	int len = strlen(str);
-	char[] data = [len];
-	int i = 0;
-	while(i < len) {
-		data[i] = charat(str, i);
-		i = i + 1;
-	}
-	return data;
+char string_to_array(string str) {
+	return __callinternal__string_to_array(str);
 }
 
-string char_to_string(int byte) {
-	int size = sizeof(byte);
-	string data = "";
-	int i = 0;
-	while(i < size) {
-		char b = byte[i];
-		string temp = data + b;
-		data = temp;
-		i = i + 1;
-	}
-	return data;
-}
-
-int char_to_int(char c) {
-	return __callinternal__char_to_int_cast(c);
+string array_to_string(int byte) {
+	return __callinternal__array_to_string(byte);
 }
 
 void explode(string data, string delim, int y) {

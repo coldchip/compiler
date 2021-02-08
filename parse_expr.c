@@ -67,7 +67,7 @@ Node *parse_divide(Parser *parser) {
 }
 
 Node *parse_relational(Parser *parser) {
-	Node *left = parse_equality(parser);
+	Node *left = parse_bitwise(parser);
 	if(consume_string(parser, "<")) {
 		Node *node = new_node(AST_LT);
 		node->left = left;
@@ -78,6 +78,23 @@ Node *parse_relational(Parser *parser) {
 		Node *node = new_node(AST_GT);
 		node->left = left;
 		node->right = parse_relational(parser);
+		return node;
+	}
+	return left;
+}
+
+Node *parse_bitwise(Parser *parser) {
+	Node *left = parse_equality(parser);
+	if(consume_string(parser, "<<")) {
+		Node *node = new_node(AST_SHL);
+		node->left = left;
+		node->right = parse_bitwise(parser);
+		return node;
+	}
+	if(consume_string(parser, ">>")) {
+		Node *node = new_node(AST_SHR);
+		node->left = left;
+		node->right = parse_bitwise(parser);
 		return node;
 	}
 	return left;

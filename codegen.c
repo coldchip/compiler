@@ -14,11 +14,11 @@ void gen_store(Generator *generator, Node *node) {
 		}
 		emit(generator, "\tarr_store %s\n", node->token->data);
 		int i = emit_add_to_constant_pool(generator->emit, node->token->data, CT_VARIABLE);
-		emit_opcode(generator->emit, BC_ARR_STORE, i, 0);
+		emit_opcode_1(generator->emit, BC_ARR_STORE, i);
 	} else {
 		emit(generator, "\tstore %s\n", node->token->data);
 		int i = emit_add_to_constant_pool(generator->emit, node->token->data, CT_VARIABLE);
-		emit_opcode(generator->emit, BC_STORE, i, 0);
+		emit_opcode_1(generator->emit, BC_STORE, i);
 	}
 	node_free(node);
 }
@@ -75,10 +75,10 @@ void enter_decl(Generator *generator, Node *node) {
 		} else if(node->size) {
 			visitor(generator, node->size);
 			emit(generator, "\tnewarray @type[%i]\n", node->data_type);
-			emit_opcode(generator->emit, BC_NEWARRAY, node->data_type, 0);
+			emit_opcode_1(generator->emit, BC_NEWARRAY, node->data_type);
 			emit(generator, "\tstore %s\n", node->token->data);
 			int i = emit_add_to_constant_pool(generator->emit, node->token->data, CT_VARIABLE);
-			emit_opcode(generator->emit, BC_STORE, i, 0);
+			emit_opcode_1(generator->emit, BC_STORE, i);
 		} else {
 			c_error("unable to emit array");
 		}
@@ -88,7 +88,7 @@ void enter_decl(Generator *generator, Node *node) {
 			visitor(generator, node->body);
 			emit(generator, "\tstore %s\n", node->token->data);
 			int i = emit_add_to_constant_pool(generator->emit, node->token->data, CT_VARIABLE);
-			emit_opcode(generator->emit, BC_STORE, i, 0);
+			emit_opcode_1(generator->emit, BC_STORE, i);
 		}
 	}
 	node_free(node);
@@ -106,49 +106,61 @@ void enter_binexpr(Generator *generator, Node *node) {
 		case AST_ADD:
 		{
 			emit(generator, "\tadd\n");
-			emit_opcode(generator->emit, BC_ADD, 0, 0);
+			emit_opcode_0(generator->emit, BC_ADD);
 		}
 		break;
 		case AST_SUB:
 		{
 			emit(generator, "\tsub\n");
-			emit_opcode(generator->emit, BC_SUB, 0, 0);
+			emit_opcode_0(generator->emit, BC_SUB);
 		}
 		break;
 		case AST_MUL:
 		{
 			emit(generator, "\tmul\n");
-			emit_opcode(generator->emit, BC_MUL, 0, 0);
+			emit_opcode_0(generator->emit, BC_MUL);
 		}
 		break;
 		case AST_DIV:
 		{
 			emit(generator, "\tdiv\n");
-			emit_opcode(generator->emit, BC_DIV, 0, 0);
+			emit_opcode_0(generator->emit, BC_DIV);
 		}
 		break;
 		case AST_EQUAL:
 		{
 			emit(generator, "\tcmpeq\n");
-			emit_opcode(generator->emit, BC_CMPEQ, 0, 0);
+			emit_opcode_0(generator->emit, BC_CMPEQ);
 		}
 		break;
 		case AST_NOTEQUAL:
 		{
 			emit(generator, "\tcmpneq\n");
-			emit_opcode(generator->emit, BC_CMPNEQ, 0, 0);
+			emit_opcode_0(generator->emit, BC_CMPNEQ);
 		}
 		break;
 		case AST_GT:
 		{
 			emit(generator, "\tcmpgt\n");
-			emit_opcode(generator->emit, BC_CMPGT, 0, 0);
+			emit_opcode_0(generator->emit, BC_CMPGT);
 		}
 		break;
 		case AST_LT:
 		{
 			emit(generator, "\tcmplt\n");
-			emit_opcode(generator->emit, BC_CMPLT, 0, 0);
+			emit_opcode_0(generator->emit, BC_CMPLT);
+		}
+		break;
+		case AST_SHL:
+		{
+			emit(generator, "\tshl\n");
+			emit_opcode_0(generator->emit, BC_SHL);
+		}
+		break;
+		case AST_SHR:
+		{
+			emit(generator, "\tshr\n");
+			emit_opcode_0(generator->emit, BC_SHR);
 		}
 		break;
 		default:
@@ -162,20 +174,20 @@ void enter_binexpr(Generator *generator, Node *node) {
 
 void enter_literal(Generator *generator, Node *node) {
 	emit(generator, "\tpush_i %s\n", (node->token->data));
-	emit_opcode(generator->emit, BC_PUSH_I, atoi(node->token->data), 0);
+	emit_opcode_1(generator->emit, BC_PUSH_I, atoi(node->token->data));
 	node_free(node);
 }
 
 void enter_char_literal(Generator *generator, Node *node) {
 	emit(generator, "\tpush_i %i\n", (int)*(node->token->data));
-	emit_opcode(generator->emit, BC_PUSH_I, (int)*(node->token->data), 0);
+	emit_opcode_1(generator->emit, BC_PUSH_I, (int)*(node->token->data));
 	node_free(node);
 }
 
 void enter_ident(Generator *generator, Node *node) {
 	emit(generator, "\tload %s\n", node->token->data);
 	int i = emit_add_to_constant_pool(generator->emit, node->token->data, CT_VARIABLE);
-	emit_opcode(generator->emit, BC_LOAD, i, 0);
+	emit_opcode_1(generator->emit, BC_LOAD, i);
 	node_free(node);
 }
 
@@ -185,7 +197,7 @@ void enter_ident_member(Generator *generator, Node *node) {
 	}
 	emit(generator, "\tarr_load %s\n", node->token->data);
 	int i = emit_add_to_constant_pool(generator->emit, node->token->data, CT_VARIABLE);
-	emit_opcode(generator->emit, BC_ARR_LOAD, i, 0);
+	emit_opcode_1(generator->emit, BC_ARR_LOAD, i);
 	node_free(node);
 }
 
@@ -200,7 +212,7 @@ void enter_call(Generator *generator, Node *node) {
 	} else {
 		i = emit_add_to_constant_pool(generator->emit, node->token->data, CT_FNAME); // obfuscated
 	}
-	emit_opcode(generator->emit, BC_CALL, i, 0);
+	emit_opcode_1(generator->emit, BC_CALL, i);
 	node_free(node);
 }
 
@@ -209,14 +221,14 @@ void enter_if(Generator *generator, Node *node) {
 	OP *jmp_exit_no_else = NULL;
 	if(node->condition) {
 		visitor(generator, node->condition);
-		emit_opcode(generator->emit, BC_PUSH_I, 0, 0);
+		emit_opcode_1(generator->emit, BC_PUSH_I, 0);
 		emit(generator, "\tpush_i %i\n", 0);
-		jmp_exit = emit_opcode(generator->emit, BC_JMPIFEQ, 0, 0);
+		jmp_exit = emit_opcode_1(generator->emit, BC_JMPIFEQ, 0);
 		emit(generator, "\tjmpifeq ???\n");
 	}
 	if(node->body) {
 		visitor(generator, node->body);
-		jmp_exit_no_else = emit_opcode(generator->emit, BC_GOTO, 0, 0);
+		jmp_exit_no_else = emit_opcode_1(generator->emit, BC_GOTO, 0);
 		emit(generator, "\tgoto ???\n");
 	}
 	if(node->alternate) {
@@ -236,15 +248,15 @@ void enter_while(Generator *generator, Node *node) {
 	OP *jmp = NULL;
 	if(node->condition) {
 		visitor(generator, node->condition);
-		emit_opcode(generator->emit, BC_PUSH_I, 0, 0);
+		emit_opcode_1(generator->emit, BC_PUSH_I, 0);
 		emit(generator, "\tpush_i %i\n", 0);
-		jmp = emit_opcode(generator->emit, BC_JMPIFEQ, 0, 0);
+		jmp = emit_opcode_1(generator->emit, BC_JMPIFEQ, 0);
 		emit(generator, "\tjmpifeq ???\n");
 	}
 	if(node->body) {
 		visitor(generator, node->body);
 	}
-	emit_opcode(generator->emit, BC_GOTO, line, 0);
+	emit_opcode_1(generator->emit, BC_GOTO, line);
 	emit(generator, "\tgoto %i\n", line);
 	unsigned finish_line = emit_get_current_line(generator->emit);
 	if(jmp) {
@@ -260,7 +272,7 @@ void enter_param(Generator *generator, Node *node) {
 		if(entry->type == AST_IDENT) {
 			emit(generator, "\tstore %s\n", entry->token->data);
 			int i = emit_add_to_constant_pool(generator->emit, entry->token->data, CT_VARIABLE);
-			emit_opcode(generator->emit, BC_STORE, i, 0);
+			emit_opcode_1(generator->emit, BC_STORE, i);
 		}
 		node_free(entry);
 	}
@@ -276,7 +288,7 @@ void enter_arg(Generator *generator, Node *node) {
 		count++;
 	}
 	emit(generator, "\tpush_i %i #args count\n", count);
-	emit_opcode(generator->emit, BC_PUSH_I, count, 0);
+	emit_opcode_1(generator->emit, BC_PUSH_I, count);
 	node_free(node);
 }
 
@@ -285,7 +297,7 @@ void enter_return(Generator *generator, Node *node) {
 		visitor(generator, node->body);
 	}
 	emit(generator, "\tret\n");
-	emit_opcode(generator->emit, BC_RET, 0, 0);
+	emit_opcode_0(generator->emit, BC_RET);
 	node_free(node);
 }
 
@@ -297,14 +309,14 @@ void enter_string_concat(Generator *generator, Node *node) {
 		visitor(generator, node->left);
 	}
 	emit(generator, "\tstr_concat\n");
-	emit_opcode(generator->emit, BC_STRCONCAT, 0, 0);
+	emit_opcode_0(generator->emit, BC_STRCONCAT);
 	node_free(node);
 }
 
 void enter_string_literal(Generator *generator, Node *node) {
 	emit(generator, "\tpush_s %s\n", node->token->data);
 	int i = emit_add_to_constant_pool(generator->emit, node->token->data, CT_STRING);
-	emit_opcode(generator->emit, BC_PUSH_S, i, 0);
+	emit_opcode_1(generator->emit, BC_PUSH_S, i);
 	node_free(node);
 }
 
@@ -343,6 +355,8 @@ void visitor(Generator *generator, Node *node) {
 		case AST_LT:
 		case AST_EQUAL:
 		case AST_NOTEQUAL:
+		case AST_SHL:
+		case AST_SHR:
 		{
 			enter_binexpr(generator, node);
 		}
@@ -420,8 +434,8 @@ void generate(Node *node) {
 	generator.file = fopen("data/out.code", "wb");
 	generator.emit = new_emit();
 	visitor(&generator, node);
-	emit_build(generator.emit, "data/out.chip");
-	//emit_build2(generator.emit, "data/beta_bin.bin");
+	//emit_build(generator.emit, "data/out.chip");
+	emit_build2(generator.emit, "data/out.chip");
 	free_emit(generator.emit);
 	fclose(generator.file);
 }

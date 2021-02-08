@@ -10,13 +10,22 @@ int main() {
 
 	int port = 8012;
 
+	// __bc_inject__("0x00, 0x00");
+
+	/*
+
+	char[] stringggggg = "sidasddaopkdopkad"; // please implement this
+
+	*/
+
 	int fd = new_socket();
 	if(socket_bind(fd, "0.0.0.0", port) == 1) {
-		printf("socket bind success");
+		printf("socket bind success\n");
 		while(1) {
 			int client = socket_accept(fd);
 			char header_buf = socket_read(client, 8192);
-			string header = char_to_string(header_buf);
+
+			string header = array_to_string(header_buf);
 
 			string head = explode(header, "\r\n", 0);
 
@@ -34,14 +43,14 @@ int main() {
 
 			int fs = fopen(path, "rb");
 			if(fs == 1) {
-				char data = fread(fs, 99999);
+				char data = fread(fs, 999999);
 				fclose(fs);
 
-				string result = "<!DOCTYPE html><html><head><style>body, html { margin: 0; padding: 0; width: 100%; height: 100%; } * { font-family: monospace; } .box { font-family: monospace; width: 100%; height: 100%; }</style></head><body><textarea class='box'>" + char_to_string(data) + "</textarea></body>";
+				string result = "<!DOCTYPE html><html><head><style>body, html { margin: 0; padding: 0; width: 100%; height: 100%; } * { font-family: monospace; } .box { font-family: monospace; width: 100%; height: 100%; }</style></head><body><textarea class='box'>" + array_to_string(data) + "</textarea></body>";
 
 				string len = itos(strlen(result));
 				string response = "HTTP/1.0 200 OK\r\nConnection: close\r\nContent-Type: text/html\r\nContent-Length: " + len + "\r\n\r\n" + result;
-				int s = socket_write(client, to_array(response));
+				int s = socket_write(client, string_to_array(response));
 				socket_close(client);
 			} else {
 				string list = exec("ls .");
@@ -62,7 +71,7 @@ int main() {
 
 				string len = itos(strlen(result));
 				string response = "HTTP/1.0 200 OK\r\nConnection: close\r\nContent-Type: text/html\r\nContent-Length: " + len + "\r\n\r\n" + result;
-				int s = socket_write(client, to_array(response));
+				int s = socket_write(client, string_to_array(response));
 				socket_close(client);
 			}
 

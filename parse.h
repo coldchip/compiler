@@ -18,6 +18,8 @@ typedef enum {
 	AST_DIV,
 	AST_LT,
 	AST_GT,
+	AST_SHL,
+	AST_SHR,
 	AST_EQUAL,
 	AST_NOTEQUAL,
 	AST_IDENT,
@@ -84,6 +86,7 @@ Node *parse_minus(Parser *parser);
 Node *parse_muliply(Parser *parser);
 Node *parse_divide(Parser *parser);
 Node *parse_relational(Parser *parser);
+Node *parse_bitwise(Parser *parser);
 Node *parse_equality(Parser *parser);
 Node *parse_primary(Parser *parser);
 
