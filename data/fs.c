@@ -1,4 +1,4 @@
-int fopen(string file, string mode) {
+int fopen(char file, char mode) {
 	return __callinternal__fopen(file, mode);
 }
 

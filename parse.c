@@ -25,9 +25,7 @@ Node *parse_call(Parser *parser) {
 
 DataType parse_basetype(Parser *parser) {
 	DataType type = DATA_VOID;
-	if(consume_string(parser, "string")) {
-		type = DATA_STRING;
-	} else if(consume_string(parser, "int")) {
+	if(consume_string(parser, "int")) {
 		type = DATA_NUMBER;
 	} else if(consume_string(parser, "void")) {
 		type = DATA_VOID;
@@ -58,22 +56,15 @@ Node *parse_declaration(Parser *parser) {
 	if(node->data_type & DATA_ARRAY_MASK) {
 		// = [10]
 		expect_string(parser, "=");
-		if(peek_type(parser, TK_STRING)) {
-			node->body = parse_string_expr(parser);
-		} else {
-			expect_string(parser, "[");
+		if(consume_string(parser, "[")) {
 			node->size = parse_expr(parser);
 			expect_string(parser, "]");
+		} else {
+			node->body = parse_string_expr(parser);
 		}
 	} else {
 		if(consume_string(parser, "=")) {
-			if(node->data_type == DATA_STRING) {
-				/* "hello" + "hello" */
-				node->body = parse_string_expr(parser);
-			} else {
-				/* 1 + 2 + 3 ... */
-				node->body = parse_expr(parser);
-			}
+			node->body = parse_expr(parser);	
 		}
 	}
 	
@@ -274,6 +265,5 @@ bool is_typename(Parser *parser) {
 	return 
 	peek_string(parser, "void") || 
 	peek_string(parser, "int") || 
-	peek_string(parser, "char") || 
-	peek_string(parser, "string");
+	peek_string(parser, "char");
 }

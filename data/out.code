@@ -1,16 +1,136 @@
+@func strjoin
+	store b
+	store a
+	load a
+	push_i 1 #args count
+	call strlen
+	store s_a
+	load b
+	push_i 1 #args count
+	call strlen
+	store s_b
+	push_i 1
+	load s_b
+	add
+	load s_a
+	add
+	newarray @type[2]
+	store c
+	push_i 0
+	store i_a
+	push_i 0
+	store i_b
+	push_i 0
+	store i_c
+	load s_a
+	load i_a
+	cmplt
+	push_i 0
+	jmpifeq ???
+	load i_a
+	arr_load a
+	load i_c
+	arr_store c
+	push_i 1
+	load i_a
+	add
+	store i_a
+	push_i 1
+	load i_c
+	add
+	store i_c
+	goto 23
+	load s_b
+	load i_b
+	cmplt
+	push_i 0
+	jmpifeq ???
+	load i_b
+	arr_load b
+	load i_c
+	arr_store c
+	push_i 1
+	load i_b
+	add
+	store i_b
+	push_i 1
+	load i_c
+	add
+	store i_c
+	goto 41
+	load c
+	ret
+@func strjoinc
+	store b
+	store a
+	load a
+	push_i 1 #args count
+	call strlen
+	store s_a
+	push_i 1
+	push_i 1
+	add
+	load s_a
+	add
+	newarray @type[2]
+	store c
+	push_i 0
+	store i_a
+	push_i 0
+	store i_b
+	push_i 0
+	store i_c
+	load s_a
+	load i_a
+	cmplt
+	push_i 0
+	jmpifeq ???
+	load i_a
+	arr_load a
+	load i_c
+	arr_store c
+	push_i 1
+	load i_a
+	add
+	store i_a
+	push_i 1
+	load i_c
+	add
+	store i_c
+	goto 19
+	load b
+	load i_c
+	arr_store c
+	load c
+	ret
 @func strlen
 	store str
+	push_i 0
+	store i
 	load str
 	push_i 1 #args count
-	call __callinternal__strlen
+	call sizeof
+	store max
+	load max
+	load i
+	cmplt
+	push_i 0
+	jmpifeq ???
+	push_i 0
+	load i
+	arr_load str
+	cmpeq
+	push_i 0
+	jmpifeq ???
+	load i
 	ret
-@func charat
-	store index
-	store str
-	load str
-	load index
-	push_i 2 #args count
-	call __callinternal__charat
+	goto ???
+	push_i 1
+	load i
+	add
+	store i
+	goto 7
+	load i
 	ret
 @func strstr
 	store needle
@@ -24,10 +144,8 @@
 	cmplt
 	push_i 0
 	jmpifeq ???
-	load haystack
 	load i
-	push_i 2 #args count
-	call charat
+	arr_load haystack
 	store at
 	load needle
 	load at
@@ -67,14 +185,10 @@
 	cmplt
 	push_i 0
 	jmpifeq ???
-	load b
 	load i
-	push_i 2 #args count
-	call charat
-	load a
+	arr_load b
 	load i
-	push_i 2 #args count
-	call charat
+	arr_load a
 	cmpneq
 	push_i 0
 	jmpifeq ???
@@ -103,23 +217,12 @@
 	push_i 1 #args count
 	call __callinternal__sizeof
 	ret
-@func string_to_array
-	store str
-	load str
-	push_i 1 #args count
-	call __callinternal__string_to_array
-	ret
-@func array_to_string
-	store byte
-	load byte
-	push_i 1 #args count
-	call __callinternal__array_to_string
-	ret
 @func explode
 	store y
 	store delim
 	store data
-	push_s 
+	push_i 1000
+	newarray @type[2]
 	store result
 	load data
 	push_i 1 #args count
@@ -136,12 +239,11 @@
 	jmpifeq ???
 	push_i 0
 	store g
-	load data
-	load i
-	push_i 2 #args count
-	call charat
 	load result
-	str_concat
+	load i
+	arr_load data
+	push_i 2 #args count
+	call strjoinc
 	store tmp
 	load tmp
 	store result
@@ -149,17 +251,31 @@
 	load i
 	add
 	store i
-	load delim
 	load g
-	push_i 2 #args count
-	call charat
-	load data
+	arr_load delim
 	load i
-	push_i 2 #args count
-	call charat
+	arr_load data
 	cmpeq
 	push_i 0
 	jmpifeq ???
+	push_i 0
+	load i
+	arr_load data
+	cmpeq
+	push_i 0
+	jmpifeq ???
+	push_s 
+	ret
+	goto ???
+	push_i 0
+	load g
+	arr_load delim
+	cmpeq
+	push_i 0
+	jmpifeq ???
+	push_s 
+	ret
+	goto ???
 	push_i 1
 	load i
 	add
@@ -193,7 +309,7 @@
 	store f
 	goto ???
 	goto 33
-	goto 13
+	goto 14
 	push_s 
 	ret
 @func stoi
@@ -285,11 +401,13 @@
 	call __callinternal__socket_read
 	ret
 @func socket_write
+	store length
 	store data
 	store fd
 	load fd
 	load data
-	push_i 2 #args count
+	load length
+	push_i 3 #args count
 	call __callinternal__socket_write
 	ret
 @func socket_close
@@ -329,6 +447,11 @@
 	load str
 	push_i 1 #args count
 	call __callinternal__printf
+@func printc
+	store c
+	load c
+	push_i 1 #args count
+	call __callinternal__printc
 @func main
 	push_s ChipCode HTTP Server 1.0
 
@@ -363,58 +486,8 @@
 	push_i 8192
 	push_i 2 #args count
 	call socket_read
-	store header_buf
-	load header_buf
-	push_i 1 #args count
-	call array_to_string
 	store header
-	load header
-	push_s 
-
-	push_i 0
-	push_i 3 #args count
-	call explode
-	store head
-	load head
-	push_s  
-	push_i 0
-	push_i 3 #args count
-	call explode
-	store method
-	load head
-	push_s  
-	push_i 1
-	push_i 3 #args count
-	call explode
-	store path
-	load head
-	push_s  
-	push_i 2
-	push_i 3 #args count
-	call explode
-	store version
-	push_i 0
-	load path
-	push_s /
-	push_i 2 #args count
-	call strcmp
-	cmpeq
-	push_i 0
-	jmpifeq ???
-	push_s index.html
-	load path
-	str_concat
-	store index
-	load index
-	store path
-	goto ???
-	load path
-	push_s .
-	str_concat
-	store prefix
-	load prefix
-	store path
-	load path
+	push_s ./lol.txt
 	push_s rb
 	push_i 2 #args count
 	call fopen
@@ -429,128 +502,46 @@
 	push_i 2 #args count
 	call fread
 	store data
+	load data
+	push_i 1 #args count
+	call sizeof
+	store len
+	push_s HTTP/1.0 200 OK
+Connection: close
+Content-Type: text/html
+Content-Length: 
+	load len
+	push_i 1 #args count
+	call itos
+	push_i 2 #args count
+	call strjoin
+	push_s 
+
+
+	push_i 2 #args count
+	call strjoin
+	store response
+	load client
+	load response
+	load response
+	push_i 1 #args count
+	call strlen
+	push_i 3 #args count
+	call socket_write
+	store s
+	load client
+	load data
+	load len
+	push_i 3 #args count
+	call socket_write
+	store f
+	load client
+	push_i 1 #args count
+	call socket_close
 	load fs
 	push_i 1 #args count
 	call fclose
-	push_s </textarea></body>
-	load data
-	push_i 1 #args count
-	call array_to_string
-	str_concat
-	push_s <!DOCTYPE html><html><head><style>body, html { margin: 0; padding: 0; width: 100%; height: 100%; } * { font-family: monospace; } .box { font-family: monospace; width: 100%; height: 100%; }</style></head><body><textarea class='box'>
-	str_concat
-	store result
-	load result
-	push_i 1 #args count
-	call strlen
-	push_i 1 #args count
-	call itos
-	store len
-	load result
-	push_s 
-
-
-	str_concat
-	load len
-	str_concat
-	push_s HTTP/1.0 200 OK
-Connection: close
-Content-Type: text/html
-Content-Length: 
-	str_concat
-	store response
-	load client
-	load response
-	push_i 1 #args count
-	call string_to_array
-	push_i 2 #args count
-	call socket_write
-	store s
-	load client
-	push_i 1 #args count
-	call socket_close
 	goto ???
-	push_s ls .
-	push_i 1 #args count
-	call exec
-	store list
-	push_i 0
-	store g
-	push_s 
-	store res
-	push_s 0
-	store elem
-	push_i 1
-	load elem
-	push_s 
-	push_i 2 #args count
-	call strcmp
-	cmpeq
-	push_i 0
-	jmpifeq ???
-	load list
-	push_s 
-
-	load g
-	push_i 3 #args count
-	call explode
-	store tmp
-	load tmp
-	store elem
-	push_s </a><br>
-	load elem
-	str_concat
-	push_s '>
-	str_concat
-	load elem
-	str_concat
-	push_s <a href='
-	str_concat
-	load res
-	str_concat
-	store tmp2
-	load tmp2
-	store res
-	push_i 1
-	load g
-	add
-	store g
-	goto 142
-	push_s </div></body>
-	load res
-	str_concat
-	push_s <!DOCTYPE html><html><head><style>* { font-family: monospace; } .box { font-family: monospace; }</style></head><body><div class='box'>
-	str_concat
-	store result
-	load result
-	push_i 1 #args count
-	call strlen
-	push_i 1 #args count
-	call itos
-	store len
-	load result
-	push_s 
-
-
-	str_concat
-	load len
-	str_concat
-	push_s HTTP/1.0 200 OK
-Connection: close
-Content-Type: text/html
-Content-Length: 
-	str_concat
-	store response
-	load client
-	load response
-	push_i 1 #args count
-	call string_to_array
-	push_i 2 #args count
-	call socket_write
-	store s
-	load client
-	push_i 1 #args count
-	call socket_close
 	goto 20
 	goto ???
 	push_s 

@@ -36,10 +36,9 @@ typedef enum {
 } NodeType;
 
 typedef enum {
-	DATA_STRING = 1 << 0,
-	DATA_NUMBER = 2 << 0,
-	DATA_CHAR = 3 << 0,
-	DATA_VOID = 4 << 0,
+	DATA_NUMBER = 1 << 0,
+	DATA_CHAR = 2 << 0,
+	DATA_VOID = 3 << 0,
 	DATA_ARRAY_MASK = 1 << 5
 } DataType;
 

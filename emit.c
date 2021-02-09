@@ -1,5 +1,31 @@
 #include "emit.h"
 
+char *bc_char[] = {
+	"nop", // do nothing
+	"newarray",
+	"arr_store",
+	"arr_load",
+	"add",
+	"sub",
+	"mul",
+	"div",
+	"shl",
+	"shr",
+	"strconcat",
+	"store",
+	"load",
+	"push_i", // for numbers and char
+	"push_s", // string
+	"call",
+	"ret",
+	"cmpeq",
+	"cmpneq",
+	"cmpgt",
+	"cmplt",
+	"jmpifeq",
+	"goto"
+};
+
 Emit *new_emit() {
 	Emit *emit = malloc(sizeof(Emit));
 	if(!emit) {
@@ -7,6 +33,7 @@ Emit *new_emit() {
 	}
 	emit->constant_pool_index = 0;
 	list_clear(&emit->constant_pool);
+	list_clear(&emit->vars);
 	list_clear(&emit->functions);
 	return emit;
 }
@@ -39,6 +66,10 @@ unsigned emit_get_current_line(Emit *emit) {
 	return list_size(&emit->current_function->code);
 }
 
+int emit_put_var(Emit *emit, char *var) {
+	
+}
+
 OP *emit_opcode_2(Emit *emit, ByteCode op, int left, int right) {
 	OP *row = malloc(sizeof(OP));
 	row->op = op;
@@ -66,81 +97,29 @@ OP *emit_opcode_0(Emit *emit, ByteCode op) {
 	return row;
 }
 
-void emit_build(Emit *emit, char *file) {
+void emit_asm(Emit *emit, char *file) {
 	FILE *fp = fopen(file, "wb");
-
-	Header header;
-	header.magic   = 1178944383;
-	header.version = 2;
-	header.time    = time(NULL);
-
-	fwrite(&header, sizeof(Header), 1, fp);
-
-	unsigned f_count = list_size(&emit->functions);
-	fwrite(&f_count, sizeof(unsigned), 1, fp);
 
 	for(ListNode *f = list_begin(&emit->functions); f != list_end(&emit->functions); f = list_next(f)) {
 		Function *function = (Function*)f;
-
-		unsigned f_index = -1;
-		if(strcmp(function->name, "main") == 0) {
-			f_index = emit_add_to_constant_pool(emit, function->name, CT_STRING);
-		} else {
-			f_index = emit_add_to_constant_pool(emit, function->name, CT_FNAME);
-		}
-		unsigned f_length = list_size(&function->code);
-		fwrite(&f_index, sizeof(unsigned), 1, fp);
-		fwrite(&f_length, sizeof(unsigned), 1, fp);
-
+		fprintf(fp, "function %s:\n", function->name);
+		int counter = 0;
 		for(ListNode *c = list_begin(&function->code); c != list_end(&function->code); c = list_next(c)) {
 			OP *row = (OP*)c;
 			uint8_t op = (uint8_t)row->op;
 			int left = (int)row->left;
 			int right = (int)row->right;
-			if(fwrite(&op, sizeof(uint8_t), 1, fp) != 1) {
-				c_error("unable to emit bytecode to file");
+			if(row->size == 0) {
+				fprintf(fp, "\t%i: %s\n", counter, bc_char[op]);
+			} else if(row->size == 1) {
+				fprintf(fp, "\t%i: %s %i\n", counter, bc_char[op], left);
+			} else if(row->size == 2) {
+				fprintf(fp, "\t%i: %s %i %i\n", counter, bc_char[op], left, right);
+			} else {
+				c_error("emit opcode size unknown");
 			}
-			if(fwrite(&left, sizeof(int), 1, fp) != 1) {
-				c_error("unable to emit bytecode to file");
-			}
-			if(fwrite(&right, sizeof(int), 1, fp) != 1) {
-				c_error("unable to emit bytecode to file");
-			}
+			counter++;
 		}
-	}
-
-	fwrite(&emit->constant_pool_index, sizeof(unsigned), 1, fp);
-
-	int count = 0;
-
-	for(ListNode *i = list_begin(&emit->constant_pool); i != list_end(&emit->constant_pool); i = list_next(i)) {
-		ConstantPoolRow *row = (ConstantPoolRow*)i;
-
-		if(row->type == CT_STRING || OBFUSCATION == 0) {
-			unsigned str_len = strlen(row->data);
-			char *data = row->data;
-			fwrite(&str_len, sizeof(unsigned), 1, fp);
-			fwrite(data, sizeof(char), str_len, fp);
-		} else if(row->type == CT_VARIABLE) {
-			char format[] = "var_%i";
-			int size = snprintf(NULL, 0, format, count);
-			char data[size + 1];
-			sprintf(data, format, count);
-			unsigned str_len = strlen(data);
-			fwrite(&str_len, sizeof(unsigned), 1, fp);
-			fwrite(data, sizeof(char), str_len, fp);
-		} else if(row->type == CT_FNAME) {
-			char format[] = "func_%i";
-			int size = snprintf(NULL, 0, format, count);
-			char data[size + 1];
-			sprintf(data, format, count);
-			unsigned str_len = strlen(data);
-			fwrite(&str_len, sizeof(unsigned), 1, fp);
-			fwrite(data, sizeof(char), str_len, fp);
-		} else {
-			c_error("emit error, unable to emit constant_pool_row");
-		}
-		count++;
 	}
 	fclose(fp);
 }

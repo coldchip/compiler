@@ -1,4 +1,4 @@
-int stoi(string str) {
+int stoi(char str) {
 	int res = 0;
 	int sign = 1;
 	int i = 0;

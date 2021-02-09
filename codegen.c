@@ -72,6 +72,9 @@ void enter_decl(Generator *generator, Node *node) {
 		if(node->body) {
 			// char[] x = "abc";
 			visitor(generator, node->body);
+			emit(generator, "\tstore %s\n", node->token->data);
+			int i = emit_add_to_constant_pool(generator->emit, node->token->data, CT_VARIABLE);
+			emit_opcode_1(generator->emit, BC_STORE, i);
 		} else if(node->size) {
 			visitor(generator, node->size);
 			emit(generator, "\tnewarray @type[%i]\n", node->data_type);
@@ -436,6 +439,7 @@ void generate(Node *node) {
 	visitor(&generator, node);
 	//emit_build(generator.emit, "data/out.chip");
 	emit_build2(generator.emit, "data/out.chip");
+	emit_asm(generator.emit, "data/out.asm");
 	free_emit(generator.emit);
 	fclose(generator.file);
 }

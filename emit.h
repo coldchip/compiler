@@ -71,10 +71,17 @@ typedef struct _Function {
 	List code;
 } Function;
 
+typedef struct _VarAddr {
+	ListNode node;
+	char *name;
+	int addr;
+} VarAddr;
+
 typedef struct _Emit {
 	unsigned constant_pool_index;
 	List constant_pool;
 	List functions;
+	List vars;
 	Function *current_function;
 } Emit;
 
@@ -85,7 +92,7 @@ unsigned emit_get_current_line(Emit *emit);
 OP *emit_opcode_0(Emit *emit, ByteCode op);
 OP *emit_opcode_1(Emit *emit, ByteCode op, int left);
 OP *emit_opcode_2(Emit *emit, ByteCode op, int left, int right);
-void emit_build(Emit *emit, char *file);
+void emit_asm(Emit *emit, char *file);
 void emit_build2(Emit *emit, char *file);
 void free_emit(Emit *emit);
 

@@ -1,15 +1,61 @@
-int strlen(string str) {
-	return __callinternal__strlen(str);
+char strjoin(char a, char b) {
+	int s_a = strlen(a);
+	int s_b = strlen(b);
+	char[] c = [s_a + s_b + 1];
+
+	int i_a = 0;
+	int i_b = 0;
+	int i_c = 0;
+	while(i_a < s_a) {
+		c[i_c] = a[i_a];
+		i_a = i_a + 1;
+		i_c = i_c + 1;
+	}
+
+	while(i_b < s_b) {
+		c[i_c] = b[i_b];
+		i_b = i_b + 1;
+		i_c = i_c + 1;
+	}
+
+	return c;
 }
 
-string charat(string str, int index) {
-	return __callinternal__charat(str, index);
+char strjoinc(char a, char b) {
+	int s_a = strlen(a);
+	
+	char[] c = [s_a + 1 + 1];
+
+	int i_a = 0;
+	int i_b = 0;
+	int i_c = 0;
+	while(i_a < s_a) {
+		c[i_c] = a[i_a];
+		i_a = i_a + 1;
+		i_c = i_c + 1;
+	}
+
+	c[i_c] = b;
+
+	return c;
 }
 
-int strstr(string haystack, char needle) {
+int strlen(char str) {
+	int i = 0;
+	int max = sizeof(str);
+	while(i < max) {
+		if(str[i] == 0) {
+			return i;
+		}
+		i = i + 1;
+	}
+	return i;
+}
+
+int strstr(char haystack, char needle) {
 	int i = 0;
 	while(i < strlen(haystack)) {
-		char at = charat(haystack, i);
+		char at = haystack[i];
 		if(at == needle) {
 			return 1;
 		}
@@ -18,13 +64,13 @@ int strstr(string haystack, char needle) {
 	return 0;
 }
 
-int strcmp(string a, string b) {
+int strcmp(char a, char b) {
 	int a_len = strlen(a);
 	int b_len = strlen(b);
 	if(a_len == b_len) {
 		int i = 0;
 		while(i < a_len) {
-			if(charat(a, i) != charat(b, i)) {
+			if(a[i] != b[i]) {
 				return 1;
 			}
 			i = i + 1;
@@ -34,7 +80,7 @@ int strcmp(string a, string b) {
 	return 1;
 }
 
-string itos(int n) {
+char itos(int n) {
 	return __callinternal__itos(n);
 }
 
@@ -42,32 +88,30 @@ int sizeof(int arr) {
 	return __callinternal__sizeof(arr);
 }
 
-char string_to_array(string str) {
-	return __callinternal__string_to_array(str);
-}
-
-string array_to_string(int byte) {
-	return __callinternal__array_to_string(byte);
-}
-
-void explode(string data, string delim, int y) {
-	string result = "";
+void explode(char data, char delim, int y) {
+	char[] result = [1000];
 	int data_len = strlen(data);
 	int i = 0;
 	int f = 0;
 	while(i < data_len) {
 		int g = 0;
-		string tmp = result + charat(data, i); // please implement casts -.-
+		char[] tmp = strjoinc(result, data[i]);
 		result = tmp;
 		i = i + 1;
-		while(charat(data, i) == charat(delim, g)) {
+		while(data[i] == delim[g]) {
+			if(data[i] == 0) {
+				return "";
+			}
+			if(delim[g] == 0) {
+				return "";
+			}
 			i = i + 1;
 			g = g + 1;
 			if(g == strlen(delim)) {
 				if(f == y) {
 					return result;
 				}
-				string empty = "";
+				char[] empty = "";
 				result = empty;
 				f = f + 1;
 			}
