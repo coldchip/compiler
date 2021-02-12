@@ -11,11 +11,12 @@ char *bc_char[] = {
 	"div",
 	"shl",
 	"shr",
+	"and",
 	"strconcat",
 	"store",
 	"load",
-	"push_i", // for numbers and char
-	"push_s", // string
+	"push",
+	"pop",
 	"call",
 	"ret",
 	"cmpeq",
@@ -23,7 +24,10 @@ char *bc_char[] = {
 	"cmpgt",
 	"cmplt",
 	"jmpifeq",
-	"goto"
+	"goto",
+	"deref",
+	"ref",
+	"mov"
 };
 
 Emit *new_emit() {
@@ -70,32 +74,17 @@ int emit_put_var(Emit *emit, char *var) {
 	
 }
 
-OP *emit_opcode_2(Emit *emit, ByteCode op, int left, int right) {
+OP *emit_opcode(Emit *emit, ByteMode mode, ByteCode op, int left, int right) {
 	OP *row = malloc(sizeof(OP));
 	row->op = op;
 	row->left = left;
 	row->right = right;
-	row->size = 2;
+	row->mode = 0;
+	row->mode |= mode;
 	list_insert(list_end(&emit->current_function->code), row);
 	return row;
 }
 
-OP *emit_opcode_1(Emit *emit, ByteCode op, int left) {
-	OP *row = malloc(sizeof(OP));
-	row->op = op;
-	row->left = left;
-	row->size = 1;
-	list_insert(list_end(&emit->current_function->code), row);
-	return row;
-}
-
-OP *emit_opcode_0(Emit *emit, ByteCode op) {
-	OP *row = malloc(sizeof(OP));
-	row->op = op;
-	row->size = 0;
-	list_insert(list_end(&emit->current_function->code), row);
-	return row;
-}
 
 void emit_asm(Emit *emit, char *file) {
 	FILE *fp = fopen(file, "wb");
@@ -109,15 +98,48 @@ void emit_asm(Emit *emit, char *file) {
 			uint8_t op = (uint8_t)row->op;
 			int left = (int)row->left;
 			int right = (int)row->right;
-			if(row->size == 0) {
-				fprintf(fp, "\t%i: %s\n", counter, bc_char[op]);
-			} else if(row->size == 1) {
-				fprintf(fp, "\t%i: %s %i\n", counter, bc_char[op], left);
-			} else if(row->size == 2) {
-				fprintf(fp, "\t%i: %s %i %i\n", counter, bc_char[op], left, right);
-			} else {
-				c_error("emit opcode size unknown");
+
+			fprintf(fp, "\t%i: %s ", counter, bc_char[op]);
+			if(row->mode & BM_L) {
+				if(row->mode & BM_L_REG) {
+					if(left == SP) {
+						fprintf(fp, "sp");
+					} else if(left == FP) {
+						fprintf(fp, "fp");
+					} else if(left == IP) {
+						fprintf(fp, "ip");
+					} else {
+						fprintf(fp, "r%i", left);
+					}
+				} else if(row->mode & BM_L_ADDR) {
+					fprintf(fp, "@%i", left);
+				} else if(row->mode & BM_L_VAL) {
+					fprintf(fp, "$%i", left);
+				} else {
+					c_error("unknown opcode mode given");
+				}
 			}
+			fprintf(fp, " ");
+			if(row->mode & BM_R) {
+				if(row->mode & BM_R_REG) {
+					if(right == SP) {
+						fprintf(fp, "sp");
+					} else if(right == FP) {
+						fprintf(fp, "fp");
+					} else if(right == IP) {
+						fprintf(fp, "ip");
+					} else {
+						fprintf(fp, "r%i", right);
+					}
+				} else if(row->mode & BM_R_ADDR) {
+					fprintf(fp, "@%i", right);
+				} else if(row->mode & BM_R_VAL) {
+					fprintf(fp, "$%i", right);
+				} else {
+					c_error("unknown opcode mode given");
+				}
+			}
+			fprintf(fp, "\n");
 			counter++;
 		}
 	}
@@ -129,7 +151,7 @@ void emit_build2(Emit *emit, char *file) {
 
 	Header header;
 	header.magic   = 1178944383;
-	header.version = 3;
+	header.version = 4;
 	header.time    = time(NULL);
 
 	fwrite(&header, sizeof(Header), 1, fp);
@@ -153,35 +175,28 @@ void emit_build2(Emit *emit, char *file) {
 		for(ListNode *c = list_begin(&function->code); c != list_end(&function->code); c = list_next(c)) {
 			OP *row = (OP*)c;
 			uint8_t op = (uint8_t)row->op;
-			int size = (int)row->size;
+			int mode = (int)row->mode;
 			int left = (int)row->left;
 			int right = (int)row->right;
+
+			if(fwrite(&mode, sizeof(uint8_t), 1, fp) != 1) {
+				c_error("unable to emit bytecode to file");
+			}
+
+			if(fwrite(&op, sizeof(uint8_t), 1, fp) != 1) {
+				c_error("unable to emit bytecode to file");
+			}
 			
-			if(size == 0) {
-				if(fwrite(&op, sizeof(uint8_t), 1, fp) != 1) {
-					c_error("unable to emit bytecode to file");
-				}
-			} else if(size == 1) {
-				op |= 0x80; // 01000000
-				if(fwrite(&op, sizeof(uint8_t), 1, fp) != 1) {
-					c_error("unable to emit bytecode to file");
-				}
+			if(mode & BM_L) {
 				if(fwrite(&left, sizeof(int), 1, fp) != 1) {
 					c_error("unable to emit bytecode to file");
 				}
-			} else if(size == 2) {
-				op |= 0xC0; // 11000000
-				if(fwrite(&op, sizeof(uint8_t), 1, fp) != 1) {
-					c_error("unable to emit bytecode to file");
-				}
-				if(fwrite(&left, sizeof(int), 1, fp) != 1) {
-					c_error("unable to emit bytecode to file");
-				}
+			}
+
+			if(mode & BM_R) {
 				if(fwrite(&right, sizeof(int), 1, fp) != 1) {
 					c_error("unable to emit bytecode to file");
 				}
-			} else {
-				c_error("emit opcode size unknown");
 			}
 		}
 	}

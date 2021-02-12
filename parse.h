@@ -20,6 +20,7 @@ typedef enum {
 	AST_GT,
 	AST_SHL,
 	AST_SHR,
+	AST_AND,
 	AST_EQUAL,
 	AST_NOTEQUAL,
 	AST_IDENT,
@@ -32,26 +33,40 @@ typedef enum {
 	AST_ARG,
 	AST_PARAM,
 	AST_STRING_CONCAT,
-	AST_STRING_LITERAL
+	AST_STRING_LITERAL,
+	AST_DEREF,
+	AST_REF
 } NodeType;
 
 typedef enum {
-	DATA_NUMBER = 1 << 0,
-	DATA_CHAR = 2 << 0,
-	DATA_VOID = 3 << 0,
-	DATA_ARRAY_MASK = 1 << 5
+	DATA_INT = 4,
+	DATA_LONG = 8,
+	DATA_CHAR = 1,
+	DATA_VOID = 0
 } DataType;
 
+typedef struct _VarScope {
+	ListNode node;
+	char *name;
+	int offset;
+	int size;
+} VarScope;
+
 typedef struct _Parser {
+	List varscope;
 	Token *token;
 } Parser;
 
 typedef struct _Node {
 	ListNode node;
 	NodeType type;
-	struct _Node *size;
-	struct _Node *index; // arr[index<--];
+	
+	int total_local_size; // for allocating stack space(if it is a function node)
+	int offset; // variable offset(if it is a decl node)
+	int size; // variable size(if it is a decl node)
+
 	DataType data_type;
+	struct _Node *index; // a[expr]
 	struct _Node *condition;
 
 	struct _Node *left;
@@ -68,6 +83,10 @@ typedef struct _Node {
 
 Node *new_node(NodeType type);
 void node_free(Node *node);
+
+int parse_get_offset(Parser *parser);
+int parse_get_var_offset(Parser *parser, char *var);
+bool parse_has_var(Parser *parser, char *var);
 
 /* parse_string_expr.c */
 
@@ -87,6 +106,7 @@ Node *parse_divide(Parser *parser);
 Node *parse_relational(Parser *parser);
 Node *parse_bitwise(Parser *parser);
 Node *parse_equality(Parser *parser);
+Node *parse_unary(Parser *parser);
 Node *parse_primary(Parser *parser);
 
 /* parse_args.c */

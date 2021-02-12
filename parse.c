@@ -12,6 +12,34 @@ void node_free(Node *node) {
 	free(node);
 }
 
+int parse_get_offset(Parser *parser) {
+	if(list_size(&parser->varscope) > 0) {
+		VarScope *vs = (VarScope*)list_back(&parser->varscope);
+		return vs->offset + vs->size;
+	}
+	return 0;
+}
+
+int parse_get_var_offset(Parser *parser, char *var) {
+	for(ListNode *i = list_begin(&parser->varscope); i != list_end(&parser->varscope); i = list_next(i)) {
+		VarScope *vs = (VarScope*)i;
+		if(strcmp(var, vs->name) == 0) {
+			return vs->offset;
+		}
+	}
+	return 0;
+}
+
+bool parse_has_var(Parser *parser, char *var) {
+	for(ListNode *i = list_begin(&parser->varscope); i != list_end(&parser->varscope); i = list_next(i)) {
+		VarScope *vs = (VarScope*)i;
+		if(strcmp(var, vs->name) == 0) {
+			return true;
+		}
+	}
+	return false;
+}
+
 Node *parse_call(Parser *parser) {
 	Node *node = new_node(AST_CALL);
 	Token *ident = parser->token;
@@ -26,7 +54,9 @@ Node *parse_call(Parser *parser) {
 DataType parse_basetype(Parser *parser) {
 	DataType type = DATA_VOID;
 	if(consume_string(parser, "int")) {
-		type = DATA_NUMBER;
+		type = DATA_INT;
+	} else if(consume_string(parser, "long")) {
+		type = DATA_LONG;
 	} else if(consume_string(parser, "void")) {
 		type = DATA_VOID;
 	} else if(consume_string(parser, "char")) {
@@ -36,7 +66,7 @@ DataType parse_basetype(Parser *parser) {
 	}
 
 	if(consume_string(parser, "[")) {
-		type |= DATA_ARRAY_MASK;
+		// type |= DATA_ARRAY_MASK;
 		expect_string(parser, "]");
 	}
 	return type;
@@ -45,28 +75,49 @@ DataType parse_basetype(Parser *parser) {
 /* Parses any string/number declaration */
 
 Node *parse_declaration(Parser *parser) {
+
+	VarScope *vs = malloc(sizeof(VarScope));
+
 	Node *node = new_node(AST_DECL);
 
-	node->data_type = parse_basetype(parser);
+	vs->size   = parse_basetype(parser);
+	vs->offset = parse_get_offset(parser);
 
-	Token *token = parser->token;	
+
+	Token *token = parser->token;
+
+	if(parse_has_var(parser, token->data)) {
+		c_error("redefinition of '%s'", token->data);
+	}
+
+	vs->name = token->data;
 	expect_type(parser, TK_IDENT);
 	node->token = token;
 
+	/*
 	if(node->data_type & DATA_ARRAY_MASK) {
 		// = [10]
 		expect_string(parser, "=");
 		if(consume_string(parser, "[")) {
-			node->size = parse_expr(parser);
+			node->offset = parser->total_local_size; // Set decl offset
+			parser->total_local_size += atoi(parser->token->data); // increase offset
+			expect_type(parser, DATA_NUMBER);
 			expect_string(parser, "]");
 		} else {
 			node->body = parse_string_expr(parser);
 		}
 	} else {
+		*/
+		node->offset = vs->offset; // Set decl offset
+		node->size = vs->size; // Set decl size
 		if(consume_string(parser, "=")) {
 			node->body = parse_expr(parser);	
 		}
+		/*
 	}
+	*/
+
+	list_insert(list_end(&parser->varscope), vs);
 	
 	return node;
 }
@@ -138,8 +189,17 @@ Node *parse_function(Parser *parser) {
 
 	expect_string(parser, "{");
 
+	list_clear(&parser->varscope);
+
 	while(!peek_string(parser, "}")) {
 		list_insert(list_end(&node->bodylist), parse_stmt(parser));
+	}
+
+	node->total_local_size = 0;
+
+	while(!list_empty(&parser->varscope)) {
+		VarScope *entry = (VarScope*)list_remove(list_back(&parser->varscope)); // begin with end
+		node->total_local_size += entry->size;
 	}
 
 	expect_string(parser, "}");

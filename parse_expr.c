@@ -97,11 +97,17 @@ Node *parse_bitwise(Parser *parser) {
 		node->right = parse_bitwise(parser);
 		return node;
 	}
+	if(consume_string(parser, "&")) {
+		Node *node = new_node(AST_AND);
+		node->left = left;
+		node->right = parse_bitwise(parser);
+		return node;
+	}
 	return left;
 }
 
 Node *parse_equality(Parser *parser) {
-	Node *left = parse_primary(parser);
+	Node *left = parse_unary(parser);
 	if(consume_string(parser, "==")) {
 		Node *node = new_node(AST_EQUAL);
 		node->left = left;
@@ -117,6 +123,20 @@ Node *parse_equality(Parser *parser) {
 	return left;
 }
 
+Node *parse_unary(Parser *parser) {
+	if(consume_string(parser, "&")) {
+		Node *node = new_node(AST_DEREF);
+		node->body = parse_unary(parser);
+		return node;
+	}
+	if(consume_string(parser, "*")) {
+		Node *node = new_node(AST_REF);
+		node->body = parse_unary(parser);
+		return node;
+	}
+	return parse_primary(parser);
+}
+
 Node *parse_primary(Parser *parser) {
 	Token *token = parser->token;
 	if(is_call(parser)) {
@@ -130,7 +150,12 @@ Node *parse_primary(Parser *parser) {
 			return node;
 		} else {
 			Node *node = new_node(AST_IDENT);
+			if(!parse_has_var(parser, token->data)) {
+				c_error("unable to find var '%s'", token->data);
+			}
+			int offset = parse_get_var_offset(parser, token->data);
 			node->token = token;
+			node->offset = offset;
 			return node;
 		}	
 	} else if(consume_type(parser, TK_CHAR)) {
