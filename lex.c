@@ -23,7 +23,7 @@ bool is_keyword(char bit) {
 }
 
 bool is_number(char bit) {
-	return (bit >= '0' && bit <= '9');
+	return (bit >= '0' && bit <= '9') || bit == '.';
 }
 
 bool is_space(char bit) {

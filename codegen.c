@@ -78,6 +78,7 @@ void enter_decl(Generator *generator, Node *node) {
 	
 	if(node->body) {
 		visitor(generator, node->body);
+		//emit_opcode(generator->emit, BM_L | BM_L_REG, BC_POP, REG_0, 0);
 		emit_opcode(generator->emit, BM_L | BM_L_ADDR | BM_R | BM_R_REG, BC_MOV, node->offset, REG_0);
 	}
 	
@@ -170,7 +171,7 @@ void enter_binexpr(Generator *generator, Node *node) {
 		}
 		break;
 	}
-	emit_opcode(generator->emit, BM_L | BM_L_REG, BC_PUSH, REG_0, 0);
+	//emit_opcode(generator->emit, BM_L | BM_L_REG, BC_PUSH, REG_0, 0);
 	node_free(node);
 }
 
@@ -460,7 +461,7 @@ void generate(Node *node) {
 	visitor(&generator, node);
 	//emit_build(generator.emit, "data/out.chip");
 	emit_build2(generator.emit, "data/out.chip");
-	emit_asm(generator.emit, "data/out.asm");
+	emit_asm(generator.emit, "data/out.S");
 	free_emit(generator.emit);
 	fclose(generator.file);
 }

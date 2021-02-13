@@ -1,58 +1,61 @@
 #include "parse.h"
 
 Node *parse_expr(Parser *parser) {
-	if(consume_type(parser, TK_STRING)) {
-		unconsume(parser);
-		Node *node = parse_string_expr(parser);
-		return node;
-	} else {
-		Node *node = parse_assign(parser);
-		return node;
-	}
+	Node *node = parse_assign(parser);
+	return node;
 }
 
 Node *parse_assign(Parser *parser) {
-	Node *left = parse_plus(parser);
+	Node *left = parse_plus_minus(parser);
 	if(consume_string(parser, "=")) {
 		Node *node = new_node(AST_ASSIGN);
 		node->left = left;
-		node->right = parse_assign(parser);
+		node->right = parse_plus_minus(parser);
 		return node;
 	}
 	return left;
 }
 
-Node *parse_plus(Parser *parser) {
-	Node *left = parse_minus(parser);
-	if(consume_string(parser, "+")) {
-		Node *node = new_node(AST_ADD);
-		node->left = left;
-		node->right = parse_plus(parser);
-		return node;
+Node *parse_plus_minus(Parser *parser) {
+	Node *left = parse_muliply_divide(parser);
+	for(;;) {
+		if(consume_string(parser, "+")) {
+			Node *node = new_node(AST_ADD);
+			node->left = left;
+			node->right = parse_muliply_divide(parser);
+			left = node;
+			continue;
+		}
+		if(consume_string(parser, "-")) {
+			Node *node = new_node(AST_SUB);
+			node->left = left;
+			node->right = parse_muliply_divide(parser);
+			left = node;
+			continue;
+		}
+		return left;
 	}
-	return left;
 }
 
-Node *parse_minus(Parser *parser) {
-	Node *left = parse_muliply(parser);
-	if(consume_string(parser, "-")) {
-		Node *node = new_node(AST_SUB);
-		node->left = left;
-		node->right = parse_minus(parser);
-		return node;
+Node *parse_muliply_divide(Parser *parser) {
+	Node *left = parse_relational(parser);
+	for(;;) {
+		if(consume_string(parser, "*")) {
+			Node *node = new_node(AST_MUL);
+			node->left = left;
+			node->right = parse_relational(parser);
+			left = node;
+			continue;
+		}
+		if(consume_string(parser, "/")) {
+			Node *node = new_node(AST_DIV);
+			node->left = left;
+			node->right = parse_relational(parser);
+			left = node;
+			continue;
+		}
+		return left;
 	}
-	return left;
-}
-
-Node *parse_muliply(Parser *parser) {
-	Node *left = parse_divide(parser);
-	if(consume_string(parser, "*")) {
-		Node *node = new_node(AST_MUL);
-		node->left = left;
-		node->right = parse_muliply(parser);
-		return node;
-	}
-	return left;
 }
 
 Node *parse_divide(Parser *parser) {
@@ -60,7 +63,7 @@ Node *parse_divide(Parser *parser) {
 	if(consume_string(parser, "/")) {
 		Node *node = new_node(AST_DIV);
 		node->left = left;
-		node->right = parse_divide(parser);
+		node->right = parse_relational(parser);
 		return node;
 	}
 	return left;
@@ -71,13 +74,13 @@ Node *parse_relational(Parser *parser) {
 	if(consume_string(parser, "<")) {
 		Node *node = new_node(AST_LT);
 		node->left = left;
-		node->right = parse_relational(parser);
+		node->right = parse_bitwise(parser);
 		return node;
 	}
 	if(consume_string(parser, ">")) {
 		Node *node = new_node(AST_GT);
 		node->left = left;
-		node->right = parse_relational(parser);
+		node->right = parse_bitwise(parser);
 		return node;
 	}
 	return left;
@@ -88,19 +91,19 @@ Node *parse_bitwise(Parser *parser) {
 	if(consume_string(parser, "<<")) {
 		Node *node = new_node(AST_SHL);
 		node->left = left;
-		node->right = parse_bitwise(parser);
+		node->right = parse_equality(parser);
 		return node;
 	}
 	if(consume_string(parser, ">>")) {
 		Node *node = new_node(AST_SHR);
 		node->left = left;
-		node->right = parse_bitwise(parser);
+		node->right = parse_equality(parser);
 		return node;
 	}
 	if(consume_string(parser, "&")) {
 		Node *node = new_node(AST_AND);
 		node->left = left;
-		node->right = parse_bitwise(parser);
+		node->right = parse_equality(parser);
 		return node;
 	}
 	return left;
@@ -111,13 +114,13 @@ Node *parse_equality(Parser *parser) {
 	if(consume_string(parser, "==")) {
 		Node *node = new_node(AST_EQUAL);
 		node->left = left;
-		node->right = parse_equality(parser);
+		node->right = parse_unary(parser);
 		return node;
 	}
 	if(consume_string(parser, "!=")) {
 		Node *node = new_node(AST_NOTEQUAL);
 		node->left = left;
-		node->right = parse_equality(parser);
+		node->right = parse_unary(parser);
 		return node;
 	}
 	return left;
@@ -126,12 +129,12 @@ Node *parse_equality(Parser *parser) {
 Node *parse_unary(Parser *parser) {
 	if(consume_string(parser, "&")) {
 		Node *node = new_node(AST_DEREF);
-		node->body = parse_unary(parser);
+		node->body = parse_primary(parser);
 		return node;
 	}
 	if(consume_string(parser, "*")) {
 		Node *node = new_node(AST_REF);
-		node->body = parse_unary(parser);
+		node->body = parse_primary(parser);
 		return node;
 	}
 	return parse_primary(parser);
@@ -158,6 +161,10 @@ Node *parse_primary(Parser *parser) {
 			node->offset = offset;
 			return node;
 		}	
+	} else if(consume_string(parser, "(")) {
+		Node *node = parse_expr(parser);
+		expect_string(parser, ")");
+		return node;
 	} else if(consume_type(parser, TK_CHAR)) {
 		Node *node = new_node(AST_CHAR_LITERAL);
 		node->token = token;

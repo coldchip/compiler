@@ -49,14 +49,16 @@ typedef enum {
 } ByteCode;
 
 typedef enum {
-	BM_L = 1 << 7,
-	BM_R = 1 << 3,
-	BM_L_REG = 1 << 6,
-	BM_R_REG = 1 << 2,
-	BM_L_ADDR = 1 << 5,
-	BM_R_ADDR = 1 << 1,
-	BM_L_VAL = 1 << 4,
-	BM_R_VAL = 1 << 0,
+	BM_L = 1 << 0,
+	BM_R = 1 << 1,
+	BM_L_REG = 1 << 2,
+	BM_R_REG = 1 << 3,
+	BM_L_ADDR = 1 << 4,
+	BM_R_ADDR = 1 << 5,
+	BM_L_VAL = 1 << 6,
+	BM_R_VAL = 1 << 7,
+	BM_L_IND = 1 << 8,
+	BM_R_IND = 1 << 9
 } ByteMode;
 
 typedef enum {

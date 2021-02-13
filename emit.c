@@ -91,7 +91,7 @@ void emit_asm(Emit *emit, char *file) {
 
 	for(ListNode *f = list_begin(&emit->functions); f != list_end(&emit->functions); f = list_next(f)) {
 		Function *function = (Function*)f;
-		fprintf(fp, "function %s:\n", function->name);
+		fprintf(fp, "%s:\n", function->name);
 		int counter = 0;
 		for(ListNode *c = list_begin(&function->code); c != list_end(&function->code); c = list_next(c)) {
 			OP *row = (OP*)c;
@@ -101,6 +101,9 @@ void emit_asm(Emit *emit, char *file) {
 
 			fprintf(fp, "\t%i: %s ", counter, bc_char[op]);
 			if(row->mode & BM_L) {
+				if(row->mode & BM_L_IND) {
+					fprintf(fp, "ind ");
+				}
 				if(row->mode & BM_L_REG) {
 					if(left == SP) {
 						fprintf(fp, "sp");
@@ -121,6 +124,9 @@ void emit_asm(Emit *emit, char *file) {
 			}
 			fprintf(fp, " ");
 			if(row->mode & BM_R) {
+				if(row->mode & BM_R_IND) {
+					fprintf(fp, "ind ");
+				}
 				if(row->mode & BM_R_REG) {
 					if(right == SP) {
 						fprintf(fp, "sp");
@@ -174,12 +180,12 @@ void emit_build2(Emit *emit, char *file) {
 
 		for(ListNode *c = list_begin(&function->code); c != list_end(&function->code); c = list_next(c)) {
 			OP *row = (OP*)c;
-			uint8_t op = (uint8_t)row->op;
-			int mode = (int)row->mode;
-			int left = (int)row->left;
-			int right = (int)row->right;
+			uint16_t op = (uint16_t)row->op;
+			int mode    = (int)row->mode;
+			int left    = (int)row->left;
+			int right   = (int)row->right;
 
-			if(fwrite(&mode, sizeof(uint8_t), 1, fp) != 1) {
+			if(fwrite(&mode, sizeof(uint16_t), 1, fp) != 1) {
 				c_error("unable to emit bytecode to file");
 			}
 

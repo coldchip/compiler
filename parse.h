@@ -99,10 +99,8 @@ Node *parse_string_primary(Parser *parser);
 
 Node *parse_expr(Parser *parser);
 Node *parse_assign(Parser *parser);
-Node *parse_plus(Parser *parser);
-Node *parse_minus(Parser *parser);
-Node *parse_muliply(Parser *parser);
-Node *parse_divide(Parser *parser);
+Node *parse_plus_minus(Parser *parser);
+Node *parse_muliply_divide(Parser *parser);
 Node *parse_relational(Parser *parser);
 Node *parse_bitwise(Parser *parser);
 Node *parse_equality(Parser *parser);
