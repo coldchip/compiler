@@ -10,7 +10,7 @@ Node *parse_assign(Parser *parser) {
 	if(consume_string(parser, "=")) {
 		Node *node = new_node(AST_ASSIGN);
 		node->left = left;
-		node->right = parse_plus_minus(parser);
+		node->right = parse_assign(parser);
 		return node;
 	}
 	return left;

@@ -4,12 +4,9 @@ int add(int a, int b) {
 
 int main() {
 	int a = 0;
-	int b = 1;
-	int next = 0;
-	while(a < 999999999) {
-		next = add(a, b);
-		a = b;
-		b = next;
-		dbg(next);
+	int b;
+	while(a < 999) {
+		dbg(b);
+		b = a = (a + 1);
 	}
 }
