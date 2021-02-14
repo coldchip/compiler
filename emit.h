@@ -41,11 +41,16 @@ typedef enum {
 	BC_CMPNEQ,
 	BC_CMPGT,
 	BC_CMPLT,
-	BC_JMPIFEQ,
-	BC_GOTO,
+	BC_JNE,
+	BC_JE,
+	BC_JMP,
 	BC_DEREF,
 	BC_REF,
-	BC_MOV
+	BC_MOV,
+	BC_MOVIND,
+	BC_CMP,
+	BC_SETEGT,
+	BC_SETELT
 } ByteCode;
 
 typedef enum {
@@ -81,6 +86,9 @@ typedef enum {
 	SP     = 16, // stack pointer
 	FP     = 17, // frame pointer
 	IP     = 18, // instruction pointer
+	F_GT   = 19, // flag greater
+	F_EQ   = 20, // flag equal
+	F_LT   = 21, // flag less
 	REGSIZE
 } Register;
 
@@ -103,6 +111,7 @@ typedef struct _OP {
 	int left;
 	int right;
 	ByteMode mode;
+	char *comments;
 } OP;
 
 typedef struct _Function {
@@ -129,7 +138,7 @@ Emit *new_emit();
 int emit_add_to_constant_pool(Emit *emit, char *string, ConstantType type);
 void emit_select_function(Emit *emit, char *name);
 unsigned emit_get_current_line(Emit *emit);
-OP *emit_opcode(Emit *emit, ByteMode mode, ByteCode op, int left, int right);
+OP *emit_opcode(Emit *emit, ByteMode mode, ByteCode op, int left, int right, char *comments);
 void emit_asm(Emit *emit, char *file);
 void emit_build2(Emit *emit, char *file);
 void free_emit(Emit *emit);

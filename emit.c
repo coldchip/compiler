@@ -23,11 +23,16 @@ char *bc_char[] = {
 	"cmpneq",
 	"cmpgt",
 	"cmplt",
-	"jmpifeq",
-	"goto",
+	"jne",
+	"je",
+	"jmp",
 	"deref",
 	"ref",
-	"mov"
+	"mov",
+	"movind",
+	"cmp",
+	"setegt",
+	"setelt"
 };
 
 Emit *new_emit() {
@@ -70,17 +75,17 @@ unsigned emit_get_current_line(Emit *emit) {
 	return list_size(&emit->current_function->code);
 }
 
-int emit_put_var(Emit *emit, char *var) {
-	
-}
-
-OP *emit_opcode(Emit *emit, ByteMode mode, ByteCode op, int left, int right) {
+OP *emit_opcode(Emit *emit, ByteMode mode, ByteCode op, int left, int right, char *comments) {
 	OP *row = malloc(sizeof(OP));
 	row->op = op;
 	row->left = left;
 	row->right = right;
 	row->mode = 0;
 	row->mode |= mode;
+	row->comments = NULL;
+	if(comments) {
+		row->comments = strmalloc(comments);
+	}
 	list_insert(list_end(&emit->current_function->code), row);
 	return row;
 }
@@ -98,6 +103,7 @@ void emit_asm(Emit *emit, char *file) {
 			uint8_t op = (uint8_t)row->op;
 			int left = (int)row->left;
 			int right = (int)row->right;
+			char *comments = row->comments;
 
 			fprintf(fp, "\t%i: %s ", counter, bc_char[op]);
 			if(row->mode & BM_L) {
@@ -144,6 +150,9 @@ void emit_asm(Emit *emit, char *file) {
 				} else {
 					c_error("unknown opcode mode given");
 				}
+			}
+			if(comments) {
+				fprintf(fp, "          # %s", comments);
 			}
 			fprintf(fp, "\n");
 			counter++;

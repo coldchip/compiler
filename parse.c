@@ -173,6 +173,8 @@ Node *parse_stmt(Parser *parser) {
 }
 
 Node *parse_function(Parser *parser) {
+	list_clear(&parser->varscope);
+
 	Node *node = new_node(AST_FUNCTION);
 
 	parse_basetype(parser);
@@ -188,8 +190,6 @@ Node *parse_function(Parser *parser) {
 	expect_string(parser, ")");
 
 	expect_string(parser, "{");
-
-	list_clear(&parser->varscope);
 
 	while(!peek_string(parser, "}")) {
 		list_insert(list_end(&node->bodylist), parse_stmt(parser));

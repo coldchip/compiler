@@ -8,18 +8,7 @@ void emit(Generator *generator, const char *format, ...) {
 }
 
 void gen_store(Generator *generator, Node *node) {
-	if(node->type == AST_IDENT_MEMBER) {
-		if(node->index) {
-			visitor(generator, node->index);
-		}
-		
-		int i = emit_add_to_constant_pool(generator->emit, node->token->data, CT_VARIABLE);
-		// emit_opcode_1(generator->emit, BC_ARR_STORE, i);
-	} else {
-		
-		int i = emit_add_to_constant_pool(generator->emit, node->token->data, CT_VARIABLE);
-		// emit_opcode_1(generator->emit, BC_STORE, i);
-	}
+	emit_opcode(generator->emit, BM_L | BM_L_ADDR | BM_R | BM_R_REG, BC_MOV, node->offset, REG_0, "store");
 	node_free(node);
 }
 
@@ -45,12 +34,12 @@ void enter_program(Generator *generator, Node *node) {
 void enter_function(Generator *generator, Node *node) {
 	emit_select_function(generator->emit, node->token->data);
 	// prologue
-	emit_opcode(generator->emit, BM_L | BM_L_REG, BC_PUSH, FP, 0);
-	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_MOV, FP, SP);
+	emit_opcode(generator->emit, BM_L | BM_L_REG, BC_PUSH, FP, 0, "prologue");
+	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_MOV, FP, SP, "prologue");
 
 	// stack reserve for local
-	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_VAL, BC_MOV, REG_0, node->total_local_size);
-	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_ADD, SP, REG_0);
+	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_VAL, BC_MOV, REG_0, node->total_local_size, "local size");
+	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_ADD, SP, REG_0, "allocate local variables");
 	if(node->args) {
 		visitor(generator, node->args);
 	}
@@ -60,8 +49,8 @@ void enter_function(Generator *generator, Node *node) {
 		visitor(generator, entry);
 	}
 
-	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_MOV, SP, FP);
-	emit_opcode(generator->emit, BM_L | BM_L_REG, BC_POP, FP, 0);
+	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_MOV, SP, FP, "epilogue");
+	emit_opcode(generator->emit, BM_L | BM_L_REG, BC_POP, FP, 0, "epilogue");
 	node_free(node);
 }
 
@@ -78,8 +67,7 @@ void enter_decl(Generator *generator, Node *node) {
 	
 	if(node->body) {
 		visitor(generator, node->body);
-		//emit_opcode(generator->emit, BM_L | BM_L_REG, BC_POP, REG_0, 0);
-		emit_opcode(generator->emit, BM_L | BM_L_ADDR | BM_R | BM_R_REG, BC_MOV, node->offset, REG_0);
+		emit_opcode(generator->emit, BM_L | BM_L_ADDR | BM_R | BM_R_REG, BC_MOV, node->offset, REG_0, "store variable");
 	}
 	
 	node_free(node);
@@ -90,37 +78,33 @@ void enter_binexpr(Generator *generator, Node *node) {
 	if(node->right) {
 		visitor(generator, node->right);
 	}
-	emit_opcode(generator->emit, BM_L | BM_L_REG, BC_PUSH, REG_0, 0);
+	emit_opcode(generator->emit, BM_L | BM_L_REG, BC_PUSH, REG_0, 0, "push right");
 	if(node->left) {
 		visitor(generator, node->left);
 	}
-	emit_opcode(generator->emit, BM_L | BM_L_REG, BC_PUSH, REG_0, 0);
+	emit_opcode(generator->emit, BM_L | BM_L_REG, BC_PUSH, REG_0, 0, "push left");
 
-	emit_opcode(generator->emit, BM_L | BM_L_REG, BC_POP, REG_0, 0);
-	emit_opcode(generator->emit, BM_L | BM_L_REG, BC_POP, REG_1, 0);
+	emit_opcode(generator->emit, BM_L | BM_L_REG, BC_POP, REG_0, 0, "pop right");
+	emit_opcode(generator->emit, BM_L | BM_L_REG, BC_POP, REG_1, 0, "pop left");
 	switch(node->type) {
 		case AST_ADD:
 		{
-			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_ADD, REG_0, REG_1);
-			// emit_opcode_0(generator->emit, BC_ADD);
+			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_ADD, REG_0, REG_1, "add");
 		}
 		break;
 		case AST_SUB:
 		{
-			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_SUB, REG_0, REG_1);
-			// emit_opcode_0(generator->emit, BC_SUB);
+			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_SUB, REG_0, REG_1, "subtract");
 		}
 		break;
 		case AST_MUL:
 		{
-			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_MUL, REG_0, REG_1);
-			// emit_opcode_0(generator->emit, BC_MUL);
+			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_MUL, REG_0, REG_1, "multiply");
 		}
 		break;
 		case AST_DIV:
 		{
-			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_DIV, REG_0, REG_1);
-			// emit_opcode_0(generator->emit, BC_DIV);
+			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_DIV, REG_0, REG_1, "divide");
 		}
 		break;
 		case AST_EQUAL:
@@ -137,14 +121,14 @@ void enter_binexpr(Generator *generator, Node *node) {
 		break;
 		case AST_GT:
 		{
-			
-			// emit_opcode_0(generator->emit, BC_CMPGT);
+			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_CMP, REG_0, REG_1, "cmp (expr)");
+			emit_opcode(generator->emit, BM_L | BM_L_REG, BC_SETEGT, REG_0, 0, "setegt (expr)");
 		}
 		break;
 		case AST_LT:
 		{
-			
-			// emit_opcode_0(generator->emit, BC_CMPLT);
+			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_CMP, REG_0, REG_1, "cmp (expr)");
+			emit_opcode(generator->emit, BM_L | BM_L_REG, BC_SETELT, REG_0, 0, "setelt (expr)");
 		}
 		break;
 		case AST_SHL:
@@ -171,12 +155,11 @@ void enter_binexpr(Generator *generator, Node *node) {
 		}
 		break;
 	}
-	//emit_opcode(generator->emit, BM_L | BM_L_REG, BC_PUSH, REG_0, 0);
 	node_free(node);
 }
 
 void enter_literal(Generator *generator, Node *node) {
-	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_VAL, BC_MOV, REG_0, atoi(node->token->data));
+	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_VAL, BC_MOV, REG_0, atoi(node->token->data), "move literal to register 0");
 	node_free(node);
 }
 
@@ -187,7 +170,7 @@ void enter_char_literal(Generator *generator, Node *node) {
 }
 
 void enter_ident(Generator *generator, Node *node) {
-	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_ADDR, BC_MOV, REG_0, node->offset);
+	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_ADDR, BC_MOV, REG_0, node->offset, "access variable");
 	node_free(node);
 }
 
@@ -200,13 +183,16 @@ void enter_ident_member(Generator *generator, Node *node) {
 }
 
 void enter_call(Generator *generator, Node *node) {
+	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_MOV, REG_9, SP, "preserve arguments pointer #1 (fixed)");
+	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_MOV, REG_10, SP, "preserve arguments pointer #2 (unfixed)");
 	if(node->args) {
 		visitor(generator, node->args);
 	}
 	
 	int i = emit_add_to_constant_pool(generator->emit, node->token->data, CT_STRING);
-	emit_opcode(generator->emit, BM_L | BM_L_ADDR, BC_CALL, i, 0);
-	// emit_opcode_1(generator->emit, BC_CALL, i);
+	emit_opcode(generator->emit, BM_L | BM_L_ADDR, BC_CALL, i, 0, "call");
+	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_MOV, SP, REG_9, "restore sp from args");
+	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_MOV, REG_0, REG_11, "move return [r11] to local");
 	node_free(node);
 }
 
@@ -240,26 +226,20 @@ void enter_if(Generator *generator, Node *node) {
 }
 
 void enter_while(Generator *generator, Node *node) {
-	/*
 	unsigned line = emit_get_current_line(generator->emit);
 	OP *jmp = NULL;
 	if(node->condition) {
 		visitor(generator, node->condition);
-		// emit_opcode_1(generator->emit, BC_PUSH_I, 0);
-		
-		jmp = // emit_opcode_1(generator->emit, BC_JMPIFEQ, 0);
-		
+		emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_VAL, BC_CMP, REG_0, 0, "cmp (while)");
+		jmp = emit_opcode(generator->emit, BM_L | BM_L_ADDR, BC_JE, line, 0, "jmp finish(while)");
 	}
 	if(node->body) {
 		visitor(generator, node->body);
 	}
-	// emit_opcode_1(generator->emit, BC_GOTO, line);
-	
-	unsigned finish_line = emit_get_current_line(generator->emit);
+	emit_opcode(generator->emit, BM_L | BM_L_ADDR, BC_JMP, line, 0, "jmp (while)");
 	if(jmp) {
-		jmp->left = finish_line;
+		jmp->left = emit_get_current_line(generator->emit);
 	}
-	*/
 	node_free(node);
 }
 
@@ -268,9 +248,9 @@ void enter_param(Generator *generator, Node *node) {
 	while(!list_empty(list)) {
 		Node *entry = (Node*)list_remove(list_back(list)); // begin with end
 		if(entry->type == AST_IDENT) {
-			
-			int i = emit_add_to_constant_pool(generator->emit, entry->token->data, CT_VARIABLE);
-			// emit_opcode_1(generator->emit, BC_STORE, i);
+			emit_opcode(generator->emit, BM_L | BM_L_ADDR | BM_R | BM_R_REG, BC_MOVIND, entry->offset, REG_10, "mov arguments to local stack");
+			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_VAL, BC_MOV, REG_0, entry->size, "move arg size");
+			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_ADD, REG_10, REG_0, "increment the arg size");
 		}
 		node_free(entry);
 	}
@@ -279,14 +259,12 @@ void enter_param(Generator *generator, Node *node) {
 
 void enter_arg(Generator *generator, Node *node) {
 	List *list = &node->bodylist;
-	int count = 0;
 	while(!list_empty(list)) {
-		Node *entry = (Node*)list_remove(list_begin(list));
+		Node *entry = (Node*)list_remove(list_back(list));
 		visitor(generator, entry);
-		count++;
+		emit_opcode(generator->emit, BM_L | BM_L_REG, BC_PUSH, REG_0, 0, "push arg to stack");
 	}
 	
-	// emit_opcode_1(generator->emit, BC_PUSH_I, count);
 	node_free(node);
 }
 
@@ -295,7 +273,7 @@ void enter_return(Generator *generator, Node *node) {
 		visitor(generator, node->body);
 	}
 	
-	// emit_opcode_0(generator->emit, BC_RET);
+	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_MOV, REG_11, REG_0, "move data to return reg [r11]");
 	node_free(node);
 }
 
@@ -307,14 +285,11 @@ void enter_string_concat(Generator *generator, Node *node) {
 		visitor(generator, node->left);
 	}
 	
-	// emit_opcode_0(generator->emit, BC_STRCONCAT);
 	node_free(node);
 }
 
 void enter_string_literal(Generator *generator, Node *node) {
 	
-	int i = emit_add_to_constant_pool(generator->emit, node->token->data, CT_STRING);
-	// emit_opcode_1(generator->emit, BC_PUSH_S, i);
 	node_free(node);
 }
 

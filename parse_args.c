@@ -1,11 +1,22 @@
 #include "parse.h"
 
 Node *parse_param(Parser *parser) {
-	parse_basetype(parser);
+	VarScope *vs = malloc(sizeof(VarScope));
+
+	vs->size   = parse_basetype(parser);
+	vs->offset = parse_get_offset(parser);
+
+
 	Token *token = parser->token;
+	vs->name = token->data;
 	expect_type(parser, TK_IDENT);
 	Node *node = new_node(AST_IDENT);
 	node->token = token;
+
+	node->offset = vs->offset;
+	node->size = vs->size;
+
+	list_insert(list_end(&parser->varscope), vs);
 
 	return node;
 }
