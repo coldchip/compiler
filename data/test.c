@@ -1,12 +1,16 @@
-int add(int a, int b) {
-	return a + b;
-}
-
 int main() {
-	int a = 0;
-	int b;
-	while(a < 999) {
-		dbg(b);
-		b = a = (a + 1);
-	}
+	int i = 1;
+    while(i < 10000) {
+        if (i % 3 == 0) {
+            dbg(111111111);
+        }
+        if (i % 5 == 0) {
+            dbg(222222222);
+        }
+        if ((i % 3 != 0) && (i % 5 != 0)) {
+            dbg(i);
+        }
+
+        i = i + 1;
+    }
 }

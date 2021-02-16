@@ -94,28 +94,17 @@ Node *parse_declaration(Parser *parser) {
 	expect_type(parser, TK_IDENT);
 	node->token = token;
 
-	/*
-	if(node->data_type & DATA_ARRAY_MASK) {
-		// = [10]
-		expect_string(parser, "=");
-		if(consume_string(parser, "[")) {
-			node->offset = parser->total_local_size; // Set decl offset
-			parser->total_local_size += atoi(parser->token->data); // increase offset
-			expect_type(parser, DATA_NUMBER);
-			expect_string(parser, "]");
-		} else {
-			node->body = parse_string_expr(parser);
-		}
+	if(consume_string(parser, "[")) {
+		vs->size *= atoi(parser->token->data);
+		expect_type(parser, TK_NUMBER);
+		expect_string(parser, "]");
 	} else {
-		*/
 		node->offset = vs->offset; // Set decl offset
 		node->size = vs->size; // Set decl size
 		if(consume_string(parser, "=")) {
 			node->body = parse_expr(parser);	
 		}
-		/*
 	}
-	*/
 
 	list_insert(list_end(&parser->varscope), vs);
 	

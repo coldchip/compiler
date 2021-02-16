@@ -127,6 +127,11 @@ void lex(List *tokens, char *data) {
 			}
 			data = q + 2;
 			continue;
+		} else if(startswith(data, "&&")) {
+			char *t = malloc_strcpy(data, 2);
+			list_insert(list_end(tokens), new_token(TK_SPECIAL, t, line));
+			data += 2;
+			continue;
 		} else if(startswith(data, "==")) {
 			char *t = malloc_strcpy(data, 2);
 			list_insert(list_end(tokens), new_token(TK_SPECIAL, t, line));

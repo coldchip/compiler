@@ -12,10 +12,12 @@ typedef enum {
 	AST_BLOCK,
 	AST_WHILE,
 	AST_ASSIGN,
+	AST_LOGAND,
 	AST_ADD,
 	AST_SUB,
 	AST_MUL,
 	AST_DIV,
+	AST_MOD,
 	AST_LT,
 	AST_GT,
 	AST_SHL,
@@ -99,11 +101,12 @@ Node *parse_string_primary(Parser *parser);
 
 Node *parse_expr(Parser *parser);
 Node *parse_assign(Parser *parser);
-Node *parse_plus_minus(Parser *parser);
-Node *parse_muliply_divide(Parser *parser);
+Node *parse_log(Parser *parser);
+Node *parse_equality(Parser *parser);
 Node *parse_relational(Parser *parser);
 Node *parse_bitwise(Parser *parser);
-Node *parse_equality(Parser *parser);
+Node *parse_plus_minus(Parser *parser);
+Node *parse_muliply_divide(Parser *parser);
 Node *parse_unary(Parser *parser);
 Node *parse_primary(Parser *parser);
 

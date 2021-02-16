@@ -8,7 +8,19 @@ void emit(Generator *generator, const char *format, ...) {
 }
 
 void gen_store(Generator *generator, Node *node) {
-	emit_opcode(generator->emit, BM_L | BM_L_ADDR | BM_R | BM_R_REG, BC_MOV, node->offset, REG_0, "store");
+	if(node->type == AST_DEREF) {
+		Node *body = node->body;
+		emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_ADDR, BC_MOV, REG_1, body->offset, "store");
+		emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_MOVIND2, REG_1, REG_0, "store");
+	} else {
+		emit_opcode(generator->emit, BM_L | BM_L_ADDR | BM_R | BM_R_REG, BC_MOV, node->offset, REG_0, "store");
+	}
+	node_free(node);
+}
+
+void gen_addr(Generator *generator, Node *node) {
+	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_ADDR, BC_LEA, REG_0, node->offset, "genaddr");
+	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_ADD, REG_0, FP, "add base to ptr");
 	node_free(node);
 }
 
@@ -87,6 +99,20 @@ void enter_binexpr(Generator *generator, Node *node) {
 	emit_opcode(generator->emit, BM_L | BM_L_REG, BC_POP, REG_0, 0, "pop right");
 	emit_opcode(generator->emit, BM_L | BM_L_REG, BC_POP, REG_1, 0, "pop left");
 	switch(node->type) {
+		case AST_LOGAND: 
+		{
+			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_VAL, BC_CMP, REG_0, 1, "logical and cmp #1");
+			emit_opcode(generator->emit, BM_L | BM_L_REG, BC_SETEEQ, REG_0, 0, "seteeq (expr)");
+
+			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_VAL, BC_CMP, REG_1, 1, "logical and cmp #2");
+			emit_opcode(generator->emit, BM_L | BM_L_REG, BC_SETEEQ, REG_1, 0, "seteeq (expr)");
+
+			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_AND, REG_0, REG_1, "AND logical and");
+
+			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_VAL, BC_CMP, REG_0, 1, "logand cmp AND'ed");
+			emit_opcode(generator->emit, BM_L | BM_L_REG, BC_SETEEQ, REG_0, 0, "seteeq (expr)");
+		}
+		break;
 		case AST_ADD:
 		{
 			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_ADD, REG_0, REG_1, "add");
@@ -107,16 +133,21 @@ void enter_binexpr(Generator *generator, Node *node) {
 			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_DIV, REG_0, REG_1, "divide");
 		}
 		break;
+		case AST_MOD:
+		{
+			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_MOD, REG_0, REG_1, "mod");
+		}
+		break;
 		case AST_EQUAL:
 		{
-			
-			// emit_opcode_0(generator->emit, BC_CMPEQ);
+			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_CMP, REG_0, REG_1, "cmp (expr)");
+			emit_opcode(generator->emit, BM_L | BM_L_REG, BC_SETEEQ, REG_0, 0, "seteeq (expr)");
 		}
 		break;
 		case AST_NOTEQUAL:
 		{
-			
-			// emit_opcode_0(generator->emit, BC_CMPNEQ);
+			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_CMP, REG_0, REG_1, "cmp (expr)");
+			emit_opcode(generator->emit, BM_L | BM_L_REG, BC_SETENEQ, REG_0, 0, "seteneq (expr)");
 		}
 		break;
 		case AST_GT:
@@ -196,32 +227,20 @@ void enter_call(Generator *generator, Node *node) {
 	node_free(node);
 }
 
-void enter_if(Generator *generator, Node *node) {
-	/*
-	OP *jmp_exit = NULL;
-	OP *jmp_exit_no_else = NULL;
+void enter_if(Generator *generator, Node *node) {	
+	unsigned line = emit_get_current_line(generator->emit);
+	OP *jmp = NULL;
 	if(node->condition) {
 		visitor(generator, node->condition);
-		// emit_opcode_1(generator->emit, BC_PUSH_I, 0);
-		
-		jmp_exit = // emit_opcode_1(generator->emit, BC_JMPIFEQ, 0);
-		
+		emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_VAL, BC_CMP, REG_0, 1, "cmp (while)");
+		jmp = emit_opcode(generator->emit, BM_L | BM_L_ADDR, BC_JNE, line, 0, "jmp finish(while)");
 	}
 	if(node->body) {
 		visitor(generator, node->body);
-		jmp_exit_no_else = // emit_opcode_1(generator->emit, BC_GOTO, 0);
-		
 	}
-	if(node->alternate) {
-		jmp_exit->left = emit_get_current_line(generator->emit);
-		visitor(generator, node->alternate);
-	} else {
-		jmp_exit->left = emit_get_current_line(generator->emit);
+	if(jmp) {
+		jmp->left = emit_get_current_line(generator->emit);
 	}
-	if(jmp_exit_no_else) {
-		jmp_exit_no_else->left = emit_get_current_line(generator->emit);
-	}
-	*/
 	node_free(node);
 }
 
@@ -230,8 +249,8 @@ void enter_while(Generator *generator, Node *node) {
 	OP *jmp = NULL;
 	if(node->condition) {
 		visitor(generator, node->condition);
-		emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_VAL, BC_CMP, REG_0, 0, "cmp (while)");
-		jmp = emit_opcode(generator->emit, BM_L | BM_L_ADDR, BC_JE, line, 0, "jmp finish(while)");
+		emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_VAL, BC_CMP, REG_0, 1, "cmp (while)");
+		jmp = emit_opcode(generator->emit, BM_L | BM_L_ADDR, BC_JNE, line, 0, "jmp finish(while)");
 	}
 	if(node->body) {
 		visitor(generator, node->body);
@@ -297,15 +316,15 @@ void enter_derefrence(Generator *generator, Node *node) {
 	if(node->body) {
 		visitor(generator, node->body);
 	}
-	// emit_opcode_0(generator->emit, BC_DEREF);
+	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_MOVIND, REG_0, REG_0, "deref");
+
 	node_free(node);
 }
 
 void enter_refrence(Generator *generator, Node *node) {
 	if(node->body) {
-		visitor(generator, node->body);
+		gen_addr(generator, node->body);
 	}
-	// emit_opcode_0(generator->emit, BC_REF);
 	node_free(node);
 }
 
@@ -336,10 +355,12 @@ void visitor(Generator *generator, Node *node) {
 			enter_assign(generator, node);
 		}
 		break;
+		case AST_LOGAND:
 		case AST_ADD:
 		case AST_SUB:
 		case AST_MUL:
 		case AST_DIV:
+		case AST_MOD:
 		case AST_GT:
 		case AST_LT:
 		case AST_EQUAL:

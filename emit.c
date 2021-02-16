@@ -9,6 +9,7 @@ char *bc_char[] = {
 	"sub",
 	"mul",
 	"div",
+	"mod",
 	"shl",
 	"shr",
 	"and",
@@ -30,9 +31,13 @@ char *bc_char[] = {
 	"ref",
 	"mov",
 	"movind",
+	"movind2",
 	"cmp",
 	"setegt",
-	"setelt"
+	"setelt",
+	"seteeq",
+	"seteneq",
+	"lea"
 };
 
 Emit *new_emit() {
