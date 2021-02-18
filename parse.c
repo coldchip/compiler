@@ -147,7 +147,9 @@ Node *parse_stmt(Parser *parser) {
 		return node;
 	} else if(consume_string(parser, "return")) {
 		Node *node = new_node(AST_RETURN);
-		node->body = parse_expr(parser);
+		if(!peek_string(parser, ";")) {
+			node->body = parse_expr(parser);
+		}
 		expect_string(parser, ";");
 		return node;
 	} else if(is_typename(parser)) {

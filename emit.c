@@ -37,7 +37,9 @@ char *bc_char[] = {
 	"setelt",
 	"seteeq",
 	"seteneq",
-	"lea"
+	"lea",
+	"syscall",
+	"halt"
 };
 
 Emit *new_emit() {
@@ -47,8 +49,8 @@ Emit *new_emit() {
 	}
 	emit->constant_pool_index = 0;
 	list_clear(&emit->constant_pool);
-	list_clear(&emit->vars);
-	list_clear(&emit->functions);
+	list_clear(&emit->code);
+	list_clear(&emit->label);
 	return emit;
 }
 
@@ -67,17 +69,26 @@ int emit_add_to_constant_pool(Emit *emit, char *string, ConstantType type) {
 	return row->index;
 }
 
-void emit_select_function(Emit *emit, char *name) {
-	Function *row = malloc(sizeof(Function));
-	row->name = strmalloc(name);
-	list_clear(&row->code);
-	
-	list_insert(list_end(&emit->functions), row);
-	emit->current_function = row;
+void emit_label(Emit *emit, char *name) {
+	Label *label = malloc(sizeof(Label));
+	label->name = strmalloc(name);
+	label->addr = emit_get_current_line(emit);
+	list_insert(list_end(&emit->label), label);
+}
+
+int emit_get_label_addr(Emit *emit, char *name) {
+	for(ListNode *l = list_begin(&emit->label); l != list_end(&emit->label); l = list_next(l)) {
+		Label *label = (Label*)l;
+		if(strcmp(name, label->name) == 0) {
+			return label->addr;
+		}
+	}
+	c_error("label %s not found", name);
+	return -1;
 }
 
 unsigned emit_get_current_line(Emit *emit) {
-	return list_size(&emit->current_function->code);
+	return list_size(&emit->code);
 }
 
 OP *emit_opcode(Emit *emit, ByteMode mode, ByteCode op, int left, int right, char *comments) {
@@ -91,7 +102,7 @@ OP *emit_opcode(Emit *emit, ByteMode mode, ByteCode op, int left, int right, cha
 	if(comments) {
 		row->comments = strmalloc(comments);
 	}
-	list_insert(list_end(&emit->current_function->code), row);
+	list_insert(list_end(&emit->code), row);
 	return row;
 }
 
@@ -99,127 +110,131 @@ OP *emit_opcode(Emit *emit, ByteMode mode, ByteCode op, int left, int right, cha
 void emit_asm(Emit *emit, char *file) {
 	FILE *fp = fopen(file, "wb");
 
-	for(ListNode *f = list_begin(&emit->functions); f != list_end(&emit->functions); f = list_next(f)) {
-		Function *function = (Function*)f;
-		fprintf(fp, "%s:\n", function->name);
-		int counter = 0;
-		for(ListNode *c = list_begin(&function->code); c != list_end(&function->code); c = list_next(c)) {
-			OP *row = (OP*)c;
-			uint8_t op = (uint8_t)row->op;
-			int left = (int)row->left;
-			int right = (int)row->right;
-			char *comments = row->comments;
+	
+	int counter = 0;
+	for(ListNode *c = list_begin(&emit->code); c != list_end(&emit->code); c = list_next(c)) {
+		OP *row = (OP*)c;
+		uint8_t op = (uint8_t)row->op;
+		int left = (int)row->left;
+		int right = (int)row->right;
+		char *comments = row->comments;
 
-			fprintf(fp, "\t%i: %s ", counter, bc_char[op]);
-			if(row->mode & BM_L) {
-				if(row->mode & BM_L_IND) {
-					fprintf(fp, "ind ");
-				}
-				if(row->mode & BM_L_REG) {
-					if(left == SP) {
-						fprintf(fp, "sp");
-					} else if(left == FP) {
-						fprintf(fp, "fp");
-					} else if(left == IP) {
-						fprintf(fp, "ip");
-					} else {
-						fprintf(fp, "r%i", left);
-					}
-				} else if(row->mode & BM_L_ADDR) {
-					fprintf(fp, "@%i", left);
-				} else if(row->mode & BM_L_VAL) {
-					fprintf(fp, "$%i", left);
-				} else {
-					c_error("unknown opcode mode given");
-				}
+		for(ListNode *l = list_begin(&emit->label); l != list_end(&emit->label); l = list_next(l)) {
+			Label *label = (Label*)l;
+			if(label->addr == counter) {
+				fprintf(fp, "%s:\n", label->name);
 			}
-			fprintf(fp, " ");
-			if(row->mode & BM_R) {
-				if(row->mode & BM_R_IND) {
-					fprintf(fp, "ind ");
-				}
-				if(row->mode & BM_R_REG) {
-					if(right == SP) {
-						fprintf(fp, "sp");
-					} else if(right == FP) {
-						fprintf(fp, "fp");
-					} else if(right == IP) {
-						fprintf(fp, "ip");
-					} else {
-						fprintf(fp, "r%i", right);
-					}
-				} else if(row->mode & BM_R_ADDR) {
-					fprintf(fp, "@%i", right);
-				} else if(row->mode & BM_R_VAL) {
-					fprintf(fp, "$%i", right);
-				} else {
-					c_error("unknown opcode mode given");
-				}
-			}
-			if(comments) {
-				fprintf(fp, "          # %s", comments);
-			}
-			fprintf(fp, "\n");
-			counter++;
 		}
+
+		fprintf(fp, "\t%i: %s ", counter, bc_char[op]);
+		if(row->mode & BM_L) {
+			if(row->mode & BM_L_IND) {
+				fprintf(fp, "[");
+			}
+			if(row->mode & BM_L_REG) {
+				if(left == SP) {
+					fprintf(fp, "sp");
+				} else if(left == FP) {
+					fprintf(fp, "fp");
+				} else if(left == IP) {
+					fprintf(fp, "ip");
+				} else {
+					fprintf(fp, "r%i", left);
+				}
+			} else if(row->mode & BM_L_ADDR) {
+				fprintf(fp, "@%i", left);
+			} else if(row->mode & BM_L_VAL) {
+				fprintf(fp, "$%i", left);
+			} else {
+				c_error("unknown opcode mode given");
+			}
+			if(row->mode & BM_L_IND) {
+				fprintf(fp, "]");
+			}
+		}
+		fprintf(fp, " ");
+		if(row->mode & BM_R) {
+			if(row->mode & BM_R_IND) {
+				fprintf(fp, "[");
+			}
+			if(row->mode & BM_R_REG) {
+				if(right == SP) {
+					fprintf(fp, "sp");
+				} else if(right == FP) {
+					fprintf(fp, "fp");
+				} else if(right == IP) {
+					fprintf(fp, "ip");
+				} else {
+					fprintf(fp, "r%i", right);
+				}
+			} else if(row->mode & BM_R_ADDR) {
+				fprintf(fp, "@%i", right);
+			} else if(row->mode & BM_R_VAL) {
+				fprintf(fp, "$%i", right);
+			} else {
+				c_error("unknown opcode mode given");
+			}
+			if(row->mode & BM_R_IND) {
+				fprintf(fp, "]");
+			}
+		}
+		if(comments) {
+			fprintf(fp, "          # %s", comments);
+		}
+		fprintf(fp, "\n");
+		counter++;
 	}
+	
 	fclose(fp);
 }
+
+
 
 void emit_build2(Emit *emit, char *file) {
 	FILE *fp = fopen(file, "wb");
 
 	Header header;
 	header.magic   = 1178944383;
-	header.version = 4;
+	header.version = 5;
 	header.time    = time(NULL);
 
 	fwrite(&header, sizeof(Header), 1, fp);
 
-	unsigned f_count = list_size(&emit->functions);
-	fwrite(&f_count, sizeof(unsigned), 1, fp);
+	unsigned entry_point = emit_get_label_addr(emit, "main");
+	fwrite(&entry_point, sizeof(unsigned), 1, fp);
 
-	for(ListNode *f = list_begin(&emit->functions); f != list_end(&emit->functions); f = list_next(f)) {
-		Function *function = (Function*)f;
+	
+	unsigned code_length = list_size(&emit->code);
+	fwrite(&code_length, sizeof(unsigned), 1, fp);
 
-		unsigned f_index = -1;
-		if(strcmp(function->name, "main") == 0) {
-			f_index = emit_add_to_constant_pool(emit, function->name, CT_STRING);
-		} else {
-			f_index = emit_add_to_constant_pool(emit, function->name, CT_FNAME);
+	for(ListNode *c = list_begin(&emit->code); c != list_end(&emit->code); c = list_next(c)) {
+		OP *row = (OP*)c;
+		uint16_t op = (uint16_t)row->op;
+		int mode    = (int)row->mode;
+		int left    = (int)row->left;
+		int right   = (int)row->right;
+
+		if(fwrite(&mode, sizeof(uint16_t), 1, fp) != 1) {
+			c_error("unable to emit bytecode to file");
 		}
-		unsigned f_length = list_size(&function->code);
-		fwrite(&f_index, sizeof(unsigned), 1, fp);
-		fwrite(&f_length, sizeof(unsigned), 1, fp);
 
-		for(ListNode *c = list_begin(&function->code); c != list_end(&function->code); c = list_next(c)) {
-			OP *row = (OP*)c;
-			uint16_t op = (uint16_t)row->op;
-			int mode    = (int)row->mode;
-			int left    = (int)row->left;
-			int right   = (int)row->right;
-
-			if(fwrite(&mode, sizeof(uint16_t), 1, fp) != 1) {
+		if(fwrite(&op, sizeof(uint8_t), 1, fp) != 1) {
+			c_error("unable to emit bytecode to file");
+		}
+		
+		if(mode & BM_L) {
+			if(fwrite(&left, sizeof(int), 1, fp) != 1) {
 				c_error("unable to emit bytecode to file");
 			}
+		}
 
-			if(fwrite(&op, sizeof(uint8_t), 1, fp) != 1) {
+		if(mode & BM_R) {
+			if(fwrite(&right, sizeof(int), 1, fp) != 1) {
 				c_error("unable to emit bytecode to file");
-			}
-			
-			if(mode & BM_L) {
-				if(fwrite(&left, sizeof(int), 1, fp) != 1) {
-					c_error("unable to emit bytecode to file");
-				}
-			}
-
-			if(mode & BM_R) {
-				if(fwrite(&right, sizeof(int), 1, fp) != 1) {
-					c_error("unable to emit bytecode to file");
-				}
 			}
 		}
 	}
+	
 
 	fwrite(&emit->constant_pool_index, sizeof(unsigned), 1, fp);
 
@@ -257,24 +272,18 @@ void emit_build2(Emit *emit, char *file) {
 	fclose(fp);
 }
 
+
+
 void free_emit(Emit *emit) {
-	ListNode *f = list_begin(&emit->functions);
-	while(f != list_end(&emit->functions)) {
-		Function *function = (Function*)f;
-		f = list_next(f);
+	
 
-		ListNode *c = list_begin(&function->code);
-		while(c != list_end(&function->code)) {
-			OP *row = (OP*)c;
-			c = list_next(c);
-			
-			list_remove(&row->node);
-			free(row);
-		}
-
-		list_remove(&function->node);
-		free(function->name);
-		free(function);
+	ListNode *c = list_begin(&emit->code);
+	while(c != list_end(&emit->code)) {
+		OP *row = (OP*)c;
+		c = list_next(c);
+		
+		list_remove(&row->node);
+		free(row);
 	}
 
 	ListNode *i = list_begin(&emit->constant_pool);

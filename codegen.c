@@ -11,7 +11,7 @@ void gen_store(Generator *generator, Node *node) {
 	if(node->type == AST_DEREF) {
 		Node *body = node->body;
 		emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_ADDR, BC_MOV, REG_1, body->offset, "store");
-		emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_MOVIND2, REG_1, REG_0, "store");
+		emit_opcode(generator->emit, BM_L | BM_L_REG | BM_L_IND | BM_R | BM_R_REG, BC_MOV, REG_1, REG_0, "store");
 	} else {
 		emit_opcode(generator->emit, BM_L | BM_L_ADDR | BM_R | BM_R_REG, BC_MOV, node->offset, REG_0, "store");
 	}
@@ -44,7 +44,7 @@ void enter_program(Generator *generator, Node *node) {
 }
 
 void enter_function(Generator *generator, Node *node) {
-	emit_select_function(generator->emit, node->token->data);
+	emit_label(generator->emit, node->token->data);
 	// prologue
 	emit_opcode(generator->emit, BM_L | BM_L_REG, BC_PUSH, FP, 0, "prologue");
 	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_MOV, FP, SP, "prologue");
@@ -63,6 +63,7 @@ void enter_function(Generator *generator, Node *node) {
 
 	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_MOV, SP, FP, "epilogue");
 	emit_opcode(generator->emit, BM_L | BM_L_REG, BC_POP, FP, 0, "epilogue");
+	emit_opcode(generator->emit, 0, BC_RET, 0, 0, "ret");
 	node_free(node);
 }
 
@@ -214,15 +215,18 @@ void enter_ident_member(Generator *generator, Node *node) {
 }
 
 void enter_call(Generator *generator, Node *node) {
-	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_MOV, REG_9, SP, "preserve arguments pointer #1 (fixed)");
 	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_MOV, REG_10, SP, "preserve arguments pointer #2 (unfixed)");
 	if(node->args) {
 		visitor(generator, node->args);
 	}
 	
-	int i = emit_add_to_constant_pool(generator->emit, node->token->data, CT_STRING);
-	emit_opcode(generator->emit, BM_L | BM_L_ADDR, BC_CALL, i, 0, "call");
-	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_MOV, SP, REG_9, "restore sp from args");
+	if(strcmp(node->token->data, "syscall") == 0) {
+		emit_opcode(generator->emit, 0, BC_SYSCALL, 0, 0, "syscall");
+	} else {
+		int i = emit_get_label_addr(generator->emit, node->token->data);
+		emit_opcode(generator->emit, BM_L | BM_L_ADDR, BC_CALL, i, 0, "call");
+	}
+	emit_opcode(generator->emit, BM_L | BM_L_REG, BC_POP, SP, 0, "restore sp from args");
 	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_MOV, REG_0, REG_11, "move return [r11] to local");
 	node_free(node);
 }
@@ -267,7 +271,7 @@ void enter_param(Generator *generator, Node *node) {
 	while(!list_empty(list)) {
 		Node *entry = (Node*)list_remove(list_back(list)); // begin with end
 		if(entry->type == AST_IDENT) {
-			emit_opcode(generator->emit, BM_L | BM_L_ADDR | BM_R | BM_R_REG, BC_MOVIND, entry->offset, REG_10, "mov arguments to local stack");
+			emit_opcode(generator->emit, BM_L | BM_L_ADDR | BM_R | BM_R_REG | BM_R_IND, BC_MOV, entry->offset, REG_10, "mov arguments to local stack");
 			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_VAL, BC_MOV, REG_0, entry->size, "move arg size");
 			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_ADD, REG_10, REG_0, "increment the arg size");
 		}
@@ -277,12 +281,17 @@ void enter_param(Generator *generator, Node *node) {
 }
 
 void enter_arg(Generator *generator, Node *node) {
+	int count = 0;
+
 	List *list = &node->bodylist;
 	while(!list_empty(list)) {
 		Node *entry = (Node*)list_remove(list_back(list));
 		visitor(generator, entry);
 		emit_opcode(generator->emit, BM_L | BM_L_REG, BC_PUSH, REG_0, 0, "push arg to stack");
+		count++;
 	}
+
+	emit_opcode(generator->emit, BM_L | BM_L_REG, BC_PUSH, REG_10, 0, "push arg last sp");
 	
 	node_free(node);
 }
@@ -316,7 +325,7 @@ void enter_derefrence(Generator *generator, Node *node) {
 	if(node->body) {
 		visitor(generator, node->body);
 	}
-	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_MOVIND, REG_0, REG_0, "deref");
+	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG | BM_R_IND, BC_MOV, REG_0, REG_0, "deref");
 
 	node_free(node);
 }
@@ -455,7 +464,6 @@ void generate(Node *node) {
 	generator.file = fopen("data/out.code", "wb");
 	generator.emit = new_emit();
 	visitor(&generator, node);
-	//emit_build(generator.emit, "data/out.chip");
 	emit_build2(generator.emit, "data/out.chip");
 	emit_asm(generator.emit, "data/out.S");
 	free_emit(generator.emit);

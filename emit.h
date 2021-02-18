@@ -55,7 +55,9 @@ typedef enum {
 	BC_SETELT,
 	BC_SETEEQ,
 	BC_SETENEQ,
-	BC_LEA
+	BC_LEA,
+	BC_SYSCALL,
+	BC_HALT
 } ByteCode;
 
 typedef enum {
@@ -110,6 +112,12 @@ typedef struct _ConstantPoolRow {
 	ConstantType type;
 } ConstantPoolRow;
 
+typedef struct _Label {
+	ListNode node;
+	char *name;
+	int addr;
+} Label;
+
 typedef struct _OP {
 	ListNode node;
 	ByteCode op;
@@ -119,30 +127,18 @@ typedef struct _OP {
 	char *comments;
 } OP;
 
-typedef struct _Function {
-	ListNode node;
-	char *name;
-	List code;
-} Function;
-
-typedef struct _VarAddr {
-	ListNode node;
-	char *name;
-	int addr;
-} VarAddr;
-
 typedef struct _Emit {
 	unsigned constant_pool_index;
 	List constant_pool;
-	List functions;
-	List vars;
-	Function *current_function;
+	List code;
+	List label;
 } Emit;
 
 Emit *new_emit();
 int emit_add_to_constant_pool(Emit *emit, char *string, ConstantType type);
-void emit_select_function(Emit *emit, char *name);
+void emit_label(Emit *emit, char *name);
 unsigned emit_get_current_line(Emit *emit);
+int emit_get_label_addr(Emit *emit, char *name);
 OP *emit_opcode(Emit *emit, ByteMode mode, ByteCode op, int left, int right, char *comments);
 void emit_asm(Emit *emit, char *file);
 void emit_build2(Emit *emit, char *file);
