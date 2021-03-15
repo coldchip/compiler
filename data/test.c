@@ -1,11 +1,7 @@
 void printf(int a) {
-    syscall(a);
+    syscall(0, &a, 4);
 }
 
 int main() {
-    int a = 0;
-    while(a < 999999) {
-        printf(a);
-        a = a + 1;
-    }
+    printf(444);
 }
