@@ -1,0 +1,3 @@
+ENTRY(main)
+printf:
+main:

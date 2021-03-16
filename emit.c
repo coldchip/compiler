@@ -69,22 +69,52 @@ int emit_add_to_constant_pool(Emit *emit, char *string, ConstantType type) {
 	return row->index;
 }
 
-void emit_label(Emit *emit, char *name) {
+int emit_label(Emit *emit, char *format, ...) {
+	va_list args;
+	va_start(args, format);
+
+	char buf[1000];
+
+	vsprintf(buf, format, args);
+
+	va_end(args);
+
 	Label *label = malloc(sizeof(Label));
-	label->name = strmalloc(name);
+	label->name = strmalloc(buf);
 	label->addr = emit_get_current_line(emit);
 	list_insert(list_end(&emit->label), label);
+
+	return label->addr;
 }
 
-int emit_get_label_addr(Emit *emit, char *name) {
+int emit_get_label_addr(Emit *emit, char *format, ...) {
+	va_list args;
+	va_start(args, format);
+
+	char buf[1000];
+
+	vsprintf(buf, format, args);
+
+	va_end(args);
+
 	for(ListNode *l = list_begin(&emit->label); l != list_end(&emit->label); l = list_next(l)) {
 		Label *label = (Label*)l;
-		if(strcmp(name, label->name) == 0) {
+		if(strcmp(buf, label->name) == 0) {
 			return label->addr;
 		}
 	}
-	c_error("label %s not found", name);
+	c_error("label %s not found", buf);
 	return -1;
+}
+
+char *emit_get_label_name(Emit *emit, int addr) {
+	for(ListNode *l = list_begin(&emit->label); l != list_end(&emit->label); l = list_next(l)) {
+		Label *label = (Label*)l;
+		if(addr == label->addr) {
+			return label->name;
+		}
+	}
+	return NULL;
 }
 
 unsigned emit_get_current_line(Emit *emit) {
@@ -119,6 +149,12 @@ void emit_asm(Emit *emit, char *file) {
 		int right = (int)row->right;
 		char *comments = row->comments;
 
+		uint8_t  reg_l = ((left >> 0) & 0xFF);
+		int16_t  off_l = ((left >> 8) & 0xFFFF);
+
+		uint8_t  reg_r = ((right >> 0) & 0xFF);
+		int16_t  off_r = ((right >> 8) & 0xFFFF);
+
 		for(ListNode *l = list_begin(&emit->label); l != list_end(&emit->label); l = list_next(l)) {
 			Label *label = (Label*)l;
 			if(label->addr == counter) {
@@ -126,46 +162,64 @@ void emit_asm(Emit *emit, char *file) {
 			}
 		}
 
-		fprintf(fp, "\t%i: %s ", counter, bc_char[op]);
+		fprintf(fp, "\t%s ", bc_char[op]);
 		if(row->mode & BM_L) {
 			if(row->mode & BM_L_IND) {
-				fprintf(fp, "[");
+				fprintf(fp, "PTR ");
 			}
 			if(row->mode & BM_L_REG) {
-				if(left == SP) {
-					fprintf(fp, "sp");
-				} else if(left == FP) {
-					fprintf(fp, "fp");
-				} else if(left == IP) {
-					fprintf(fp, "ip");
+				if(off_l != 0) {
+					fprintf(fp, "%i(", off_l);
+				}
+				if(reg_l == SP) {
+					fprintf(fp, "%%sp");
+				} else if(reg_l == FP) {
+					fprintf(fp, "%%fp");
+				} else if(reg_l == IP) {
+					fprintf(fp, "%%ip");
 				} else {
-					fprintf(fp, "r%i", left);
+					fprintf(fp, "%%r%i", reg_l);
+				}
+				if(off_l != 0) {
+					fprintf(fp, ")");
 				}
 			} else if(row->mode & BM_L_ADDR) {
-				fprintf(fp, "@%i", left);
+				if(op == BC_CALL || op == BC_JE || op == BC_JNE || op == BC_JMP) {
+					char *l_name = emit_get_label_name(emit, left);
+					if(l_name) {
+						fprintf(fp, "%s", l_name);
+					} else {
+						fprintf(fp, "@%i", left);
+					}
+				} else {
+					fprintf(fp, "@%i", left);
+				}
 			} else if(row->mode & BM_L_VAL) {
 				fprintf(fp, "$%i", left);
 			} else {
 				c_error("unknown opcode mode given");
 			}
-			if(row->mode & BM_L_IND) {
-				fprintf(fp, "]");
-			}
 		}
-		fprintf(fp, " ");
 		if(row->mode & BM_R) {
+			fprintf(fp, ", ");
 			if(row->mode & BM_R_IND) {
-				fprintf(fp, "[");
+				fprintf(fp, "PTR ");
 			}
 			if(row->mode & BM_R_REG) {
-				if(right == SP) {
-					fprintf(fp, "sp");
-				} else if(right == FP) {
-					fprintf(fp, "fp");
-				} else if(right == IP) {
-					fprintf(fp, "ip");
+				if(off_r != 0) {
+					fprintf(fp, "%i(", off_r);
+				}
+				if(reg_r == SP) {
+					fprintf(fp, "%%sp");
+				} else if(reg_r == FP) {
+					fprintf(fp, "%%fp");
+				} else if(reg_r == IP) {
+					fprintf(fp, "%%ip");
 				} else {
-					fprintf(fp, "r%i", right);
+					fprintf(fp, "%%r%i", reg_r);
+				}
+				if(off_r != 0) {
+					fprintf(fp, ")");
 				}
 			} else if(row->mode & BM_R_ADDR) {
 				fprintf(fp, "@%i", right);
@@ -173,9 +227,6 @@ void emit_asm(Emit *emit, char *file) {
 				fprintf(fp, "$%i", right);
 			} else {
 				c_error("unknown opcode mode given");
-			}
-			if(row->mode & BM_R_IND) {
-				fprintf(fp, "]");
 			}
 		}
 		if(comments) {
@@ -221,7 +272,7 @@ void emit_build2(Emit *emit, char *file) {
 		if(fwrite(&op, sizeof(uint8_t), 1, fp) != 1) {
 			c_error("unable to emit bytecode to file");
 		}
-		
+
 		if(mode & BM_L) {
 			if(fwrite(&left, sizeof(int), 1, fp) != 1) {
 				c_error("unable to emit bytecode to file");

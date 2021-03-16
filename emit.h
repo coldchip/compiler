@@ -136,9 +136,10 @@ typedef struct _Emit {
 
 Emit *new_emit();
 int emit_add_to_constant_pool(Emit *emit, char *string, ConstantType type);
-void emit_label(Emit *emit, char *name);
+int emit_label(Emit *emit, char *format, ...);
 unsigned emit_get_current_line(Emit *emit);
-int emit_get_label_addr(Emit *emit, char *name);
+int emit_get_label_addr(Emit *emit, char *format, ...);
+char *emit_get_label_name(Emit *emit, int addr);
 OP *emit_opcode(Emit *emit, ByteMode mode, ByteCode op, int left, int right, char *comments);
 void emit_asm(Emit *emit, char *file);
 void emit_build2(Emit *emit, char *file);

@@ -195,6 +195,10 @@ Node *parse_primary(Parser *parser) {
 		Node *node = new_node(AST_LITERAL);
 		node->token = token;
 		return node;
+	} else if(consume_type(parser, TK_STRING)) {
+		Node *node = new_node(AST_STRING_LITERAL);
+		node->token = token;
+		return node;
 	} else {
 		c_error("Expecting Identifier or Literal at Line %i, got %i", token->line, token->type);
 	}

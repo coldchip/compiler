@@ -1,10 +1,8 @@
 #include "codegen.h"
 
-void emit(Generator *generator, const char *format, ...) {
-	va_list args;
-    va_start(args, format);
-    vfprintf(generator->file, format, args);
-    va_end(args);
+int counter() {
+	static int i = 0;
+	return i++;
 }
 
 void gen_store(Generator *generator, Node *node) {
@@ -35,6 +33,7 @@ void enter_assign(Generator *generator, Node *node) {
 }
 
 void enter_program(Generator *generator, Node *node) {
+	fprintf(generator->file, "ENTRY(main)\n");
 	List *list = &node->bodylist;
 	while(!list_empty(list)) {
 		Node *entry = (Node*)list_remove(list_begin(list));
@@ -44,6 +43,7 @@ void enter_program(Generator *generator, Node *node) {
 }
 
 void enter_function(Generator *generator, Node *node) {
+	fprintf(generator->file, "%s:\n", node->token->data);
 	emit_label(generator->emit, node->token->data);
 	// prologue
 	emit_opcode(generator->emit, BM_L | BM_L_REG, BC_PUSH, FP, 0, "prologue");
@@ -177,8 +177,7 @@ void enter_binexpr(Generator *generator, Node *node) {
 		break;
 		case AST_AND:
 		{
-			
-			// emit_opcode_0(generator->emit, BC_AND);
+			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_AND, REG_0, REG_1, "and");
 		}
 		break;
 		default:
@@ -219,6 +218,7 @@ void enter_call(Generator *generator, Node *node) {
 	if(node->args) {
 		visitor(generator, node->args);
 	}
+	emit_opcode(generator->emit, BM_L | BM_L_REG, BC_PUSH, REG_10, 0, "push arg last sp");
 	
 	if(strcmp(node->token->data, "syscall") == 0) {
 		emit_opcode(generator->emit, 0, BC_SYSCALL, 0, 0, "syscall");
@@ -242,14 +242,16 @@ void enter_if(Generator *generator, Node *node) {
 	if(node->body) {
 		visitor(generator, node->body);
 	}
+	int r = counter();
+	emit_label(generator->emit, "if.%i", r);
 	if(jmp) {
-		jmp->left = emit_get_current_line(generator->emit);
+		jmp->left = emit_get_label_addr(generator->emit, "if.%i", r);
 	}
 	node_free(node);
 }
 
 void enter_while(Generator *generator, Node *node) {
-	unsigned line = emit_get_current_line(generator->emit);
+	int line = emit_label(generator->emit, "while.%i", counter());
 	OP *jmp = NULL;
 	if(node->condition) {
 		visitor(generator, node->condition);
@@ -261,19 +263,20 @@ void enter_while(Generator *generator, Node *node) {
 	}
 	emit_opcode(generator->emit, BM_L | BM_L_ADDR, BC_JMP, line, 0, "jmp (while)");
 	if(jmp) {
-		jmp->left = emit_get_current_line(generator->emit);
+		jmp->left = emit_label(generator->emit, "while.%i", counter());
 	}
 	node_free(node);
 }
 
 void enter_param(Generator *generator, Node *node) {
+	int16_t offset = 0;
+
 	List *list = &node->bodylist;
 	while(!list_empty(list)) {
 		Node *entry = (Node*)list_remove(list_back(list)); // begin with end
 		if(entry->type == AST_IDENT) {
-			emit_opcode(generator->emit, BM_L | BM_L_ADDR | BM_R | BM_R_REG | BM_R_IND, BC_MOV, entry->offset, REG_10, "mov arguments to local stack");
-			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_VAL, BC_MOV, REG_0, entry->size, "move arg size");
-			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_ADD, REG_10, REG_0, "increment the arg size");
+			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG | BM_R_IND, BC_MOV, (entry->offset << 8) | FP, (offset << 8) | REG_10, "mov arguments to local stack");
+			offset += 4;
 		}
 		node_free(entry);
 	}
@@ -290,8 +293,6 @@ void enter_arg(Generator *generator, Node *node) {
 		emit_opcode(generator->emit, BM_L | BM_L_REG, BC_PUSH, REG_0, 0, "push arg to stack");
 		count++;
 	}
-
-	emit_opcode(generator->emit, BM_L | BM_L_REG, BC_PUSH, REG_10, 0, "push arg last sp");
 	
 	node_free(node);
 }
@@ -461,7 +462,7 @@ void visitor(Generator *generator, Node *node) {
 
 void generate(Node *node) {
 	Generator generator;
-	generator.file = fopen("data/out.code", "wb");
+	generator.file = fopen("data/code.S", "wb");
 	generator.emit = new_emit();
 	visitor(&generator, node);
 	emit_build2(generator.emit, "data/out.chip");
