@@ -1,3 +1,0 @@
-ENTRY(main)
-printf:
-main:

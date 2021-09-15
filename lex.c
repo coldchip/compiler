@@ -87,6 +87,15 @@ void lex(List *tokens, char *data) {
 					} else if(*data == 'r') {
 						sb_append(sb, "\r");
 						data++;
+					} else if(*data == '"') {
+						sb_append(sb, "\"");
+						data++;
+					} else if(*data == 't') {
+						sb_append(sb, "\t");
+						data++;
+					} else if(*data == '\\') {
+						sb_append(sb, "\\");
+						data++;
 					}
 				} else if(*data == '"') {
 					break;

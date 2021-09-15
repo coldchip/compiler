@@ -80,9 +80,7 @@ Node *parse_declaration(Parser *parser) {
 
 	Node *node = new_node(AST_DECL);
 
-	vs->size   = parse_basetype(parser);
-	vs->offset = parse_get_offset(parser);
-
+	parse_basetype(parser);
 
 	Token *token = parser->token;
 
@@ -111,7 +109,7 @@ Node *parse_declaration(Parser *parser) {
 	return node;
 }
 
-void parse_declarator(Parser *parser) {
+void parse_identifier(Parser *parser) {
 	expect_type(parser, TK_IDENT);
 }
 
@@ -169,10 +167,10 @@ Node *parse_function(Parser *parser) {
 	Node *node = new_node(AST_FUNCTION);
 
 	parse_basetype(parser);
-	
+
 	Token *ident = parser->token;
 	node->token = ident;
-	parse_declarator(parser);
+	parse_identifier(parser);
 
 	expect_string(parser, "(");
 
@@ -316,5 +314,6 @@ bool is_typename(Parser *parser) {
 	return 
 	peek_string(parser, "void") || 
 	peek_string(parser, "int") || 
-	peek_string(parser, "char");
+	peek_string(parser, "char") || 
+	peek_string(parser, "long");
 }

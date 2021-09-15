@@ -3,18 +3,15 @@
 Node *parse_param(Parser *parser) {
 	VarScope *vs = malloc(sizeof(VarScope));
 
-	vs->size   = parse_basetype(parser);
-	vs->offset = parse_get_offset(parser);
-
 
 	Token *token = parser->token;
 	vs->name = token->data;
+
+	parse_basetype(parser);
 	expect_type(parser, TK_IDENT);
+	
 	Node *node = new_node(AST_IDENT);
 	node->token = token;
-
-	node->offset = vs->offset;
-	node->size = vs->size;
 
 	list_insert(list_end(&parser->varscope), vs);
 

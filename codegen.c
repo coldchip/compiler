@@ -8,17 +8,16 @@ int counter() {
 void gen_store(Generator *generator, Node *node) {
 	if(node->type == AST_DEREF) {
 		Node *body = node->body;
-		emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_ADDR, BC_MOV, REG_1, body->offset, "store");
-		emit_opcode(generator->emit, BM_L | BM_L_REG | BM_L_IND | BM_R | BM_R_REG, BC_MOV, REG_1, REG_0, "store");
+		visitor(generator, body);
+		fprintf(generator->file, "\tstore_ptr\n");
 	} else {
-		emit_opcode(generator->emit, BM_L | BM_L_ADDR | BM_R | BM_R_REG, BC_MOV, node->offset, REG_0, "store");
+		fprintf(generator->file, "\tstore %s\n", node->token->data);
 	}
 	node_free(node);
 }
 
 void gen_addr(Generator *generator, Node *node) {
-	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_ADDR, BC_LEA, REG_0, node->offset, "genaddr");
-	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_ADD, REG_0, FP, "add base to ptr");
+	fprintf(generator->file, "\tload_addr %s\n", node->token->data);
 	node_free(node);
 }
 
@@ -33,7 +32,6 @@ void enter_assign(Generator *generator, Node *node) {
 }
 
 void enter_program(Generator *generator, Node *node) {
-	fprintf(generator->file, "ENTRY(main)\n");
 	List *list = &node->bodylist;
 	while(!list_empty(list)) {
 		Node *entry = (Node*)list_remove(list_begin(list));
@@ -44,14 +42,7 @@ void enter_program(Generator *generator, Node *node) {
 
 void enter_function(Generator *generator, Node *node) {
 	fprintf(generator->file, "%s:\n", node->token->data);
-	emit_label(generator->emit, node->token->data);
 	// prologue
-	emit_opcode(generator->emit, BM_L | BM_L_REG, BC_PUSH, FP, 0, "prologue");
-	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_MOV, FP, SP, "prologue");
-
-	// stack reserve for local
-	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_VAL, BC_MOV, REG_0, node->total_local_size, "local size");
-	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_ADD, SP, REG_0, "allocate local variables");
 	if(node->args) {
 		visitor(generator, node->args);
 	}
@@ -60,10 +51,6 @@ void enter_function(Generator *generator, Node *node) {
 		Node *entry = (Node*)list_remove(list_begin(list));
 		visitor(generator, entry);
 	}
-
-	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_MOV, SP, FP, "epilogue");
-	emit_opcode(generator->emit, BM_L | BM_L_REG, BC_POP, FP, 0, "epilogue");
-	emit_opcode(generator->emit, 0, BC_RET, 0, 0, "ret");
 	node_free(node);
 }
 
@@ -80,7 +67,7 @@ void enter_decl(Generator *generator, Node *node) {
 	
 	if(node->body) {
 		visitor(generator, node->body);
-		emit_opcode(generator->emit, BM_L | BM_L_ADDR | BM_R | BM_R_REG, BC_MOV, node->offset, REG_0, "store variable");
+		fprintf(generator->file, "\tstore %s\n", node->token->data);
 	}
 	
 	node_free(node);
@@ -91,93 +78,75 @@ void enter_binexpr(Generator *generator, Node *node) {
 	if(node->right) {
 		visitor(generator, node->right);
 	}
-	emit_opcode(generator->emit, BM_L | BM_L_REG, BC_PUSH, REG_0, 0, "push right");
 	if(node->left) {
 		visitor(generator, node->left);
 	}
-	emit_opcode(generator->emit, BM_L | BM_L_REG, BC_PUSH, REG_0, 0, "push left");
-
-	emit_opcode(generator->emit, BM_L | BM_L_REG, BC_POP, REG_0, 0, "pop right");
-	emit_opcode(generator->emit, BM_L | BM_L_REG, BC_POP, REG_1, 0, "pop left");
 	switch(node->type) {
 		case AST_LOGAND: 
 		{
-			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_VAL, BC_CMP, REG_0, 1, "logical and cmp #1");
-			emit_opcode(generator->emit, BM_L | BM_L_REG, BC_SETEEQ, REG_0, 0, "seteeq (expr)");
-
-			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_VAL, BC_CMP, REG_1, 1, "logical and cmp #2");
-			emit_opcode(generator->emit, BM_L | BM_L_REG, BC_SETEEQ, REG_1, 0, "seteeq (expr)");
-
-			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_AND, REG_0, REG_1, "AND logical and");
-
-			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_VAL, BC_CMP, REG_0, 1, "logand cmp AND'ed");
-			emit_opcode(generator->emit, BM_L | BM_L_REG, BC_SETEEQ, REG_0, 0, "seteeq (expr)");
+	
 		}
 		break;
 		case AST_ADD:
 		{
-			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_ADD, REG_0, REG_1, "add");
+			fprintf(generator->file, "\tadd\n");
 		}
 		break;
 		case AST_SUB:
 		{
-			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_SUB, REG_0, REG_1, "subtract");
+			fprintf(generator->file, "\tsub\n");
 		}
 		break;
 		case AST_MUL:
 		{
-			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_MUL, REG_0, REG_1, "multiply");
+			fprintf(generator->file, "\tmul\n");
 		}
 		break;
 		case AST_DIV:
 		{
-			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_DIV, REG_0, REG_1, "divide");
+			fprintf(generator->file, "\tdiv\n");
 		}
 		break;
 		case AST_MOD:
 		{
-			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_MOD, REG_0, REG_1, "mod");
+			fprintf(generator->file, "\tmod\n");
 		}
 		break;
 		case AST_EQUAL:
 		{
-			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_CMP, REG_0, REG_1, "cmp (expr)");
-			emit_opcode(generator->emit, BM_L | BM_L_REG, BC_SETEEQ, REG_0, 0, "seteeq (expr)");
+			fprintf(generator->file, "\tequal\n");
 		}
 		break;
 		case AST_NOTEQUAL:
 		{
-			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_CMP, REG_0, REG_1, "cmp (expr)");
-			emit_opcode(generator->emit, BM_L | BM_L_REG, BC_SETENEQ, REG_0, 0, "seteneq (expr)");
+			fprintf(generator->file, "\taabcmp\n");
 		}
 		break;
 		case AST_GT:
 		{
-			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_CMP, REG_0, REG_1, "cmp (expr)");
-			emit_opcode(generator->emit, BM_L | BM_L_REG, BC_SETEGT, REG_0, 0, "setegt (expr)");
+			fprintf(generator->file, "\tCMP(r0, r1)\n");
+			fprintf(generator->file, "\tSETE(r0)\n");
 		}
 		break;
 		case AST_LT:
 		{
-			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_CMP, REG_0, REG_1, "cmp (expr)");
-			emit_opcode(generator->emit, BM_L | BM_L_REG, BC_SETELT, REG_0, 0, "setelt (expr)");
+			fprintf(generator->file, "\tCMP(r0, r1)\n");
+			fprintf(generator->file, "\tSETE(r0)\n");
 		}
 		break;
 		case AST_SHL:
 		{
 			
-			// emit_opcode_0(generator->emit, BC_SHL);
 		}
 		break;
 		case AST_SHR:
 		{
 			
-			// emit_opcode_0(generator->emit, BC_SHR);
 		}
 		break;
 		case AST_AND:
 		{
-			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_AND, REG_0, REG_1, "and");
+			
 		}
 		break;
 		default:
@@ -190,18 +159,17 @@ void enter_binexpr(Generator *generator, Node *node) {
 }
 
 void enter_literal(Generator *generator, Node *node) {
-	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_VAL, BC_MOV, REG_0, atoi(node->token->data), "move literal to register 0");
+	fprintf(generator->file, "\tpush_int %i\n", atoi(node->token->data));
 	node_free(node);
 }
 
 void enter_char_literal(Generator *generator, Node *node) {
 	
-	// emit_opcode_1(generator->emit, BC_PUSH_I, (int)*(node->token->data));
 	node_free(node);
 }
 
 void enter_ident(Generator *generator, Node *node) {
-	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_ADDR, BC_MOV, REG_0, node->offset, "access variable");
+	fprintf(generator->file, "\tload %s\n", node->token->data);
 	node_free(node);
 }
 
@@ -213,21 +181,17 @@ void enter_ident_member(Generator *generator, Node *node) {
 	node_free(node);
 }
 
-void enter_call(Generator *generator, Node *node) {
-	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_MOV, REG_10, SP, "preserve arguments pointer #2 (unfixed)");
-	if(node->args) {
-		visitor(generator, node->args);
-	}
-	emit_opcode(generator->emit, BM_L | BM_L_REG, BC_PUSH, REG_10, 0, "push arg last sp");
-	
-	if(strcmp(node->token->data, "syscall") == 0) {
-		emit_opcode(generator->emit, 0, BC_SYSCALL, 0, 0, "syscall");
+void enter_call(Generator *generator, Node *node) {	
+	if(strcmp(node->token->data, "__asm__") == 0) {
+		Node *ins = node->args;
+		Node *entry = (Node*)list_remove(list_back(&ins->bodylist));
+		fprintf(generator->file, "%s\n", entry->token->data);
 	} else {
-		int i = emit_get_label_addr(generator->emit, node->token->data);
-		emit_opcode(generator->emit, BM_L | BM_L_ADDR, BC_CALL, i, 0, "call");
+		if(node->args) {
+			visitor(generator, node->args);
+		}
+		fprintf(generator->file, "\tcall %s\n", node->token->data);
 	}
-	emit_opcode(generator->emit, BM_L | BM_L_REG, BC_POP, SP, 0, "restore sp from args");
-	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_MOV, REG_0, REG_11, "move return [r11] to local");
 	node_free(node);
 }
 
@@ -251,17 +215,24 @@ void enter_if(Generator *generator, Node *node) {
 }
 
 void enter_while(Generator *generator, Node *node) {
-	int line = emit_label(generator->emit, "while.%i", counter());
+	int c_c = counter();
+	int d_c = counter();
+	fprintf(generator->file, "w_%i:\n", c_c);
+	int line = emit_label(generator->emit, "while.%i", c_c);
 	OP *jmp = NULL;
 	if(node->condition) {
 		visitor(generator, node->condition);
+		fprintf(generator->file, "\tcmp 1\n");
 		emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_VAL, BC_CMP, REG_0, 1, "cmp (while)");
+		fprintf(generator->file, "\tje w_%i\n", d_c);
 		jmp = emit_opcode(generator->emit, BM_L | BM_L_ADDR, BC_JNE, line, 0, "jmp finish(while)");
 	}
 	if(node->body) {
 		visitor(generator, node->body);
 	}
+	fprintf(generator->file, "\tgoto w_%i\n", c_c);	
 	emit_opcode(generator->emit, BM_L | BM_L_ADDR, BC_JMP, line, 0, "jmp (while)");
+	fprintf(generator->file, "w_%i:\n", d_c);	
 	if(jmp) {
 		jmp->left = emit_label(generator->emit, "while.%i", counter());
 	}
@@ -275,7 +246,6 @@ void enter_param(Generator *generator, Node *node) {
 	while(!list_empty(list)) {
 		Node *entry = (Node*)list_remove(list_back(list)); // begin with end
 		if(entry->type == AST_IDENT) {
-			emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG | BM_R_IND, BC_MOV, (entry->offset << 8) | FP, (offset << 8) | REG_10, "mov arguments to local stack");
 			offset += 4;
 		}
 		node_free(entry);
@@ -290,7 +260,6 @@ void enter_arg(Generator *generator, Node *node) {
 	while(!list_empty(list)) {
 		Node *entry = (Node*)list_remove(list_back(list));
 		visitor(generator, entry);
-		emit_opcode(generator->emit, BM_L | BM_L_REG, BC_PUSH, REG_0, 0, "push arg to stack");
 		count++;
 	}
 	
@@ -302,7 +271,7 @@ void enter_return(Generator *generator, Node *node) {
 		visitor(generator, node->body);
 	}
 	
-	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG, BC_MOV, REG_11, REG_0, "move data to return reg [r11]");
+	fprintf(generator->file, "\tret\n");
 	node_free(node);
 }
 
@@ -326,8 +295,7 @@ void enter_derefrence(Generator *generator, Node *node) {
 	if(node->body) {
 		visitor(generator, node->body);
 	}
-	emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_REG | BM_R_IND, BC_MOV, REG_0, REG_0, "deref");
-
+	fprintf(generator->file, "\tderef\n");
 	node_free(node);
 }
 
@@ -465,8 +433,6 @@ void generate(Node *node) {
 	generator.file = fopen("data/code.S", "wb");
 	generator.emit = new_emit();
 	visitor(&generator, node);
-	emit_build2(generator.emit, "data/out.chip");
-	emit_asm(generator.emit, "data/out.S");
 	free_emit(generator.emit);
 	fclose(generator.file);
 }

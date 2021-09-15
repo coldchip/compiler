@@ -121,7 +121,7 @@ Node *parse_params(Parser *parser);
 
 Node *parse_call(Parser *parser);
 Node *parse_declaration(Parser *parser);
-void parse_declarator(Parser *parser);
+void parse_identifier(Parser *parser);
 DataType parse_basetype(Parser *parser);
 Node *parse_stmt(Parser *parser);
 Node *parse_function(Parser *parser);
