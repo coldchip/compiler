@@ -1,19 +1,17 @@
+#include "varlist.h"
 #include "parse.h"
 
 Node *parse_param(Parser *parser) {
-	VarScope *vs = malloc(sizeof(VarScope));
-
+	DataType type = parse_basetype(parser);
 
 	Token *token = parser->token;
-	vs->name = token->data;
+	VarScope *vs = var_insert(&parser->varlist, token->data, type);
 
-	parse_basetype(parser);
 	expect_type(parser, TK_IDENT);
 	
-	Node *node = new_node(AST_IDENT);
+	Node *node  = new_node(AST_IDENT);
 	node->token = token;
-
-	list_insert(list_end(&parser->varscope), vs);
+	node->size  = vs->size; 
 
 	return node;
 }
@@ -24,11 +22,15 @@ Node *parse_params(Parser *parser) {
 		return node;
 	}
 
-	list_insert(list_end(&node->bodylist), parse_param(parser));
+	Node *param = parse_param(parser);
+	node->size += param->size;
+	list_insert(list_end(&node->bodylist), param);
 
 	while(!peek_string(parser, ")")) {
 		expect_string(parser, ",");
-		list_insert(list_end(&node->bodylist), parse_param(parser));
+		Node *param = parse_param(parser);
+		node->size += param->size;
+		list_insert(list_end(&node->bodylist), param);
 	}
 	return node;
 }

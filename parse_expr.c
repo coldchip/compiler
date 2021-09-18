@@ -1,3 +1,4 @@
+#include "varlist.h"
 #include "parse.h"
 
 Node *parse_expr(Parser *parser) {
@@ -175,12 +176,12 @@ Node *parse_primary(Parser *parser) {
 			return node;
 		} else {
 			Node *node = new_node(AST_IDENT);
-			if(!parse_has_var(parser, token->data)) {
+			VarScope *vs = var_get(&parser->varlist, token->data);
+			if(!vs) {
 				c_error("unable to find var '%s'", token->data);
 			}
-			int offset = parse_get_var_offset(parser, token->data);
 			node->token = token;
-			node->offset = offset;
+			node->offset = vs->offset;
 			return node;
 		}	
 	} else if(consume_string(parser, "(")) {

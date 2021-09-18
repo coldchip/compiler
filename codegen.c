@@ -9,15 +9,15 @@ void gen_store(Generator *generator, Node *node) {
 	if(node->type == AST_DEREF) {
 		Node *body = node->body;
 		visitor(generator, body);
-		fprintf(generator->file, "\tstore_ptr\n");
+		fprintf(generator->file, "\tsta\n");
 	} else {
-		fprintf(generator->file, "\tstore %s\n", node->token->data);
+		fprintf(generator->file, "\tstore %i\n", node->offset);
 	}
 	node_free(node);
 }
 
 void gen_addr(Generator *generator, Node *node) {
-	fprintf(generator->file, "\tload_addr %s\n", node->token->data);
+	fprintf(generator->file, "\tlda %i\n", node->offset);
 	node_free(node);
 }
 
@@ -32,6 +32,8 @@ void enter_assign(Generator *generator, Node *node) {
 }
 
 void enter_program(Generator *generator, Node *node) {
+	fprintf(generator->file, "\tjmp main\n");
+
 	List *list = &node->bodylist;
 	while(!list_empty(list)) {
 		Node *entry = (Node*)list_remove(list_begin(list));
@@ -51,6 +53,7 @@ void enter_function(Generator *generator, Node *node) {
 		Node *entry = (Node*)list_remove(list_begin(list));
 		visitor(generator, entry);
 	}
+	fprintf(generator->file, "\tret\n");
 	node_free(node);
 }
 
@@ -67,7 +70,7 @@ void enter_decl(Generator *generator, Node *node) {
 	
 	if(node->body) {
 		visitor(generator, node->body);
-		fprintf(generator->file, "\tstore %s\n", node->token->data);
+		fprintf(generator->file, "\tstore %i\n", node->offset);
 	}
 	
 	node_free(node);
@@ -124,14 +127,12 @@ void enter_binexpr(Generator *generator, Node *node) {
 		break;
 		case AST_GT:
 		{
-			fprintf(generator->file, "\tCMP(r0, r1)\n");
-			fprintf(generator->file, "\tSETE(r0)\n");
+			fprintf(generator->file, "\tcmpgt\n");
 		}
 		break;
 		case AST_LT:
 		{
-			fprintf(generator->file, "\tCMP(r0, r1)\n");
-			fprintf(generator->file, "\tSETE(r0)\n");
+			fprintf(generator->file, "\tcmplt\n");
 		}
 		break;
 		case AST_SHL:
@@ -146,7 +147,7 @@ void enter_binexpr(Generator *generator, Node *node) {
 		break;
 		case AST_AND:
 		{
-			
+
 		}
 		break;
 		default:
@@ -169,7 +170,7 @@ void enter_char_literal(Generator *generator, Node *node) {
 }
 
 void enter_ident(Generator *generator, Node *node) {
-	fprintf(generator->file, "\tload %s\n", node->token->data);
+	fprintf(generator->file, "\tload %i\n", node->offset);
 	node_free(node);
 }
 
@@ -188,9 +189,9 @@ void enter_call(Generator *generator, Node *node) {
 		fprintf(generator->file, "%s\n", entry->token->data);
 	} else {
 		if(node->args) {
-			visitor(generator, node->args);
+			enter_arg(generator, node->args);
 		}
-		fprintf(generator->file, "\tcall %s\n", node->token->data);
+		fprintf(generator->file, "\tcall %s %i\n", node->token->data, node->size);
 	}
 	node_free(node);
 }
@@ -218,24 +219,16 @@ void enter_while(Generator *generator, Node *node) {
 	int c_c = counter();
 	int d_c = counter();
 	fprintf(generator->file, "w_%i:\n", c_c);
-	int line = emit_label(generator->emit, "while.%i", c_c);
-	OP *jmp = NULL;
 	if(node->condition) {
 		visitor(generator, node->condition);
-		fprintf(generator->file, "\tcmp 1\n");
-		emit_opcode(generator->emit, BM_L | BM_L_REG | BM_R | BM_R_VAL, BC_CMP, REG_0, 1, "cmp (while)");
+		fprintf(generator->file, "\tpush_int 0\n");
 		fprintf(generator->file, "\tje w_%i\n", d_c);
-		jmp = emit_opcode(generator->emit, BM_L | BM_L_ADDR, BC_JNE, line, 0, "jmp finish(while)");
 	}
 	if(node->body) {
 		visitor(generator, node->body);
 	}
-	fprintf(generator->file, "\tgoto w_%i\n", c_c);	
-	emit_opcode(generator->emit, BM_L | BM_L_ADDR, BC_JMP, line, 0, "jmp (while)");
+	fprintf(generator->file, "\tjmp w_%i\n", c_c);	
 	fprintf(generator->file, "w_%i:\n", d_c);	
-	if(jmp) {
-		jmp->left = emit_label(generator->emit, "while.%i", counter());
-	}
 	node_free(node);
 }
 

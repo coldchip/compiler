@@ -1,3 +1,4 @@
+#include "varlist.h"
 #include "parse.h"
 
 Node *new_node(NodeType type) {
@@ -12,41 +13,22 @@ void node_free(Node *node) {
 	free(node);
 }
 
-int parse_get_offset(Parser *parser) {
-	if(list_size(&parser->varscope) > 0) {
-		VarScope *vs = (VarScope*)list_back(&parser->varscope);
-		return vs->offset + vs->size;
-	}
-	return 0;
-}
-
-int parse_get_var_offset(Parser *parser, char *var) {
-	for(ListNode *i = list_begin(&parser->varscope); i != list_end(&parser->varscope); i = list_next(i)) {
-		VarScope *vs = (VarScope*)i;
-		if(strcmp(var, vs->name) == 0) {
-			return vs->offset;
-		}
-	}
-	return 0;
-}
-
-bool parse_has_var(Parser *parser, char *var) {
-	for(ListNode *i = list_begin(&parser->varscope); i != list_end(&parser->varscope); i = list_next(i)) {
-		VarScope *vs = (VarScope*)i;
-		if(strcmp(var, vs->name) == 0) {
-			return true;
-		}
-	}
-	return false;
-}
-
 Node *parse_call(Parser *parser) {
 	Node *node = new_node(AST_CALL);
-	Token *ident = parser->token;
-	node->token = ident;
+	Token *token = parser->token;
+	node->token = token;
+
+	VarScope *vs = var_get(&parser->varlist, token->data);
+	if(!vs && !strcmp(token->data, "__asm__") == 0) {
+		c_error("unable to find function '%s'", token->data);
+	}
+
 	expect_type(parser, TK_IDENT);
 	expect_string(parser, "(");
 	node->args = parse_args(parser);
+	if(!strcmp(token->data, "__asm__") == 0) {
+		node->size = vs->arg_size;
+	}
 	expect_string(parser, ")");
 	return node;
 }
@@ -75,22 +57,21 @@ DataType parse_basetype(Parser *parser) {
 /* Parses any string/number declaration */
 
 Node *parse_declaration(Parser *parser) {
-
-	VarScope *vs = malloc(sizeof(VarScope));
-
 	Node *node = new_node(AST_DECL);
 
-	parse_basetype(parser);
+	DataType type = parse_basetype(parser);
 
 	Token *token = parser->token;
 
-	if(parse_has_var(parser, token->data)) {
+	if(var_get(&parser->varlist, token->data)) {
 		c_error("redefinition of '%s'", token->data);
 	}
 
-	vs->name = token->data;
+	VarScope *vs = var_insert(&parser->varlist, token->data, type);
+
 	expect_type(parser, TK_IDENT);
 	node->token = token;
+	node->offset = vs->offset;
 
 	if(consume_string(parser, "[")) {
 		vs->size *= atoi(parser->token->data);
@@ -103,14 +84,8 @@ Node *parse_declaration(Parser *parser) {
 			node->body = parse_expr(parser);	
 		}
 	}
-
-	list_insert(list_end(&parser->varscope), vs);
 	
 	return node;
-}
-
-void parse_identifier(Parser *parser) {
-	expect_type(parser, TK_IDENT);
 }
 
 Node *parse_stmt(Parser *parser) {
@@ -162,19 +137,24 @@ Node *parse_stmt(Parser *parser) {
 }
 
 Node *parse_function(Parser *parser) {
-	list_clear(&parser->varscope);
-
 	Node *node = new_node(AST_FUNCTION);
 
 	parse_basetype(parser);
 
-	Token *ident = parser->token;
-	node->token = ident;
-	parse_identifier(parser);
+	Token *token = parser->token;
+	node->token = token;
+
+	VarScope *vs = var_insert_func(&parser->varlist, token->data, 0);
+
+	expect_type(parser, TK_IDENT);
 
 	expect_string(parser, "(");
 
+	int varlist_size = list_size(&parser->varlist); // remember size before function
+
 	node->args = parse_params(parser);
+
+	vs->arg_size = node->args->size; // param size
 
 	expect_string(parser, ")");
 
@@ -184,11 +164,8 @@ Node *parse_function(Parser *parser) {
 		list_insert(list_end(&node->bodylist), parse_stmt(parser));
 	}
 
-	node->total_local_size = 0;
-
-	while(!list_empty(&parser->varscope)) {
-		VarScope *entry = (VarScope*)list_remove(list_back(&parser->varscope)); // begin with end
-		node->total_local_size += entry->size;
+	while(list_size(&parser->varlist) > varlist_size) {
+		list_remove(list_back(&parser->varlist)); // restore size after function
 	}
 
 	expect_string(parser, "}");
@@ -197,6 +174,7 @@ Node *parse_function(Parser *parser) {
 }
 
 Node *parse_program(Parser *parser) {
+	list_clear(&parser->varlist);
 
 	Node *node = new_node(AST_PROGRAM);
 
