@@ -43,6 +43,9 @@ void enter_program(Generator *generator, Node *node) {
 }
 
 void enter_function(Generator *generator, Node *node) {
+	generator->function     = node;
+	generator->has_returned = false;
+
 	fprintf(generator->file, "%s:\n", node->token->data);
 	// prologue
 	if(node->args) {
@@ -53,7 +56,12 @@ void enter_function(Generator *generator, Node *node) {
 		Node *entry = (Node*)list_remove(list_begin(list));
 		visitor(generator, entry);
 	}
-	fprintf(generator->file, "\tret\n");
+
+	if(generator->has_returned == false) {
+		fprintf(generator->file, "\tret 0\n");
+	}
+
+	generator->function = NULL;
 	node_free(node);
 }
 
@@ -92,22 +100,38 @@ void enter_binexpr(Generator *generator, Node *node) {
 		break;
 		case AST_ADD:
 		{
-			fprintf(generator->file, "\tadd\n");
+			if(node->left->data_type == DATA_FLOAT) {
+				fprintf(generator->file, "\taddf\n");
+			} else {
+				fprintf(generator->file, "\tadd\n");
+			}
 		}
 		break;
 		case AST_SUB:
 		{
-			fprintf(generator->file, "\tsub\n");
+			if(node->left->data_type == DATA_FLOAT) {
+				fprintf(generator->file, "\tsubf\n");
+			} else {
+				fprintf(generator->file, "\tsub\n");
+			}
 		}
 		break;
 		case AST_MUL:
 		{
-			fprintf(generator->file, "\tmul\n");
+			if(node->left->data_type == DATA_FLOAT) {
+				fprintf(generator->file, "\tmulf\n");
+			} else {
+				fprintf(generator->file, "\tmul\n");
+			}
 		}
 		break;
 		case AST_DIV:
 		{
-			fprintf(generator->file, "\tdiv\n");
+			if(node->left->data_type == DATA_FLOAT) {
+				fprintf(generator->file, "\tdivf\n");
+			} else {
+				fprintf(generator->file, "\tdiv\n");
+			}
 		}
 		break;
 		case AST_MOD:
@@ -160,7 +184,13 @@ void enter_binexpr(Generator *generator, Node *node) {
 }
 
 void enter_literal(Generator *generator, Node *node) {
-	fprintf(generator->file, "\tpush_int %i\n", atoi(node->token->data));
+	if(node->data_type == DATA_FLOAT) {
+		// push it as an int first
+		float flo = atof(node->token->data);
+		fprintf(generator->file, "\tpush_int %i\n", *(int*)&flo);
+	} else {
+		fprintf(generator->file, "\tpush_int %i\n", atoi(node->token->data));
+	}
 	node_free(node);
 }
 
@@ -260,12 +290,18 @@ void enter_arg(Generator *generator, Node *node) {
 }
 
 void enter_return(Generator *generator, Node *node) {
+	if(!generator->function) {
+		c_error("cannot return outside of a function!");
+	}
+
 	if(node->body) {
 		visitor(generator, node->body);
 	}
 	
-	fprintf(generator->file, "\tret\n");
+	fprintf(generator->file, "\tret %i\n", generator->function->size);
 	node_free(node);
+
+	generator->has_returned = true;
 }
 
 void enter_string_concat(Generator *generator, Node *node) {
@@ -425,6 +461,8 @@ void generate(Node *node) {
 	Generator generator;
 	generator.file = fopen("data/code.S", "wb");
 	generator.emit = new_emit();
+	generator.function = NULL;
+	generator.has_returned = false;
 	visitor(&generator, node);
 	free_emit(generator.emit);
 	fclose(generator.file);

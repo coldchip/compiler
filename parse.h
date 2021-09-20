@@ -41,10 +41,10 @@ typedef enum {
 } NodeType;
 
 typedef enum {
-	DATA_INT = 4,
-	DATA_LONG = 8,
-	DATA_CHAR = 1,
-	DATA_VOID = 0
+	DATA_INT   = (4) | (1 << 8),
+	DATA_FLOAT = (4) | (2 << 8),
+	DATA_CHAR  = (1) | (3 << 8),
+	DATA_VOID  = (0) | (4 << 8)
 } DataType;
 
 typedef struct _Parser {
@@ -59,7 +59,8 @@ typedef struct _Node {
 	int offset; // variable offset(if it is a decl node)
 	int size; // variable size(if it is a decl node)
 
-	DataType data_type;
+	DataType data_type; // data type
+
 	struct _Node *index; // a[expr]
 	struct _Node *condition;
 
@@ -106,6 +107,8 @@ Node *parse_param(Parser *parser);
 Node *parse_params(Parser *parser);
 
 /* parse.c */
+
+Node *new_cast(Node *from, DataType type);
 
 Node *parse_call(Parser *parser);
 Node *parse_declaration(Parser *parser);

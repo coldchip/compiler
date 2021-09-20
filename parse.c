@@ -13,6 +13,10 @@ void node_free(Node *node) {
 	free(node);
 }
 
+Node *new_cast(Node *from, DataType type) {
+	return from;
+}
+
 Node *parse_call(Parser *parser) {
 	Node *node = new_node(AST_CALL);
 	Token *token = parser->token;
@@ -37,8 +41,8 @@ DataType parse_basetype(Parser *parser) {
 	DataType type = DATA_VOID;
 	if(consume_string(parser, "int")) {
 		type = DATA_INT;
-	} else if(consume_string(parser, "long")) {
-		type = DATA_LONG;
+	} else if(consume_string(parser, "float")) {
+		type = DATA_FLOAT;
 	} else if(consume_string(parser, "void")) {
 		type = DATA_VOID;
 	} else if(consume_string(parser, "char")) {
@@ -50,6 +54,8 @@ DataType parse_basetype(Parser *parser) {
 	if(consume_string(parser, "[")) {
 		// type |= DATA_ARRAY_MASK;
 		expect_string(parser, "]");
+	} else if(consume_string(parser, "*")) {
+		type = 8;
 	}
 	return type;
 }
@@ -67,23 +73,19 @@ Node *parse_declaration(Parser *parser) {
 		c_error("redefinition of '%s'", token->data);
 	}
 
-	VarScope *vs = var_insert(&parser->varlist, token->data, type);
+	VarScope *vs = var_insert(&parser->varlist, token->data, (type & 0xFF));
 
 	expect_type(parser, TK_IDENT);
 	node->token = token;
 	node->offset = vs->offset;
 
-	if(consume_string(parser, "[")) {
-		vs->size *= atoi(parser->token->data);
-		expect_type(parser, TK_NUMBER);
-		expect_string(parser, "]");
-	} else {
-		node->offset = vs->offset; // Set decl offset
-		node->size = vs->size; // Set decl size
-		if(consume_string(parser, "=")) {
-			node->body = parse_expr(parser);	
-		}
+	
+	node->offset = vs->offset; // Set decl offset
+	node->size = vs->size; // Set decl size
+	if(consume_string(parser, "=")) {
+		node->body = parse_expr(parser);	
 	}
+	
 	
 	return node;
 }
@@ -139,7 +141,9 @@ Node *parse_stmt(Parser *parser) {
 Node *parse_function(Parser *parser) {
 	Node *node = new_node(AST_FUNCTION);
 
-	parse_basetype(parser);
+	DataType type = parse_basetype(parser);
+
+	node->size = type & 0xFF;
 
 	Token *token = parser->token;
 	node->token = token;
@@ -181,6 +185,12 @@ Node *parse_program(Parser *parser) {
 	while(!peek_type(parser, TK_EOF)) {
 		if(is_function(parser)) {
 			list_insert(list_end(&node->bodylist), parse_function(parser));
+		} else if(consume_string(parser, "struct")) {
+			expect_type(parser, TK_IDENT);
+			expect_string(parser, "{");
+			
+			expect_string(parser, "}");
+			expect_string(parser, ";");
 		} else {
 			c_error("Not a function!");
 		}
@@ -292,6 +302,7 @@ bool is_typename(Parser *parser) {
 	return 
 	peek_string(parser, "void") || 
 	peek_string(parser, "int") || 
+	peek_string(parser, "float") || 
 	peek_string(parser, "char") || 
 	peek_string(parser, "long");
 }

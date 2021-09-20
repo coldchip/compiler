@@ -11,6 +11,8 @@ typedef struct _Generator {
 	int var_select;
 	FILE *file;
 	Emit *emit;
+	Node *function;
+	bool has_returned;
 } Generator;
 
 int counter();

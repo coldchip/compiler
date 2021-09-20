@@ -1,4 +1,5 @@
 #include "varlist.h"
+#include "type.h"
 #include "parse.h"
 
 Node *parse_expr(Parser *parser) {
@@ -106,7 +107,9 @@ Node *parse_plus_minus(Parser *parser) {
 		if(consume_string(parser, "+")) {
 			Node *node = new_node(AST_ADD);
 			node->left = left;
+			normalize_type(node->left);
 			node->right = parse_muliply_divide(parser);
+			normalize_type(node->right);
 			left = node;
 			continue;
 		}
@@ -195,6 +198,12 @@ Node *parse_primary(Parser *parser) {
 	} else if(consume_type(parser, TK_NUMBER)) {
 		Node *node = new_node(AST_LITERAL);
 		node->token = token;
+		if(strstr(token->data, ".") != NULL) {
+			// typeof float
+			node->data_type = DATA_FLOAT;
+		} else {
+			node->data_type = DATA_INT;
+		}
 		return node;
 	} else if(consume_type(parser, TK_STRING)) {
 		Node *node = new_node(AST_STRING_LITERAL);

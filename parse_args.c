@@ -5,7 +5,7 @@ Node *parse_param(Parser *parser) {
 	DataType type = parse_basetype(parser);
 
 	Token *token = parser->token;
-	VarScope *vs = var_insert(&parser->varlist, token->data, type);
+	VarScope *vs = var_insert(&parser->varlist, token->data, (type & 0xFF));
 
 	expect_type(parser, TK_IDENT);
 	
