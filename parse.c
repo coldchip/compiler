@@ -14,7 +14,10 @@ void node_free(Node *node) {
 }
 
 Node *new_cast(Node *from, DataType type) {
-	return from;
+	Node *node = new_node(AST_CAST);
+	node->data_type = type;
+	node->body = from;
+	return node;
 }
 
 Node *parse_call(Parser *parser) {

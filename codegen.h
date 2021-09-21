@@ -25,6 +25,7 @@ void enter_program       (Generator *generator, Node *node);
 void enter_function      (Generator *generator, Node *node);
 void enter_block         (Generator *generator, Node *node);
 void enter_decl          (Generator *generator, Node *node);
+void enter_cast          (Generator *generator, Node *node);
 void enter_binexpr       (Generator *generator, Node *node);
 void enter_literal       (Generator *generator, Node *node);
 void enter_char_literal  (Generator *generator, Node *node);

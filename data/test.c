@@ -1,17 +1,4 @@
-
-struct Object {
-	
-};
-
-void sleep(int a) {
-	__asm__("\tload 0\n\tsyscall 2");
-}
-
-void print(int a) {
-	__asm__("\tload 0\n\tsyscall 0");
-}
-
-void print_float(float a) {
+void print_float(int a) {
 	__asm__("\tload 0\n\tsyscall 1");
 }
 
@@ -30,37 +17,7 @@ float sin(float x) {
 	return res;
 }
 
-int test(int a, int b, int c) {
-	return a + b + c;
+void main() {
+	int a = sin(2) * 10;
+	print_float(a);
 }
-
-int main() {
-	
-	int i = 0;
-
-	float x = 0.1;
-
-	int a = 0;
-	int b = 0;
-	int c = 0;
-
-	while(i < 30) {
-		
-		int d = test(a, b, c);
-		print(d);
-		a = a + 1;
-		b = b + 1;
-		c = c + 1;
-
-		i = i + 1;
-		sleep(1);
-	}
-	
-	print(sin(1/2));
-	
-
-	int z = sin(0.7);
-
-	print_float(z);
-}
-

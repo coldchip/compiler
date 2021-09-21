@@ -19,14 +19,20 @@ void normalize_type(Node *node) {
 	normalize_type(node->left);
 	normalize_type(node->right);
 
-	if(node->left && node->right) {
+	switch(node->type) {
+		case AST_ADD: {
+			printf("ddddd\n");
+			DataType common = get_common_type(node->left, node->right);
+			node->left  = new_cast(node->left, common);
+			node->right = new_cast(node->right, common);
 
-		DataType common = get_common_type(node->left, node->right);
-		printf("%i\n", common);
-		node->left->data_type  = common;
-		node->right->data_type = common;
-
-		node->data_type = node->left->data_type;
+			node->data_type = node->left->data_type;
+		}
+		break;
+		
+		default: {
+			printf("ff%i\n", node->type);
+		}
+		break;
 	}
-
 }

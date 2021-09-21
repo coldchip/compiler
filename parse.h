@@ -12,6 +12,7 @@ typedef enum {
 	AST_BLOCK,
 	AST_WHILE,
 	AST_ASSIGN,
+	AST_CAST,
 	AST_LOGAND,
 	AST_ADD,
 	AST_SUB,

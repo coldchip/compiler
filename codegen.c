@@ -84,6 +84,15 @@ void enter_decl(Generator *generator, Node *node) {
 	node_free(node);
 }
 
+void enter_cast(Generator *generator, Node *node) {
+	if(node->body) {
+		visitor(generator, node->body);
+		//fprintf(generator->file, "\tcast\n");
+	}
+	
+	node_free(node);
+}
+
 void enter_binexpr(Generator *generator, Node *node) {
 	/* Enter deepest first */
 	if(node->right) {
@@ -92,6 +101,7 @@ void enter_binexpr(Generator *generator, Node *node) {
 	if(node->left) {
 		visitor(generator, node->left);
 	}
+	printf("%i\n", node->left->data_type);
 	switch(node->type) {
 		case AST_LOGAND: 
 		{
@@ -362,6 +372,11 @@ void visitor(Generator *generator, Node *node) {
 			enter_assign(generator, node);
 		}
 		break;
+		case AST_CAST:
+		{
+			enter_cast(generator, node);
+		}
+		break;
 		case AST_LOGAND:
 		case AST_ADD:
 		case AST_SUB:
@@ -451,7 +466,7 @@ void visitor(Generator *generator, Node *node) {
 		break;
 		default:
 		{
-			
+			printf("dd %i\n", node->type);
 		}
 		break;
 	}
