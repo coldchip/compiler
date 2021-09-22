@@ -8,148 +8,118 @@ Node *parse_expr(Parser *parser) {
 }
 
 Node *parse_assign(Parser *parser) {
-	Node *left = parse_log(parser);
+	Node *node = parse_log(parser);
 	if(consume_string(parser, "=")) {
-		Node *node = new_node(AST_ASSIGN);
-		node->left = left;
-		node->right = parse_assign(parser);
+		node = new_binary(AST_ASSIGN, node, parse_assign(parser));
 		return node;
 	}
-	return left;
+	return node;
 }
 
 Node *parse_log(Parser *parser) {
-	Node *left = parse_equality(parser);
+	Node *node = parse_equality(parser);
 	for(;;) {
 		if(consume_string(parser, "&&")) {
-			Node *node = new_node(AST_LOGAND);
-			node->left = left;
-			node->right = parse_equality(parser);
-			return node;
+			return new_binary(AST_LOGAND, node, parse_equality(parser));
 		}
-		return left;
+		return node;
 	}
 }
 
 Node *parse_equality(Parser *parser) {
-	Node *left = parse_relational(parser);
+	Node *node = parse_relational(parser);
 	for(;;) {
 		if(consume_string(parser, "==")) {
-			Node *node = new_node(AST_EQUAL);
-			node->left = left;
-			node->right = parse_relational(parser);
-			left = node;
+			node = new_binary(AST_EQUAL, node, parse_relational(parser));
 			continue;
 		}
 		if(consume_string(parser, "!=")) {
-			Node *node = new_node(AST_NOTEQUAL);
-			node->left = left;
-			node->right = parse_relational(parser);
-			left = node;
+			node = new_binary(AST_NOTEQUAL, node, parse_relational(parser));
 			continue;
 		}
-		return left;
+		return node;
 	}
 }
 
 Node *parse_relational(Parser *parser) {
-	Node *left = parse_bitwise(parser);
+	Node *node = parse_bitwise(parser);
 	for(;;) {
 		if(consume_string(parser, "<")) {
-			Node *node = new_node(AST_LT);
-			node->left = left;
-			node->right = parse_bitwise(parser);
-			left = node;
+			node = new_binary(AST_LT, node, parse_bitwise(parser));
 			continue;
 		}
 		if(consume_string(parser, ">")) {
-			Node *node = new_node(AST_GT);
-			node->left = left;
-			node->right = parse_bitwise(parser);
-			left = node;
+			node = new_binary(AST_LT, node, parse_bitwise(parser));
 			continue;
 		}
-		return left;
+		return node;
 	}
 }
 
 Node *parse_bitwise(Parser *parser) {
-	Node *left = parse_plus_minus(parser);
+	Node *node = parse_plus_minus(parser);
 	for(;;) {
 		if(consume_string(parser, "<<")) {
-			Node *node = new_node(AST_SHL);
-			node->left = left;
-			node->right = parse_plus_minus(parser);
-			left = node;
+			node = new_binary(AST_SHL, node, parse_plus_minus(parser));
 			continue;
 		}
 		if(consume_string(parser, ">>")) {
-			Node *node = new_node(AST_SHR);
-			node->left = left;
-			node->right = parse_plus_minus(parser);
-			left = node;
+			node = new_binary(AST_SHR, node, parse_plus_minus(parser));
 			continue;
 		}
 		if(consume_string(parser, "&")) {
-			Node *node = new_node(AST_AND);
-			node->left = left;
-			node->right = parse_plus_minus(parser);
-			left = node;
+			node = new_binary(AST_AND, node, parse_plus_minus(parser));
 			continue;
 		}
-		return left;
+		return node;
 	}
 }
 
 Node *parse_plus_minus(Parser *parser) {
-	Node *left = parse_muliply_divide(parser);
+	Node *node = parse_muliply_divide(parser);
 	for(;;) {
 		if(consume_string(parser, "+")) {
-			Node *node = new_node(AST_ADD);
-			node->left = left;
-			normalize_type(node->left);
-			node->right = parse_muliply_divide(parser);
-			normalize_type(node->right);
-			left = node;
+			node = new_binary_normalize_type(AST_ADD, node, parse_muliply_divide(parser));
 			continue;
 		}
 		if(consume_string(parser, "-")) {
-			Node *node = new_node(AST_SUB);
-			node->left = left;
-			node->right = parse_muliply_divide(parser);
-			left = node;
+			node = new_binary_normalize_type(AST_SUB, node, parse_muliply_divide(parser));
 			continue;
 		}
-		return left;
+		return node;
 	}
 }
 
 Node *parse_muliply_divide(Parser *parser) {
-	Node *left = parse_unary(parser);
+	Node *node = parse_cast(parser);
 	for(;;) {
 		if(consume_string(parser, "*")) {
-			Node *node = new_node(AST_MUL);
-			node->left = left;
-			node->right = parse_unary(parser);
-			left = node;
+			node = new_binary(AST_MUL, node, parse_cast(parser));
 			continue;
 		}
 		if(consume_string(parser, "/")) {
-			Node *node = new_node(AST_DIV);
-			node->left = left;
-			node->right = parse_unary(parser);
-			left = node;
+			node = new_binary(AST_DIV, node, parse_cast(parser));
 			continue;
 		}
 		if(consume_string(parser, "%")) {
-			Node *node = new_node(AST_MOD);
-			node->left = left;
-			node->right = parse_unary(parser);
-			left = node;
+			node = new_binary(AST_MOD, node, parse_cast(parser));
 			continue;
 		}
-		return left;
+		return node;
 	}
+}
+
+Node *parse_cast(Parser *parser) {
+	if(consume_string(parser, "(")) {
+		if(is_typename(parser)) {
+			DataType type = parse_basetype(parser);
+			expect_string(parser, ")");
+
+			return new_cast(parse_cast(parser), type);
+		}
+		unconsume(parser);
+	}
+	return parse_unary(parser);
 }
 
 Node *parse_unary(Parser *parser) {
@@ -185,6 +155,8 @@ Node *parse_primary(Parser *parser) {
 			}
 			node->token = token;
 			node->offset = vs->offset;
+			node->data_type = vs->data_type;
+
 			return node;
 		}	
 	} else if(consume_string(parser, "(")) {
@@ -204,6 +176,7 @@ Node *parse_primary(Parser *parser) {
 		} else {
 			node->data_type = DATA_INT;
 		}
+		printf("======%i %s\n", node->data_type, token->data);
 		return node;
 	} else if(consume_type(parser, TK_STRING)) {
 		Node *node = new_node(AST_STRING_LITERAL);

@@ -85,9 +85,18 @@ void enter_decl(Generator *generator, Node *node) {
 }
 
 void enter_cast(Generator *generator, Node *node) {
-	if(node->body) {
-		visitor(generator, node->body);
-		//fprintf(generator->file, "\tcast\n");
+	if(node->left) {
+		visitor(generator, node->left);
+		printf("from %i to %i\n", node->left->data_type, node->data_type);
+		int from = node->left->data_type;
+		int to   = node->data_type;
+		if(from != to) {
+			if(from == DATA_FLOAT && to == DATA_INT) {
+				fprintf(generator->file, "\tcf2i32\n");
+			} else if(from == DATA_INT && to == DATA_FLOAT) {
+				fprintf(generator->file, "\tci2f32\n");
+			}
+		}
 	}
 	
 	node_free(node);
@@ -101,7 +110,6 @@ void enter_binexpr(Generator *generator, Node *node) {
 	if(node->left) {
 		visitor(generator, node->left);
 	}
-	printf("%i\n", node->left->data_type);
 	switch(node->type) {
 		case AST_LOGAND: 
 		{
@@ -161,12 +169,20 @@ void enter_binexpr(Generator *generator, Node *node) {
 		break;
 		case AST_GT:
 		{
-			fprintf(generator->file, "\tcmpgt\n");
+			if(node->left->data_type == DATA_FLOAT) {
+				fprintf(generator->file, "\tcmpgtf\n");
+			} else {
+				fprintf(generator->file, "\tcmpgt\n");
+			}
 		}
 		break;
 		case AST_LT:
 		{
-			fprintf(generator->file, "\tcmplt\n");
+			if(node->left->data_type == DATA_FLOAT) {
+				fprintf(generator->file, "\tcmpltf\n");
+			} else {
+				fprintf(generator->file, "\tcmplt\n");
+			}
 		}
 		break;
 		case AST_SHL:
@@ -326,7 +342,11 @@ void enter_string_concat(Generator *generator, Node *node) {
 }
 
 void enter_string_literal(Generator *generator, Node *node) {
-	
+	char *data = node->token->data;
+	for (int i = 0; i < strlen(data); i++) {
+		fprintf(generator->file, "\tpush_int %i\n", *(data + i) & 0xFF);
+	}
+	fprintf(generator->file, "\tpush_int 0\n");
 	node_free(node);
 }
 

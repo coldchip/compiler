@@ -2,6 +2,7 @@
 #define VARLIST_H
 
 #include <stdbool.h>
+#include "parse.h"
 #include "list.h"
 
 typedef enum {
@@ -14,6 +15,7 @@ typedef struct _VarScope {
 	char *name;
 	int offset;
 	int size;
+	DataType data_type;
 	int arg_size;
 } VarScope;
 

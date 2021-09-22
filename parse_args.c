@@ -6,12 +6,14 @@ Node *parse_param(Parser *parser) {
 
 	Token *token = parser->token;
 	VarScope *vs = var_insert(&parser->varlist, token->data, (type & 0xFF));
+	vs->data_type = type;
 
 	expect_type(parser, TK_IDENT);
 	
-	Node *node  = new_node(AST_IDENT);
-	node->token = token;
-	node->size  = vs->size; 
+	Node *node      = new_node(AST_IDENT);
+	node->token     = token;
+	node->size      = vs->size;
+	node->data_type = type;
 
 	return node;
 }

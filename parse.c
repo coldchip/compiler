@@ -1,4 +1,5 @@
 #include "varlist.h"
+#include "type.h"
 #include "parse.h"
 
 Node *new_node(NodeType type) {
@@ -13,10 +14,27 @@ void node_free(Node *node) {
 	free(node);
 }
 
+Node *new_binary(NodeType type, Node *left, Node *right) {
+	Node *node = new_node(type);
+	node->left  = left;
+	node->right = right;
+
+	return node;
+}
+
+Node *new_binary_normalize_type(NodeType type, Node *left, Node *right) {
+	normalize_type(left);
+	normalize_type(right);
+	Node *node = new_binary(type, left, right);
+	return node;
+}
+
 Node *new_cast(Node *from, DataType type) {
+	normalize_type(from);
+
 	Node *node = new_node(AST_CAST);
 	node->data_type = type;
-	node->body = from;
+	node->left = from;
 	return node;
 }
 
@@ -28,6 +46,9 @@ Node *parse_call(Parser *parser) {
 	VarScope *vs = var_get(&parser->varlist, token->data);
 	if(!vs && !strcmp(token->data, "__asm__") == 0) {
 		c_error("unable to find function '%s'", token->data);
+	}
+	if(vs) {
+		node->data_type = vs->data_type;
 	}
 
 	expect_type(parser, TK_IDENT);
@@ -77,6 +98,7 @@ Node *parse_declaration(Parser *parser) {
 	}
 
 	VarScope *vs = var_insert(&parser->varlist, token->data, (type & 0xFF));
+	vs->data_type = type;
 
 	expect_type(parser, TK_IDENT);
 	node->token = token;
@@ -86,7 +108,8 @@ Node *parse_declaration(Parser *parser) {
 	node->offset = vs->offset; // Set decl offset
 	node->size = vs->size; // Set decl size
 	if(consume_string(parser, "=")) {
-		node->body = parse_expr(parser);	
+		node->body = parse_expr(parser);
+		normalize_type(node->body);
 	}
 	
 	
@@ -136,6 +159,7 @@ Node *parse_stmt(Parser *parser) {
 		return node;
 	} else {
 		Node *node = parse_expr(parser);
+		normalize_type(node);
 		expect_string(parser, ";");
 		return node;
 	}
@@ -152,6 +176,7 @@ Node *parse_function(Parser *parser) {
 	node->token = token;
 
 	VarScope *vs = var_insert_func(&parser->varlist, token->data, 0);
+	vs->data_type = type;
 
 	expect_type(parser, TK_IDENT);
 

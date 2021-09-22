@@ -20,8 +20,10 @@ void normalize_type(Node *node) {
 	normalize_type(node->right);
 
 	switch(node->type) {
-		case AST_ADD: {
-			printf("ddddd\n");
+		case AST_ADD:
+		case AST_SUB:
+		case AST_MUL:
+		case AST_DIV: {
 			DataType common = get_common_type(node->left, node->right);
 			node->left  = new_cast(node->left, common);
 			node->right = new_cast(node->right, common);
@@ -31,7 +33,7 @@ void normalize_type(Node *node) {
 		break;
 		
 		default: {
-			printf("ff%i\n", node->type);
+			node->data_type = DATA_INT;
 		}
 		break;
 	}

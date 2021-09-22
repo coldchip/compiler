@@ -79,6 +79,9 @@ typedef struct _Node {
 
 Node *new_node(NodeType type);
 void node_free(Node *node);
+Node *new_binary(NodeType type, Node *left, Node *right);
+Node *new_binary_normalize_type(NodeType type, Node *left, Node *right);
+Node *new_cast(Node *from, DataType type);
 
 /* parse_string_expr.c */
 
@@ -97,6 +100,7 @@ Node *parse_relational(Parser *parser);
 Node *parse_bitwise(Parser *parser);
 Node *parse_plus_minus(Parser *parser);
 Node *parse_muliply_divide(Parser *parser);
+Node *parse_cast(Parser *parser);
 Node *parse_unary(Parser *parser);
 Node *parse_primary(Parser *parser);
 
@@ -108,8 +112,6 @@ Node *parse_param(Parser *parser);
 Node *parse_params(Parser *parser);
 
 /* parse.c */
-
-Node *new_cast(Node *from, DataType type);
 
 Node *parse_call(Parser *parser);
 Node *parse_declaration(Parser *parser);
