@@ -11,7 +11,17 @@ void gen_store(Generator *generator, Node *node) {
 		visitor(generator, body);
 		fprintf(generator->file, "\tsta\n");
 	} else {
-		fprintf(generator->file, "\tstore %i\n", node->offset);
+		switch(node->data_type) {
+			case DATA_FLOAT:
+			case DATA_INT: {
+				fprintf(generator->file, "\tstorei %i\n", node->offset);
+			}
+			break;
+			case DATA_CHAR: {
+				fprintf(generator->file, "\tstorec %i\n", node->offset);
+			}
+			break;
+		}
 	}
 	node_free(node);
 }
@@ -78,7 +88,17 @@ void enter_decl(Generator *generator, Node *node) {
 	
 	if(node->body) {
 		visitor(generator, node->body);
-		fprintf(generator->file, "\tstore %i\n", node->offset);
+		switch(node->data_type) {
+			case DATA_FLOAT:
+			case DATA_INT: {
+				fprintf(generator->file, "\tstorei %i\n", node->offset);
+			}
+			break;
+			case DATA_CHAR: {
+				fprintf(generator->file, "\tstorec %i\n", node->offset);
+			}
+			break;
+		}
 	}
 	
 	node_free(node);
@@ -87,7 +107,6 @@ void enter_decl(Generator *generator, Node *node) {
 void enter_cast(Generator *generator, Node *node) {
 	if(node->left) {
 		visitor(generator, node->left);
-		printf("from %i to %i\n", node->left->data_type, node->data_type);
 		int from = node->left->data_type;
 		int to   = node->data_type;
 		if(from != to) {
@@ -164,7 +183,7 @@ void enter_binexpr(Generator *generator, Node *node) {
 		break;
 		case AST_NOTEQUAL:
 		{
-			fprintf(generator->file, "\taabcmp\n");
+			fprintf(generator->file, "\tneq\n");
 		}
 		break;
 		case AST_GT:
@@ -187,17 +206,17 @@ void enter_binexpr(Generator *generator, Node *node) {
 		break;
 		case AST_SHL:
 		{
-			
+			fprintf(generator->file, "\tshl\n");
 		}
 		break;
 		case AST_SHR:
 		{
-			
+			fprintf(generator->file, "\tshr\n");
 		}
 		break;
 		case AST_AND:
 		{
-
+			fprintf(generator->file, "\tand\n");
 		}
 		break;
 		default:
@@ -213,9 +232,9 @@ void enter_literal(Generator *generator, Node *node) {
 	if(node->data_type == DATA_FLOAT) {
 		// push it as an int first
 		float flo = atof(node->token->data);
-		fprintf(generator->file, "\tpush_int %i\n", *(int*)&flo);
+		fprintf(generator->file, "\tpushi %i\n", *(int*)&flo);
 	} else {
-		fprintf(generator->file, "\tpush_int %i\n", atoi(node->token->data));
+		fprintf(generator->file, "\tpushi %i\n", atoi(node->token->data));
 	}
 	node_free(node);
 }
@@ -226,7 +245,17 @@ void enter_char_literal(Generator *generator, Node *node) {
 }
 
 void enter_ident(Generator *generator, Node *node) {
-	fprintf(generator->file, "\tload %i\n", node->offset);
+	switch(node->data_type) {
+		case DATA_FLOAT:
+		case DATA_INT: {
+			fprintf(generator->file, "\tloadi %i\n", node->offset);
+		}
+		break;
+		case DATA_CHAR: {
+			fprintf(generator->file, "\tloadc %i\n", node->offset);
+		}
+		break;
+	}
 	node_free(node);
 }
 
@@ -274,17 +303,17 @@ void enter_if(Generator *generator, Node *node) {
 void enter_while(Generator *generator, Node *node) {
 	int c_c = counter();
 	int d_c = counter();
-	fprintf(generator->file, "w_%i:\n", c_c);
+	fprintf(generator->file, "l%i:\n", c_c);
 	if(node->condition) {
 		visitor(generator, node->condition);
-		fprintf(generator->file, "\tpush_int 0\n");
-		fprintf(generator->file, "\tje w_%i\n", d_c);
+		fprintf(generator->file, "\tpushi 0\n");
+		fprintf(generator->file, "\tje l%i\n", d_c);
 	}
 	if(node->body) {
 		visitor(generator, node->body);
 	}
-	fprintf(generator->file, "\tjmp w_%i\n", c_c);	
-	fprintf(generator->file, "w_%i:\n", d_c);	
+	fprintf(generator->file, "\tjmp l%i\n", c_c);	
+	fprintf(generator->file, "l%i:\n", d_c);	
 	node_free(node);
 }
 
@@ -344,9 +373,9 @@ void enter_string_concat(Generator *generator, Node *node) {
 void enter_string_literal(Generator *generator, Node *node) {
 	char *data = node->token->data;
 	for (int i = 0; i < strlen(data); i++) {
-		fprintf(generator->file, "\tpush_int %i\n", *(data + i) & 0xFF);
+		fprintf(generator->file, "\tpushi %i\n", *(data + i) & 0xFF);
 	}
-	fprintf(generator->file, "\tpush_int 0\n");
+	fprintf(generator->file, "\tpushi 0\n");
 	node_free(node);
 }
 

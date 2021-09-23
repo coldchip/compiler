@@ -22,15 +22,15 @@ Node *new_binary(NodeType type, Node *left, Node *right) {
 	return node;
 }
 
-Node *new_binary_normalize_type(NodeType type, Node *left, Node *right) {
-	normalize_type(left);
-	normalize_type(right);
+Node *new_binary_promote(NodeType type, Node *left, Node *right) {
+	promote_type(left);
+	promote_type(right);
 	Node *node = new_binary(type, left, right);
 	return node;
 }
 
 Node *new_cast(Node *from, DataType type) {
-	normalize_type(from);
+	promote_type(from);
 
 	Node *node = new_node(AST_CAST);
 	node->data_type = type;
@@ -103,16 +103,13 @@ Node *parse_declaration(Parser *parser) {
 	expect_type(parser, TK_IDENT);
 	node->token = token;
 	node->offset = vs->offset;
-
-	
-	node->offset = vs->offset; // Set decl offset
+	node->data_type = type;
 	node->size = vs->size; // Set decl size
+
 	if(consume_string(parser, "=")) {
 		node->body = parse_expr(parser);
-		normalize_type(node->body);
+		promote_type(node->body);
 	}
-	
-	
 	return node;
 }
 
@@ -159,7 +156,7 @@ Node *parse_stmt(Parser *parser) {
 		return node;
 	} else {
 		Node *node = parse_expr(parser);
-		normalize_type(node);
+		promote_type(node);
 		expect_string(parser, ";");
 		return node;
 	}

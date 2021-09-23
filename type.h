@@ -3,6 +3,6 @@
 
 #include "parse.h"
 
-void normalize_type(Node *node);
+void promote_type(Node *node);
 
 #endif

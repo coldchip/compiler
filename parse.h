@@ -80,15 +80,8 @@ typedef struct _Node {
 Node *new_node(NodeType type);
 void node_free(Node *node);
 Node *new_binary(NodeType type, Node *left, Node *right);
-Node *new_binary_normalize_type(NodeType type, Node *left, Node *right);
+Node *new_binary_promote(NodeType type, Node *left, Node *right);
 Node *new_cast(Node *from, DataType type);
-
-/* parse_string_expr.c */
-
-Node *parse_string_expr(Parser *parser);
-Node *parse_string_assign(Parser *parser);
-Node *parse_string_concat(Parser *parser);
-Node *parse_string_primary(Parser *parser);
 
 /* parse_expr.c */
 

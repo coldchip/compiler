@@ -1,3 +1,4 @@
+#include "mem.c"
 #include "io.c"
 #include "socket.c"
 
@@ -8,20 +9,22 @@ float sin(float x) {
 	int i = 0;
 	while(i < 5) {
 		res = res+(pow/fact);
-		pow = pow * ((0.0 - 1.0) * x * x);
-		fact = fact * ((2.0 * (i + 1.0)) * (2.0 * (i + 1.0) + 1.0));
+		pow = pow * ((0 - 1) * x * x);
+		fact = fact * ((2 * (i + 1)) * (2 * (i + 1) + 1));
 		i = i + 1;
 	}
 	return res;
 }
 
+struct Test {
+	
+};
+
 void main() {
-	float i = 0.0;
+	float i = 0;
 
-	while(i < 10.0) {
-		print_float(sin(i));
-		i = i + 0.2;
+	while(1) {
+		print_float(sin((float)i));
+		i = i + 0.001;
 	}
-
-	// char *v = "lolol";
 }

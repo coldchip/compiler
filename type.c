@@ -11,19 +11,20 @@ DataType get_common_type(Node *left, Node *right) {
 	return left->data_type;
 }
 
-void normalize_type(Node *node) {
+void promote_type(Node *node) {
 	if(!node || node->data_type) {
 		return;
 	}
 
-	normalize_type(node->left);
-	normalize_type(node->right);
+	promote_type(node->left);
+	promote_type(node->right);
 
 	switch(node->type) {
 		case AST_ADD:
 		case AST_SUB:
 		case AST_MUL:
-		case AST_DIV: {
+		case AST_DIV:
+		case AST_MOD: {
 			DataType common = get_common_type(node->left, node->right);
 			node->left  = new_cast(node->left, common);
 			node->right = new_cast(node->right, common);

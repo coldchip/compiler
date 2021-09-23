@@ -59,16 +59,16 @@ Node *parse_relational(Parser *parser) {
 Node *parse_bitwise(Parser *parser) {
 	Node *node = parse_plus_minus(parser);
 	for(;;) {
+		if(consume_string(parser, "&")) {
+			node = new_binary(AST_AND, node, parse_plus_minus(parser));
+			continue;
+		}
 		if(consume_string(parser, "<<")) {
 			node = new_binary(AST_SHL, node, parse_plus_minus(parser));
 			continue;
 		}
 		if(consume_string(parser, ">>")) {
 			node = new_binary(AST_SHR, node, parse_plus_minus(parser));
-			continue;
-		}
-		if(consume_string(parser, "&")) {
-			node = new_binary(AST_AND, node, parse_plus_minus(parser));
 			continue;
 		}
 		return node;
@@ -79,11 +79,11 @@ Node *parse_plus_minus(Parser *parser) {
 	Node *node = parse_muliply_divide(parser);
 	for(;;) {
 		if(consume_string(parser, "+")) {
-			node = new_binary_normalize_type(AST_ADD, node, parse_muliply_divide(parser));
+			node = new_binary_promote(AST_ADD, node, parse_muliply_divide(parser));
 			continue;
 		}
 		if(consume_string(parser, "-")) {
-			node = new_binary_normalize_type(AST_SUB, node, parse_muliply_divide(parser));
+			node = new_binary_promote(AST_SUB, node, parse_muliply_divide(parser));
 			continue;
 		}
 		return node;
@@ -176,7 +176,6 @@ Node *parse_primary(Parser *parser) {
 		} else {
 			node->data_type = DATA_INT;
 		}
-		printf("======%i %s\n", node->data_type, token->data);
 		return node;
 	} else if(consume_type(parser, TK_STRING)) {
 		Node *node = new_node(AST_STRING_LITERAL);
